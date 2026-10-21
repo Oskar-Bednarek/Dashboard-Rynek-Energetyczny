@@ -1,0 +1,526 @@
+<!doctype html>
+
+
+<html lang="pl">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#102746">
+    <title>Rynki energetyczne — PEC Legionowo</title>
+    <link rel="stylesheet" href="dashboard.css">
+  </head>
+  <body>
+    <div id="dashboard-viewport" aria-label="Powiększalny obszar dashboardu">
+      <div id="canvas-sizer">
+        <div id="dashboard-canvas">
+          <header class="topbar">
+            <div class="brand" aria-label="PEC Legionowo">
+              <div class="brand-mark" aria-hidden="true">
+                <svg viewBox="0 0 32 32" fill="none">
+                  <path d="M5 5h9v9H5zM18 5h9v9h-9zM5 18h9v9H5zM18 18h9v9h-9z" fill="currentColor"/>
+                </svg>
+              </div>
+              <div>
+                <div class="brand-name">PEC Legionowo</div>
+                <div class="brand-sub">Ciepło · Energia · Bezpieczeństwo</div>
+              </div>
+            </div>
+            <div class="title-wrap">
+              <h1>RYNKI ENERGETYCZNE</h1>
+              <p>Dashboard zarządczy</p>
+            </div>
+            <div class="report-date">
+              <span>Stan na dzień</span>
+              <strong>16.10.2026</strong>
+            </div>
+          </header>
+          <main>
+            <section class="market-grid" aria-label="Rynki energetyczne">
+              <article class="panel">
+                <header class="panel-heading">
+                  <div class="market-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <path d="M13.1 2.8c.7 3-1.9 4.2-1.1 6.7.5 1.3 1.7 1.7 2.2 2.8.4-2 1.4-2.8 2-4.1 2.9 3 4.1 6 2.7 9.1a7.3 7.3 0 0 1-13.7-1c-1-3.5 1-6.4 4-8.9-.2 2.6.3 3.6 1.2 4.4.3-3.5 2.8-5.4 2.7-9Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                    </svg>
+                  </div>
+                  <div class="heading-copy">
+                    <h2>Gaz ziemny</h2>
+                    <p>Rynek TGE · notowania i kontrakty</p>
+                  </div>
+                  <span class="panel-date">16.10.2026</span>
+                </header>
+                <div class="panel-body">
+                  <div class="kpis">
+                    <div class="kpi">
+                      <span class="kpi-label">Cena TTF</span>
+                      <strong class="kpi-value">34,82                       <small class="kpi-unit">EUR/MWh</small></strong>
+                      <span class="change up">▲ 1,24% dziennie</span>
+                    </div>
+                    <div class="kpi">
+                      <span class="kpi-label">Cena TGE</span>
+                      <strong class="kpi-value">158,40                       <small class="kpi-unit">PLN/MWh</small></strong>
+                      <span class="change down">▼ 0,38% dziennie</span>
+                    </div>
+                    <div class="kpi">
+                      <span class="kpi-label">Min. 30 dni</span>
+                      <strong class="kpi-value">31,25                       <small class="kpi-unit">EUR/MWh</small></strong>
+                      <span class="change neutral">23.09.2026</span>
+                    </div>
+                    <div class="kpi">
+                      <span class="kpi-label">Maks. 30 dni</span>
+                      <strong class="kpi-value">37,10                       <small class="kpi-unit">EUR/MWh</small></strong>
+                      <span class="change neutral">07.10.2026</span>
+                    </div>
+                  </div>
+                  <div class="chart-card">
+                    <div class="chart-title">
+                      <strong>Gaz TTF — historia cen (30 dni)</strong>
+                      <span>EUR/MWh</span>
+                    </div>
+                    <svg class="chart" data-values="32.4,32.1,33.0,32.8,31.9,32.5,33.4,33.1,34.0,33.6,32.9,33.7,34.3,33.8,34.7,35.2,34.1,34.8,35.6,34.9,35.1,36.3,35.4,34.8,35.9,36.6,35.7,36.9,34.4,34.82" data-unit="€"></svg>
+                  </div>
+                  <div class="table-heading">
+                    <h3>Kontrakty gazowe</h3>
+                    <span>Ceny orientacyjne</span>
+                  </div>
+                  <div class="table-grid">
+                    <div class="table-wrap">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Kontrakt</th>
+                            <th class="num">Cena</th>
+                            <th class="num">Zmiana</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td>TTF DA</td>
+                            <td class="num">34,82 €</td>
+                            <td class="num down">−0,44%</td>
+                          </tr>
+                          <tr>
+                            <td>TTF M+1</td>
+                            <td class="num">35,16 €</td>
+                            <td class="num up">+0,82%</td>
+                          </tr>
+                          <tr>
+                            <td>TTF Q1 27</td>
+                            <td class="num">36,90 €</td>
+                            <td class="num up">+1,10%</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <div class="table-wrap">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Kontrakt TGE</th>
+                            <th class="num">PLN/MWh</th>
+                            <th class="num">Wolumen</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td>DA</td>
+                            <td class="num">158,40</td>
+                            <td class="num volume">42 GWh</td>
+                          </tr>
+                          <tr>
+                            <td>MAJ 27</td>
+                            <td class="num">164,20</td>
+                            <td class="num volume">18 GWh</td>
+                          </tr>
+                          <tr>
+                            <td>ROK 27</td>
+                            <td class="num">171,60</td>
+                            <td class="num volume">96 GWh</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </article>
+              <article class="panel">
+                <header class="panel-heading">
+                  <div class="market-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <path d="m13.2 2.5-8 11h6l-.6 8 8.2-12h-6.2l.6-7Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+                    </svg>
+                  </div>
+                  <div class="heading-copy">
+                    <h2>Energia elektryczna</h2>
+                    <p>Rynek TGE · indeksy i kontrakty</p>
+                  </div>
+                  <span class="panel-date">16.10.2026</span>
+                </header>
+                <div class="panel-body">
+                  <div class="kpis">
+                    <div class="kpi">
+                      <span class="kpi-label">Indeks RDN</span>
+                      <strong class="kpi-value">412,60                       <small class="kpi-unit">PLN/MWh</small></strong>
+                      <span class="change up">▲ 2,16% dziennie</span>
+                    </div>
+                    <div class="kpi">
+                      <span class="kpi-label">Kontrakt BASE Y+1</span>
+                      <strong class="kpi-value">468,20                       <small class="kpi-unit">PLN/MWh</small></strong>
+                      <span class="change down">▼ 0,64% dziennie</span>
+                    </div>
+                    <div class="kpi">
+                      <span class="kpi-label">Min. 30 dni</span>
+                      <strong class="kpi-value">389,10                       <small class="kpi-unit">PLN/MWh</small></strong>
+                      <span class="change neutral">29.09.2026</span>
+                    </div>
+                    <div class="kpi">
+                      <span class="kpi-label">Maks. 30 dni</span>
+                      <strong class="kpi-value">506,80                       <small class="kpi-unit">PLN/MWh</small></strong>
+                      <span class="change neutral">08.10.2026</span>
+                    </div>
+                  </div>
+                  <div class="chart-card">
+                    <div class="chart-title">
+                      <strong>Energia — historia RDN (30 dni)</strong>
+                      <span>PLN/MWh</span>
+                    </div>
+                    <svg class="chart" data-values="428,416,439,405,397,421,446,432,458,471,449,425,413,439,463,482,469,506,488,451,439,427,461,477,494,471,449,432,404,412.6" data-unit=""></svg>
+                  </div>
+                  <div class="table-heading">
+                    <h3>Notowania kontraktów TGE</h3>
+                    <span>PLN/MWh · wolumen dzienny</span>
+                  </div>
+                  <div class="three-tables">
+                    <div class="table-wrap">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>RDN</th>
+                            <th class="num">Cena</th>
+                            <th class="num">Wol.</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td>BASE</td>
+                            <td class="num">412,60</td>
+                            <td class="num volume">1,8 GWh</td>
+                          </tr>
+                          <tr>
+                            <td>PEAK</td>
+                            <td class="num">486,30</td>
+                            <td class="num volume">0,7 GWh</td>
+                          </tr>
+                          <tr>
+                            <td>OFF</td>
+                            <td class="num">338,90</td>
+                            <td class="num volume">1,1 GWh</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <div class="table-wrap">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>M+1</th>
+                            <th class="num">Cena</th>
+                            <th class="num">Wol.</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td>BASE</td>
+                            <td class="num">451,70</td>
+                            <td class="num volume">240 MWh</td>
+                          </tr>
+                          <tr>
+                            <td>PEAK</td>
+                            <td class="num">514,20</td>
+                            <td class="num volume">96 MWh</td>
+                          </tr>
+                          <tr>
+                            <td>OFF</td>
+                            <td class="num">389,40</td>
+                            <td class="num volume">144 MWh</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <div class="table-wrap">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Y+1</th>
+                            <th class="num">Cena</th>
+                            <th class="num">Wol.</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td>BASE</td>
+                            <td class="num">468,20</td>
+                            <td class="num volume">840 MWh</td>
+                          </tr>
+                          <tr>
+                            <td>PEAK</td>
+                            <td class="num">539,60</td>
+                            <td class="num volume">360 MWh</td>
+                          </tr>
+                          <tr>
+                            <td>OFF</td>
+                            <td class="num">396,80</td>
+                            <td class="num volume">480 MWh</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </article>
+              <article class="panel">
+                <header class="panel-heading">
+                  <div class="market-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <path d="M5 19.5h14M7 19.5V9h10v10.5M9.5 9V5.5h5V9M10 12.5h1m2 0h1m-4 3h1m2 0h1M4 9h16L18 6H6L4 9Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </div>
+                  <div class="heading-copy">
+                    <h2>Węgiel</h2>
+                    <p>Węgiel energetyczny · benchmark ARA</p>
+                  </div>
+                  <span class="panel-date">16.10.2026</span>
+                </header>
+                <div class="panel-body">
+                  <div class="kpis">
+                    <div class="kpi">
+                      <span class="kpi-label">Cena API 2</span>
+                      <strong class="kpi-value">108,45                       <small class="kpi-unit">USD/t</small></strong>
+                      <span class="change up">▲ 0,72% dziennie</span>
+                    </div>
+                    <div class="kpi">
+                      <span class="kpi-label">Zmiana dzienna</span>
+                      <strong class="kpi-value">+0,78                       <small class="kpi-unit">USD/t</small></strong>
+                      <span class="change up">▲ wzrost</span>
+                    </div>
+                    <div class="kpi">
+                      <span class="kpi-label">Min. 30 dni</span>
+                      <strong class="kpi-value">103,20                       <small class="kpi-unit">USD/t</small></strong>
+                      <span class="change neutral">25.09.2026</span>
+                    </div>
+                    <div class="kpi">
+                      <span class="kpi-label">Maks. 30 dni</span>
+                      <strong class="kpi-value">112,60                       <small class="kpi-unit">USD/t</small></strong>
+                      <span class="change neutral">09.10.2026</span>
+                    </div>
+                  </div>
+                  <div class="chart-card">
+                    <div class="chart-title">
+                      <strong>Węgiel API 2 — historia cen (30 dni)</strong>
+                      <span>USD/t</span>
+                    </div>
+                    <svg class="chart" data-values="105.2,104.4,103.2,104.8,106.1,105.7,107.4,106.8,108.2,109.5,108.9,107.3,106.4,108.1,109.8,111.4,110.2,112.6,111.5,109.3,108.6,107.1,108.8,110.4,111.1,109.6,108.3,107.4,107.67,108.45" data-unit="$"></svg>
+                  </div>
+                  <div class="table-heading">
+                    <h3>Ostatnie notowania historyczne</h3>
+                    <span>API 2 · ARA</span>
+                  </div>
+                  <div class="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Data</th>
+                          <th class="num">Cena (USD/t)</th>
+                          <th class="num">Zmiana</th>
+                          <th class="num">Wolumen (kt)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>16.10.2026</td>
+                          <td class="num">108,45</td>
+                          <td class="num up">+0,72%</td>
+                          <td class="num volume">84,2</td>
+                        </tr>
+                        <tr>
+                          <td>15.10.2026</td>
+                          <td class="num">107,67</td>
+                          <td class="num down">−0,48%</td>
+                          <td class="num volume">91,6</td>
+                        </tr>
+                        <tr>
+                          <td>14.10.2026</td>
+                          <td class="num">108,19</td>
+                          <td class="num up">+1,16%</td>
+                          <td class="num volume">76,3</td>
+                        </tr>
+                        <tr>
+                          <td>13.10.2026</td>
+                          <td class="num">106,95</td>
+                          <td class="num down">−0,31%</td>
+                          <td class="num volume">68,9</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </article>
+              <article class="panel wide">
+                <header class="panel-heading">
+                  <div class="market-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <path d="M12 3v18m-5-2h10M6 7l12 10M18 7 6 17M8 4.5c.9 1 2.3 1.5 4 1.5s3.1-.5 4-1.5M5 10c1.2 1.2 3.5 2 7 2s5.8-.8 7-2M5 14c1.2-1.2 3.5-2 7-2s5.8.8 7 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                  <div class="heading-copy">
+                    <h2>Uprawnienia do emisji EUA</h2>
+                    <p>EU Emissions Trading System · kontrakt EUA Dec-26</p>
+                  </div>
+                  <span class="panel-date">16.10.2026</span>
+                </header>
+                <div class="panel-body">
+                  <div class="kpis">
+                    <div class="kpi">
+                      <span class="kpi-label">Cena EUA</span>
+                      <strong class="kpi-value">78,64                       <small class="kpi-unit">EUR/tCO₂</small></strong>
+                      <span class="change up">▲ 0,91% dziennie</span>
+                    </div>
+                    <div class="kpi">
+                      <span class="kpi-label">Zmiana 30 dni</span>
+                      <strong class="kpi-value">+3,42%</strong>
+                      <span class="change up">▲ +2,60 EUR</span>
+                    </div>
+                    <div class="kpi">
+                      <span class="kpi-label">Kurs EUR/PLN</span>
+                      <strong class="kpi-value">4,2861</strong>
+                      <span class="change neutral">fixing NBP</span>
+                    </div>
+                    <div class="kpi">
+                      <span class="kpi-label">Cena przeliczona</span>
+                      <strong class="kpi-value">337,09                       <small class="kpi-unit">PLN/tCO₂</small></strong>
+                      <span class="change neutral">EUA × EUR/PLN</span>
+                    </div>
+                  </div>
+                  <div class="chart-card">
+                    <div class="chart-title">
+                      <strong>EUA Dec-26 — historia cen (30 dni)</strong>
+                      <span>EUR/tCO₂</span>
+                    </div>
+                    <svg class="chart wide-chart" data-values="76.04,75.82,76.4,75.9,76.85,77.1,76.66,77.25,77.8,77.42,76.95,77.2,77.85,78.14,77.62,78.3,78.65,79.1,78.55,79.24,78.72,78.18,78.9,79.36,78.83,79.15,78.45,77.98,77.93,78.64" data-unit="€"></svg>
+                  </div>
+                  <div class="note">Notowania i wartości przeliczeniowe mają charakter poglądowy.</div>
+                </div>
+              </article>
+              <article class="panel wide">
+                <header class="panel-heading">
+                  <div class="market-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <path d="M12 21V10m0 4c-3.3 0-6-2.7-6-6 3.3 0 6 2.7 6 6Zm0-3c0-3.3 2.7-6 6-6 0 3.3-2.7 6-6 6ZM9 21h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </div>
+                  <div class="heading-copy">
+                    <h2>Biomasa — brykiet drzewny</h2>
+                    <p>Rynek lokalny · zestawienie transakcji</p>
+                  </div>
+                  <span class="panel-date">16.10.2026</span>
+                </header>
+                <div class="panel-body">
+                  <div class="table-heading transaction-heading">
+                    <h3>Ostatnie transakcje</h3>
+                    <span>Sortowanie: od najnowszych</span>
+                  </div>
+                  <div class="table-wrap">
+                    <table class="transaction-table">
+                      <thead>
+                        <tr>
+                          <th>Data transakcji</th>
+                          <th>Nabywca</th>
+                          <th>Rodzaj produktu</th>
+                          <th class="num">Wolumen</th>
+                          <th class="num">Cena netto</th>
+                          <th>Źródło</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>14.10.2026</td>
+                          <td>PEC Legionowo</td>
+                          <td>Brykiet RUF, ENplus A1</td>
+                          <td class="num">24,0 t</td>
+                          <td class="num">1 180 zł/t</td>
+                          <td>
+                            <a class="source-link" href="#transakcja-1410">Dokument ↗</a>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>09.10.2026</td>
+                          <td>Zakład Ciepłowniczy Północ</td>
+                          <td>Brykiet walcowy</td>
+                          <td class="num">18,5 t</td>
+                          <td class="num">1 095 zł/t</td>
+                          <td>
+                            <a class="source-link" href="#transakcja-0910">Dokument ↗</a>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>02.10.2026</td>
+                          <td>PEC Legionowo</td>
+                          <td>Brykiet RUF, ENplus A1</td>
+                          <td class="num">32,0 t</td>
+                          <td class="num">1 160 zł/t</td>
+                          <td>
+                            <a class="source-link" href="#transakcja-0210">Dokument ↗</a>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>25.09.2026</td>
+                          <td>Energia Lokalna Sp. z o.o.</td>
+                          <td>Brykiet kostka</td>
+                          <td class="num">12,0 t</td>
+                          <td class="num">1 125 zł/t</td>
+                          <td>
+                            <a class="source-link" href="#transakcja-2509">Dokument ↗</a>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>18.09.2026</td>
+                          <td>PEC Legionowo</td>
+                          <td>Brykiet RUF, ENplus A1</td>
+                          <td class="num">28,0 t</td>
+                          <td class="num">1 140 zł/t</td>
+                          <td>
+                            <a class="source-link" href="#transakcja-1809">Dokument ↗</a>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>11.09.2026</td>
+                          <td>Ciepło Mazowieckie</td>
+                          <td>Brykiet walcowy</td>
+                          <td class="num">16,0 t</td>
+                          <td class="num">1 085 zł/t</td>
+                          <td>
+                            <a class="source-link" href="#transakcja-1109">Dokument ↗</a>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="note">Przykładowe zestawienie — źródła transakcyjne wymagają podpięcia do właściwego rejestru.</div>
+                </div>
+              </article>
+            </section>
+            <footer>
+              <span>Dane demonstracyjne — przed użyciem operacyjnym podłącz aktualne notowania i zweryfikowane źródła.</span>
+              <span>PEC Legionowo · Dashboard zarządczy · 16.10.2026</span>
+            </footer>
+          </main>
+        </div>
+      </div>
+    </div>
+    <div class="zoom-controls" aria-label="Sterowanie powiększeniem">
+      <span id="zoom-level" aria-live="polite">100%</span>
+      <button id="zoom-reset" type="button" title="Dopasuj dashboard do szerokości okna">Dopasuj</button>
+    </div>
+    <script src="dashboard.js" defer></script>
+  </body>
+</html>
