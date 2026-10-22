@@ -1,0 +1,282 @@
+ZADANIE
+
+Pobierz dane gazowe i dane energii elektrycznej z Towarowej Giełdy Energii (TGE) oraz dane historyczne węgla i EUA:
+
+1. gazowy RDN dla dat wskazanych przez aplikację;
+2. gazowy OTF dla jednej wskazanej sesji;
+3. RDN energii elektrycznej dla dat wskazanych przez aplikację;
+4. OTF energii elektrycznej dla jednej wskazanej sesji;
+5. Rotterdam Coal Futures z przekazanego zakresu 30 dni;
+6. European Union Allowance (EUA) Year Futures z przekazanego zakresu 30 dni.
+
+Nie pobieraj biomasy.
+
+SPOSÓB OTWIERANIA STRON TGE
+
+Strony TGE zawierają tabele ładowane dynamicznie przez JavaScript. Każdy podany URL jest oddzielnym zadaniem. Dla każdego URL-a:
+
+1. otwórz bezpośrednio dokładny adres wraz z parametrem dateShow;
+2. nie korzystaj z wyników wyszukiwarki, fragmentów wyników, pamięci podręcznej ani strony bez parametru daty;
+3. poczekaj na wyrenderowanie tabeli;
+4. odczytaj dane z widocznej tabeli, a nie z tekstowego opisu strony;
+5. jeśli pierwszy odczyt nie pokazuje tabeli, odśwież dokładny URL, poczekaj na wykonanie JavaScriptu i spróbuj ponownie;
+6. zakończ odczyt jednego URL-a przed otwarciem następnego;
+7. nie przenoś wyniku ani błędu pomiędzy adresami i sekcjami.
+
+Przekierowanie lub zmiana adresu widocznego po otwarciu nie jest samo w sobie dowodem błędnej daty. Zweryfikuj datę również na podstawie nagłówków i treści wyrenderowanej strony. Jeżeli strona pokazuje domyślne notowanie z innej sesji, nie używaj go zamiast wskazanej daty.
+
+GAZ RDN
+
+Wykonaj osobno każde poniższe zadanie:
+
+{{gas_rdn_links}}
+
+Dla każdej daty odszukaj tabelę „Indeksy” oraz wiersz:
+
+- data_id: tge_gas_da
+- instrument: TGEgasDA
+
+Pobierz z tego samego wiersza:
+
+- price_pln_mwh — „Kurs (PLN/MWh)”;
+- change_pct — pierwsza kolumna „Zmiana”, bezpośrednio po kursie; nie używaj drugiej zmiany dotyczącej wolumenu;
+- volume_mwh — „Wolumen (MWh)”.
+
+Parametr dateShow wskazuje trading_date. Nagłówek dotyczący dostawy może wskazywać następny dzień — nie zapisuj daty dostawy jako daty sesji.
+
+GAZ OTF
+
+Data wymaganej sesji: {{otf_session_date}}
+Dokładny URL: {{gas_otf_url}}
+
+Po wyrenderowaniu tabeli wyszukaj osobno każdy instrument:
+
+{{gas_contracts}}
+
+Pobierz dokładnie 10 kontraktów: 3 tygodniowe, 4 miesięczne, 2 kwartalne i 1 roczny.
+
+Nadaj data_id zgodnie z kolejnością w każdej grupie:
+
+- gas_base_week_1 do gas_base_week_3;
+- gas_base_month_1 do gas_base_month_4;
+- gas_base_quarter_1 do gas_base_quarter_2;
+- gas_base_year_1.
+
+Dla każdego kontraktu pobierz z jego własnego wiersza:
+
+- dkr_pln_mwh — wyłącznie kolumna DKR;
+- max_pln_mwh — maksymalny kurs sesji;
+- volume_mwh — wolumen obrotu.
+
+Nie zastępuj DKR ostatnim kursem ani inną ceną. Brak jednego kontraktu nie oznacza braku pozostałych.
+
+ENERGIA ELEKTRYCZNA RDN
+
+Wykonaj osobno każde poniższe zadanie:
+
+{{electricity_rdn_links}}
+
+Dla każdej daty odszukaj tabelę „Indeksy” i pobierz dokładnie cztery wiersze:
+
+- data_id: tge_power_da_base, instrument: TGeBase;
+- data_id: tge_power_da_peak, instrument: TGePeak;
+- data_id: tge_power_da_offpeak, instrument: TGeOffpeak;
+- data_id: tge_power_da_24, instrument: TGe24.
+
+Dla każdego indeksu pobierz z jego własnego wiersza:
+
+- price_pln_mwh — „Kurs (PLN/MWh)”;
+- change_pct — pierwsza kolumna „Zmiana”, bezpośrednio po kursie; nie używaj drugiej zmiany dotyczącej wolumenu;
+- volume_mwh — „Wolumen (MWh)”.
+
+Nie przenoś wartości pomiędzy indeksami. Parametr dateShow wskazuje trading_date; nie zastępuj go datą dostawy z nagłówka.
+
+ENERGIA ELEKTRYCZNA OTF
+
+Data wymaganej sesji: {{otf_session_date}}
+Dokładny URL: {{electricity_otf_url}}
+
+Po wyrenderowaniu tabeli wyszukaj osobno każdy instrument BASE:
+
+{{electricity_contracts}}
+
+Pobierz dokładnie 10 kontraktów: 3 tygodniowe, 4 miesięczne, 2 kwartalne i 1 roczny.
+
+Nadaj data_id zgodnie z kolejnością w każdej grupie:
+
+- power_base_week_1 do power_base_week_3;
+- power_base_month_1 do power_base_month_4;
+- power_base_quarter_1 do power_base_quarter_2;
+- power_base_year_1.
+
+Dla każdego kontraktu pobierz z jego własnego wiersza:
+
+- dkr_pln_mwh — wyłącznie kolumna DKR;
+- max_pln_mwh — maksymalny kurs sesji;
+- volume_mwh — wolumen obrotu.
+
+Nie używaj kontraktów GAS_BASE w sekcji energii. Brak jednego kontraktu nie oznacza braku pozostałych.
+
+WĘGIEL — ROTTERDAM COAL FUTURES
+
+Źródło:
+https://www.investing.com/commodities/rotterdam-coal-futures-historical-data
+
+Zakres dat, włącznie z granicami: {{coal_start_date}}–{{coal_end_date}}
+
+Otwórz bezpośrednio stronę danych historycznych. W tabeli „Historical Data” ustaw lub zastosuj przekazany zakres i pobierz wszystkie faktycznie dostępne sesje, których data mieści się w tym zakresie. Nie twórz rekordów dla dni bez sesji.
+
+Dla każdego dostępnego wiersza zwróć:
+
+- data_id: coal_rotterdam_futures;
+- instrument: Rotterdam Coal Futures;
+- trading_date — data wiersza jako YYYY-MM-DD;
+- price — Price;
+- open — Open;
+- high — High;
+- low — Low;
+- volume — Vol.;
+- change_pct — Change %.
+
+Wartości price, open, high, low, volume i change_pct zwróć jako tekst dokładnie w postaci widocznej w tabeli. Zachowaj przecinki, kropki, skróty K/M, znak minus i znak procentu. Nie przeliczaj ani nie normalizuj tych wartości.
+
+Jeśli data końcowa przypada na dzisiaj, ale dzisiejszy rekord nie jest jeszcze dostępny, nie traktuj tego jako błędu. Zwróć wszystkie opublikowane sesje z zakresu. Błąd dodaj tylko wtedy, gdy nie można odczytać tabeli lub dat dostępnych wierszy.
+
+EUA — EUROPEAN UNION ALLOWANCE YEAR FUTURES
+
+Źródło:
+https://www.investing.com/commodities/european-union-allowance-eua-year-futures-historical-data
+
+Zakres dat, włącznie z granicami: {{eua_start_date}}–{{eua_end_date}}
+
+Otwórz bezpośrednio stronę danych historycznych. W tabeli „Historical Data” ustaw lub zastosuj przekazany zakres i pobierz wszystkie faktycznie dostępne sesje, których data mieści się w tym zakresie. Nie twórz rekordów dla dni bez sesji.
+
+Dla każdego dostępnego wiersza zwróć:
+
+- data_id: eua_year_futures;
+- instrument: European Union Allowance (EUA) Year Futures;
+- trading_date — data wiersza jako YYYY-MM-DD;
+- price — Price;
+- open — Open;
+- high — High;
+- low — Low;
+- volume — Vol.;
+- change_pct — Change %.
+
+Wartości price, open, high, low, volume i change_pct zwróć jako tekst dokładnie w postaci widocznej w tabeli. Nie przeliczaj ani nie normalizuj wartości.
+
+Jeśli data końcowa przypada na dzisiaj, ale dzisiejszy rekord nie jest jeszcze dostępny, nie traktuj tego jako błędu. Zwróć wszystkie opublikowane sesje z zakresu. Błąd dodaj tylko wtedy, gdy nie można odczytać tabeli lub dat dostępnych wierszy.
+
+FORMAT WARTOŚCI
+
+- Liczby z TGE zwracaj jako liczby JSON z kropką dziesiętną.
+- Z change_pct usuń znak procentu, np. 2,11% zwróć jako 2.11.
+- Myślnik lub jawny brak wartości zwróć jako null, nie zero.
+- Nie obliczaj, nie szacuj i nie kopiuj wartości z innego instrumentu lub dnia.
+- source_url musi być dokładnym URL-em wykorzystanym dla rekordu.
+- trading_date zapisuj jako YYYY-MM-DD.
+
+FORMAT ODPOWIEDZI
+
+Zwróć wyłącznie jeden poprawny obiekt JSON. Bez bloku Markdown i bez tekstu przed lub po JSON-ie.
+
+{
+  "schema_version": "market-data-1.0",
+  "retrieved_at": "rzeczywista data i godzina pobrania w ISO 8601 ze strefą czasową",
+  "status": "success | partial | error",
+  "data": {
+    "gas": {
+      "day_ahead": [
+        {
+          "data_id": "tge_gas_da",
+          "source_url": "dokładny URL",
+          "trading_date": "YYYY-MM-DD",
+          "instrument": "TGEgasDA",
+          "values": { "price_pln_mwh": 0.0, "volume_mwh": 0.0, "change_pct": 0.0 }
+        }
+      ],
+      "futures": [
+        {
+          "data_id": "gas_base_week_1",
+          "source_url": "dokładny URL",
+          "trading_date": "YYYY-MM-DD",
+          "instrument": "dokładna nazwa kontraktu",
+          "values": { "dkr_pln_mwh": 0.0, "max_pln_mwh": 0.0, "volume_mwh": 0.0 }
+        }
+      ]
+    },
+    "electricity": {
+      "day_ahead": [
+        {
+          "data_id": "tge_power_da_base",
+          "source_url": "dokładny URL",
+          "trading_date": "YYYY-MM-DD",
+          "instrument": "TGeBase",
+          "values": { "price_pln_mwh": 0.0, "volume_mwh": 0.0, "change_pct": 0.0 }
+        }
+      ],
+      "futures": [
+        {
+          "data_id": "power_base_week_1",
+          "source_url": "dokładny URL",
+          "trading_date": "YYYY-MM-DD",
+          "instrument": "dokładna nazwa kontraktu",
+          "values": { "dkr_pln_mwh": 0.0, "max_pln_mwh": 0.0, "volume_mwh": 0.0 }
+        }
+      ]
+    },
+    "coal": {
+      "futures": [
+        {
+          "data_id": "coal_rotterdam_futures",
+          "source_url": "https://www.investing.com/commodities/rotterdam-coal-futures-historical-data",
+          "trading_date": "YYYY-MM-DD",
+          "instrument": "Rotterdam Coal Futures",
+          "values": {
+            "price": "tekst ze źródła",
+            "open": "tekst ze źródła",
+            "high": "tekst ze źródła",
+            "low": "tekst ze źródła",
+            "volume": "tekst ze źródła",
+            "change_pct": "tekst ze źródła"
+          }
+        }
+      ]
+    },
+    "emissions": {
+      "futures": [
+        {
+          "data_id": "eua_year_futures",
+          "source_url": "https://www.investing.com/commodities/european-union-allowance-eua-year-futures-historical-data",
+          "trading_date": "YYYY-MM-DD",
+          "instrument": "European Union Allowance (EUA) Year Futures",
+          "values": {
+            "price": "tekst ze źródła",
+            "open": "tekst ze źródła",
+            "high": "tekst ze źródła",
+            "low": "tekst ze źródła",
+            "volume": "tekst ze źródła",
+            "change_pct": "tekst ze źródła"
+          }
+        }
+      ]
+    }
+  },
+  "errors": [
+    {
+      "section": "dokładna nazwa sekcji",
+      "source_url": "dokładny URL",
+      "message": "konkretny opis problemu"
+    }
+  ]
+}
+
+Zasady statusu:
+
+- success — wszystkie wymagane rekordy TGE oraz wszystkie dostępne sesje węgla i EUA zostały odczytane;
+- partial — odczytano tylko część wymaganych danych;
+- error — nie odczytano żadnego wymaganego rekordu.
+
+Nie dodawaj błędu tylko dlatego, że pojedyncza komórka zawiera myślnik i została poprawnie zapisana jako null. Jeśli nie uda się potwierdzić danych, zwróć rzeczywisty błąd zamiast wymyślonych wartości.
+
+Moment przygotowania zadania przez aplikację: {{retrieved_at}}
