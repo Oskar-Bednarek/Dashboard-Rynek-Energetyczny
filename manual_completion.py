@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Any
 
-from contract_selection import build_contract_set
+from contract_selection import OTF_MINIMUM_COUNTS, build_contract_set
 
 
 @dataclass(frozen=True)
@@ -55,14 +55,24 @@ def find_missing_tge_records(
     )
     for market, source_key, url_path, instruments in rdn_specs:
         existing = _existing_keys(payload, market, "day_ahead")
-        for trading_date in source_dates[source_key]:
+        requested_dates = source_dates[source_key]
+        if market == "electricity" and requested_dates:
+            latest_date = max(requested_dates)
+            requested_dates = [latest_date]
+        for trading_date in requested_dates:
             text_date = trading_date.isoformat()
             url = f"https://tge.pl{url_path}?dateShow={trading_date.strftime('%d-%m-%Y')}"
             for data_id, instrument in instruments.items():
                 if (text_date, data_id) not in existing:
+                    value_fields = (
+                        ("price_pln_mwh",)
+                        if market == "electricity"
+                        and data_id != "tge_power_da_base"
+                        else ("price_pln_mwh", "volume_mwh", "change_pct")
+                    )
                     missing.append(MissingRecord(
                         f"{market}.day_ahead", text_date, data_id, instrument, url,
-                        ("price_pln_mwh", "volume_mwh", "change_pct"),
+                        value_fields,
                     ))
 
     for market, gas, path, prefix in (
@@ -76,14 +86,34 @@ def find_missing_tge_records(
             ("week", contracts.weeks), ("month", contracts.months),
             ("quarter", contracts.quarters), ("year", contracts.years),
         ):
-            for index, instrument in enumerate(values, 1):
-                data_id = f"{prefix}_{group}_{index}"
+            group_ids = [
+                f"{prefix}_{group}_{index}"
+                for index in range(1, len(values) + 1)
+            ]
+            existing_ids = {
+                data_id
+                for trading_date, data_id in existing
+                if trading_date == otf_session_date.isoformat()
+                and data_id in group_ids
+            }
+            missing_ids = [
+                data_id for data_id in group_ids if data_id not in existing_ids
+            ]
+            needed_count = max(0, OTF_MINIMUM_COUNTS[group] - len(existing_ids))
+            for data_id in missing_ids[:needed_count]:
+                index = int(data_id.rsplit("_", 1)[1])
+                instrument = values[index - 1]
                 key = (otf_session_date.isoformat(), data_id)
-                if key not in existing:
-                    missing.append(MissingRecord(
-                        f"{market}.futures", key[0], data_id, instrument, url,
+                missing.append(
+                    MissingRecord(
+                        f"{market}.futures",
+                        key[0],
+                        data_id,
+                        instrument,
+                        url,
                         ("dkr_pln_mwh", "max_pln_mwh", "volume_mwh"),
-                    ))
+                    )
+                )
     return missing
 
 

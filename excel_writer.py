@@ -50,10 +50,10 @@ def _upsert_sheet(
         values = record["values"]
         output = [
             record["trading_date"], record["data_id"], record["source_url"],
-            record["instrument"], *(values[field] for field in value_fields), retrieved_at,
+            record["instrument"], *(values.get(field) for field in value_fields), retrieved_at,
         ]
         for column, value in enumerate(output, 1):
-            worksheet.cell(row, column, value)
+            worksheet.cell(row, column).value = value
         existing[key] = row
         last_data_row = max(last_data_row, row)
 
@@ -69,6 +69,42 @@ def _delete_window(worksheet, date_window: tuple[date, date]) -> None:
         except (TypeError, ValueError):
             continue
         if start <= parsed <= end:
+            worksheet.delete_rows(row)
+
+
+def _keep_latest_electricity_summary_indices(worksheet) -> None:
+    latest_base_date: date | None = None
+    for row in range(2, worksheet.max_row + 1):
+        if worksheet.cell(row, 2).value != "tge_power_da_base":
+            continue
+        value = worksheet.cell(row, 1).value
+        try:
+            parsed = value.date() if isinstance(value, datetime) else (
+                value if isinstance(value, date) else date.fromisoformat(str(value)[:10])
+            )
+        except (TypeError, ValueError):
+            continue
+        if latest_base_date is None or parsed > latest_base_date:
+            latest_base_date = parsed
+    if latest_base_date is None:
+        raise ValueError("Brak daty TGeBase w arkuszu EE_RDN.")
+
+    summary_ids = {
+        "tge_power_da_peak",
+        "tge_power_da_offpeak",
+        "tge_power_da_24",
+    }
+    for row in range(worksheet.max_row, 1, -1):
+        if worksheet.cell(row, 2).value not in summary_ids:
+            continue
+        value = worksheet.cell(row, 1).value
+        try:
+            parsed = value.date() if isinstance(value, datetime) else (
+                value if isinstance(value, date) else date.fromisoformat(str(value)[:10])
+            )
+        except (TypeError, ValueError):
+            continue
+        if parsed != latest_base_date:
             worksheet.delete_rows(row)
 
 
@@ -91,6 +127,8 @@ def save_market_data(
             elif section == "emissions.futures":
                 _delete_window(worksheet, eua_window)
             _upsert_sheet(worksheet, _records(payload, section), fields, retrieved_at)
+            if section == "electricity.day_ahead":
+                _keep_latest_electricity_summary_indices(worksheet)
         with tempfile.NamedTemporaryFile(
             prefix="DataMaster_", suffix=".xlsx", dir=workbook_path.parent, delete=False
         ) as temporary:

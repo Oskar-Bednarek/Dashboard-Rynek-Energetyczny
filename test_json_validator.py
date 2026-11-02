@@ -145,6 +145,63 @@ class JsonValidatorTests(unittest.TestCase):
         report = self.validate(payload)
         self.assertFalse(report.section_validity["gas.day_ahead"])
 
+    def test_electricity_non_base_indices_are_required_only_for_latest_date(self) -> None:
+        payload = deepcopy(valid_payload())
+        dates = [date(2026, 10, 20), date(2026, 10, 21), date(2026, 10, 22)]
+        base_record = next(
+            record
+            for record in payload["data"]["electricity"]["day_ahead"]
+            if record["data_id"] == "tge_power_da_base"
+        )
+        for trading_date in dates[1:]:
+            record = deepcopy(base_record)
+            record["trading_date"] = trading_date.isoformat()
+            record["source_url"] = (
+                f"https://tge.pl/energia-elektryczna-rdn"
+                f"?dateShow={trading_date.strftime('%d-%m-%Y')}"
+            )
+            payload["data"]["electricity"]["day_ahead"].append(record)
+        payload["data"]["electricity"]["day_ahead"] = [
+            record
+            for record in payload["data"]["electricity"]["day_ahead"]
+            if record["data_id"] == "tge_power_da_base"
+        ]
+        for data_id, instrument in (
+            ("tge_power_da_peak", "TGePeak"),
+            ("tge_power_da_offpeak", "TGeOffpeak"),
+            ("tge_power_da_24", "TGe24"),
+        ):
+            payload["data"]["electricity"]["day_ahead"].append({
+                "data_id": data_id,
+                "source_url": "https://tge.pl/energia-elektryczna-rdn?dateShow=22-10-2026",
+                "trading_date": dates[-1].isoformat(),
+                "instrument": instrument,
+                "values": {"price_pln_mwh": 200.0},
+            })
+
+        report = validate_payload(
+            payload,
+            {**SOURCE_DATES, "electricity_rdn": dates},
+            SESSION_DATE,
+            WINDOW,
+            WINDOW,
+        )
+
+        self.assertTrue(report.is_valid, report.issues)
+
+    def test_latest_non_base_electricity_index_is_still_required(self) -> None:
+        payload = deepcopy(valid_payload())
+        payload["data"]["electricity"]["day_ahead"] = [
+            record
+            for record in payload["data"]["electricity"]["day_ahead"]
+            if record["data_id"] != "tge_power_da_peak"
+        ]
+
+        report = self.validate(payload)
+
+        self.assertFalse(report.section_validity["electricity.day_ahead"])
+        self.assertTrue(any("tge_power_da_peak" in issue.message for issue in report.issues))
+
     def test_missing_otf_section_keeps_other_sections_usable(self) -> None:
         payload = deepcopy(valid_payload())
         payload["data"]["gas"]["futures"] = []
@@ -160,7 +217,7 @@ class JsonValidatorTests(unittest.TestCase):
         self.assertFalse(report.section_validity["gas.futures"])
         self.assertTrue(report.section_validity["electricity.futures"])
 
-    def test_reported_source_error_invalidates_its_section(self) -> None:
+    def test_reported_source_error_is_informational(self) -> None:
         payload = deepcopy(valid_payload())
         payload["status"] = "partial"
         payload["errors"] = [{
@@ -169,11 +226,11 @@ class JsonValidatorTests(unittest.TestCase):
             "message": "Nie odczytano całej tabeli.",
         }]
         report = self.validate(payload)
-        self.assertFalse(report.section_validity["coal.futures"])
+        self.assertTrue(report.section_validity["coal.futures"])
         self.assertTrue(report.section_validity["emissions.futures"])
-        self.assertTrue(report.is_usable)
+        self.assertTrue(report.is_valid, report.issues)
 
-    def test_error_section_aliases_are_normalized(self) -> None:
+    def test_known_error_sections_are_informational(self) -> None:
         payload = deepcopy(valid_payload())
         payload["status"] = "partial"
         payload["errors"] = [
@@ -189,12 +246,68 @@ class JsonValidatorTests(unittest.TestCase):
             },
         ]
         report = self.validate(payload)
-        self.assertFalse(report.section_validity["coal.futures"])
-        self.assertFalse(report.section_validity["emissions.futures"])
+        self.assertTrue(report.section_validity["coal.futures"])
+        self.assertTrue(report.section_validity["emissions.futures"])
+        self.assertTrue(report.is_valid, report.issues)
         self.assertFalse(any(
             issue.section == "global" and "Nieznana sekcja" in issue.message
             for issue in report.issues
         ))
+
+    def test_free_form_error_section_does_not_invalidate_payload(self) -> None:
+        payload = deepcopy(valid_payload())
+        payload["status"] = "partial"
+        payload["errors"] = [{
+            "section": "ENERGIA ELEKTRYCZNA OTF — BASE_M-11-26",
+            "source_url": "https://tge.pl/energia-elektryczna-otf?dateShow=21-10-2026",
+            "message": "Nie znaleziono kontraktu w tabeli.",
+        }]
+
+        report = self.validate(payload)
+
+        self.assertTrue(report.is_valid, report.issues)
+        self.assertTrue(report.section_validity["electricity.futures"])
+
+    def test_missing_month_contract_is_tolerated_when_buffer_is_available(self) -> None:
+        payload = deepcopy(valid_payload())
+        payload["data"]["gas"]["futures"] = [
+            record
+            for record in payload["data"]["gas"]["futures"]
+            if record["data_id"] != "gas_base_month_1"
+        ]
+
+        report = self.validate(payload)
+
+        self.assertTrue(report.is_valid, report.issues)
+        self.assertTrue(report.section_validity["gas.futures"])
+
+    def test_missing_week_contract_is_tolerated(self) -> None:
+        payload = deepcopy(valid_payload())
+        payload["data"]["gas"]["futures"] = [
+            record
+            for record in payload["data"]["gas"]["futures"]
+            if record["data_id"] != "gas_base_week_1"
+        ]
+
+        report = self.validate(payload)
+
+        self.assertTrue(report.is_valid, report.issues)
+        self.assertTrue(report.section_validity["gas.futures"])
+
+    def test_two_missing_month_contracts_fail_validation(self) -> None:
+        payload = deepcopy(valid_payload())
+        payload["data"]["gas"]["futures"] = [
+            record
+            for record in payload["data"]["gas"]["futures"]
+            if record["data_id"] not in {"gas_base_month_1", "gas_base_month_5"}
+        ]
+
+        report = self.validate(payload)
+
+        self.assertFalse(report.section_validity["gas.futures"])
+        self.assertTrue(
+            any("Brak wymaganego kontraktu" in issue.message for issue in report.issues)
+        )
 
     def test_empty_sections_keep_valid_json_structure(self) -> None:
         payload = deepcopy(valid_payload())

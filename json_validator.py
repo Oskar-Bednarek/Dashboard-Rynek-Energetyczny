@@ -5,7 +5,7 @@ import re
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
-from contract_selection import ContractSet, build_contract_set
+from contract_selection import OTF_MINIMUM_COUNTS, ContractSet, build_contract_set
 
 
 SECTION_NAMES = (
@@ -17,18 +17,6 @@ SECTION_NAMES = (
     "emissions.futures",
 )
 ALLOWED_STATUS = {"success", "partial", "error"}
-SECTION_ALIASES = {
-    "gas": "gas.day_ahead",
-    "gas.rdn": "gas.day_ahead",
-    "gas.otf": "gas.futures",
-    "electricity": "electricity.day_ahead",
-    "electricity.rdn": "electricity.day_ahead",
-    "electricity.otf": "electricity.futures",
-    "coal": "coal.futures",
-    "eua": "emissions.futures",
-    "eua.futures": "emissions.futures",
-    "emissions": "emissions.futures",
-}
 FENCED_JSON = re.compile(r"^\s*```(?:json)?\s*(.*?)\s*```\s*$", re.DOTALL | re.IGNORECASE)
 
 
@@ -131,20 +119,6 @@ def _valid_url(value: Any, expected_host: str | None = None) -> bool:
     if parsed.scheme not in {"http", "https"} or not parsed.netloc:
         return False
     return expected_host is None or parsed.netloc.lower().endswith(expected_host)
-
-
-def _normalize_error_section(value: Any) -> str | None:
-    if not isinstance(value, str):
-        return None
-    normalized = value.strip().lower()
-    if normalized in SECTION_NAMES:
-        return normalized
-    if normalized in SECTION_ALIASES:
-        return SECTION_ALIASES[normalized]
-    for section in SECTION_NAMES:
-        if normalized.startswith(section + ".") or normalized.startswith(section + "["):
-            return section
-    return None
 
 
 def _validate_tge_source_url(
@@ -253,7 +227,20 @@ def _validate_rdn(
             "tge_power_da_24": "TGe24",
         }
     )
-    expected = {(value.isoformat(), data_id) for value in expected_dates for data_id in instruments}
+    latest_electricity_date = max(expected_dates) if expected_dates else None
+    expected = {
+        (value.isoformat(), data_id)
+        for value in expected_dates
+        for data_id in instruments
+        if market == "gas"
+        or data_id == "tge_power_da_base"
+        or value == latest_electricity_date
+    }
+    allowed = {
+        (value.isoformat(), data_id)
+        for value in expected_dates
+        for data_id in instruments
+    }
     actual: set[tuple[str, str]] = set()
     for index, raw in enumerate(records):
         path = f"data.{market}.day_ahead[{index}]"
@@ -280,16 +267,31 @@ def _validate_rdn(
                 f"{path}.source_url",
                 report,
             )
-        _validate_tge_values(
-            record.get("values"),
-            ("price_pln_mwh", "volume_mwh", "change_pct"),
-            section,
-            f"{path}.values",
-            report,
+        values = record.get("values")
+        required_value_keys = (
+            ("price_pln_mwh",)
+            if market == "electricity" and data_id != "tge_power_da_base"
+            else ("price_pln_mwh", "volume_mwh", "change_pct")
         )
+        _validate_tge_values(
+            values, required_value_keys, section, f"{path}.values", report
+        )
+        if isinstance(values, dict):
+            optional_value_keys = (
+                {"volume_mwh", "change_pct"}
+                if market == "electricity" and data_id != "tge_power_da_base"
+                else set()
+            )
+            for key in optional_value_keys.intersection(values):
+                if not _is_number_or_none(values[key]):
+                    report.add(
+                        section,
+                        f"{path}.values.{key}",
+                        f"Oczekiwano liczby lub null, otrzymano {_type_name(values[key])}.",
+                    )
     for missing in sorted(expected - actual):
         report.add(section, f"data.{market}.day_ahead", f"Brak rekordu {missing[1]} dla {missing[0]}.")
-    for extra in sorted(actual - expected):
+    for extra in sorted(actual - allowed):
         report.add(section, f"data.{market}.day_ahead", f"Nieoczekiwany rekord {extra[1]} dla {extra[0]}.")
 
 
@@ -312,9 +314,15 @@ def _validate_otf(
 ) -> None:
     section = f"{market}.futures"
     records = _get_section(payload, market, "futures", report)
-    expected = _contract_map(
-        build_contract_set(session_date, gas=market == "gas"), market
-    )
+    contracts = build_contract_set(session_date, gas=market == "gas")
+    contract_groups = {
+        "week": contracts.weeks,
+        "month": contracts.months,
+        "quarter": contracts.quarters,
+        "year": contracts.years,
+    }
+    prefix = "gas_base" if market == "gas" else "power_base"
+    expected = _contract_map(contracts, market)
     actual_ids: set[str] = set()
     for index, raw in enumerate(records):
         path = f"data.{market}.futures[{index}]"
@@ -347,8 +355,20 @@ def _validate_otf(
             f"{path}.values",
             report,
         )
-    for missing in sorted(set(expected) - actual_ids):
-        report.add(section, f"data.{market}.futures", f"Brak kontraktu {missing} ({expected[missing]}).")
+    for group, instruments in contract_groups.items():
+        group_ids = [
+            f"{prefix}_{group}_{index}"
+            for index in range(1, len(instruments) + 1)
+        ]
+        missing_ids = [data_id for data_id in group_ids if data_id not in actual_ids]
+        available_count = len(group_ids) - len(missing_ids)
+        shortage = OTF_MINIMUM_COUNTS[group] - available_count
+        for missing in missing_ids[: max(0, shortage)]:
+            report.add(
+                section,
+                f"data.{market}.futures",
+                f"Brak wymaganego kontraktu {missing} ({expected[missing]}).",
+            )
 
 
 def _validate_investing(
@@ -423,24 +443,6 @@ def validate_payload(
             for key in ("section", "source_url", "message"):
                 if not isinstance(error.get(key), str) or not error.get(key):
                     report.add("global", f"errors[{index}].{key}", "Oczekiwano niepustego tekstu.")
-            error_section = error.get("section")
-            normalized_section = _normalize_error_section(error_section)
-            if isinstance(error_section, str) and normalized_section is None:
-                report.add(
-                    "global",
-                    f"errors[{index}].section",
-                    f"Nieznana sekcja danych rynkowych: {error_section!r}.",
-                )
-            elif (
-                normalized_section is not None
-                and isinstance(error.get("message"), str)
-                and error.get("message")
-            ):
-                report.add(
-                    normalized_section,
-                    f"errors[{index}]",
-                    f"Źródło zgłosiło problem: {error['message']}",
-                )
             if isinstance(error.get("source_url"), str) and not _valid_url(error["source_url"]):
                 report.add("global", f"errors[{index}].source_url", "Oczekiwano poprawnego URL.")
 

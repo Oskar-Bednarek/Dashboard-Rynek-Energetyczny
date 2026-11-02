@@ -1,0 +1,1198 @@
+{
+"schema_version": "market-data-1.0",
+"retrieved_at": "2026-11-02T07:32:01+01:00",
+"status": "partial",
+"data": {
+"gas": {
+"day_ahead": [
+{
+"data_id": "tge_gas_da",
+"source_url": "https://tge.pl/gaz-rdn?dateShow=26-10-2026",
+"trading_date": "2026-10-26",
+"instrument": "TGEgasDA",
+"values": {
+"price_pln_mwh": 441.31,
+"volume_mwh": 149040,
+"change_pct": 1.64
+}
+},
+{
+"data_id": "tge_gas_da",
+"source_url": "https://tge.pl/gaz-rdn?dateShow=27-10-2026",
+"trading_date": "2026-10-27",
+"instrument": "TGEgasDA",
+"values": {
+"price_pln_mwh": 438.88,
+"volume_mwh": 175704,
+"change_pct": 0.55
+}
+},
+{
+"data_id": "tge_gas_da",
+"source_url": "https://tge.pl/gaz-rdn?dateShow=28-10-2026",
+"trading_date": "2026-10-28",
+"instrument": "TGEgasDA",
+"values": {
+"price_pln_mwh": 459.93,
+"volume_mwh": 189768,
+"change_pct": 4.8
+}
+},
+{
+"data_id": "tge_gas_da",
+"source_url": "https://tge.pl/gaz-rdn?dateShow=29-10-2026",
+"trading_date": "2026-10-29",
+"instrument": "TGEgasDA",
+"values": {
+"price_pln_mwh": 450.81,
+"volume_mwh": 178488,
+"change_pct": 1.98
+}
+},
+{
+"data_id": "tge_gas_da",
+"source_url": "https://tge.pl/gaz-rdn?dateShow=30-10-2026",
+"trading_date": "2026-10-30",
+"instrument": "TGEgasDA",
+"values": {
+"price_pln_mwh": 475.09,
+"volume_mwh": 116328,
+"change_pct": 5.39
+}
+},
+{
+"data_id": "tge_gas_da",
+"source_url": "https://tge.pl/gaz-rdn?dateShow=31-10-2026",
+"trading_date": "2026-10-31",
+"instrument": "TGEgasDA",
+"values": {
+"price_pln_mwh": 479.17,
+"volume_mwh": 22032,
+"change_pct": 0.86
+}
+},
+{
+"data_id": "tge_gas_da",
+"source_url": "https://tge.pl/gaz-rdn?dateShow=01-11-2026",
+"trading_date": "2026-11-01",
+"instrument": "TGEgasDA",
+"values": {
+"price_pln_mwh": 482.54,
+"volume_mwh": 84936,
+"change_pct": 0.7
+}
+}
+],
+"futures": [
+{
+"data_id": "gas_base_week_1",
+"source_url": "https://tge.pl/gaz-otf?dateShow=30-10-2026",
+"trading_date": "2026-10-30",
+"instrument": "GAS_BASE_W-46-26",
+"values": {
+"dkr_pln_mwh": 461.5,
+"max_pln_mwh": null,
+"volume_mwh": 0
+}
+},
+{
+"data_id": "gas_base_week_2",
+"source_url": "https://tge.pl/gaz-otf?dateShow=30-10-2026",
+"trading_date": "2026-10-30",
+"instrument": "GAS_BASE_W-47-26",
+"values": {
+"dkr_pln_mwh": 475.94,
+"max_pln_mwh": null,
+"volume_mwh": 0
+}
+},
+{
+"data_id": "gas_base_week_3",
+"source_url": "https://tge.pl/gaz-otf?dateShow=30-10-2026",
+"trading_date": "2026-10-30",
+"instrument": "GAS_BASE_W-48-26",
+"values": {
+"dkr_pln_mwh": 475.94,
+"max_pln_mwh": null,
+"volume_mwh": 0
+}
+},
+{
+"data_id": "gas_base_month_1",
+"source_url": "https://tge.pl/gaz-otf?dateShow=30-10-2026",
+"trading_date": "2026-10-30",
+"instrument": "GAS_BASE_M-11-26",
+"values": {
+"dkr_pln_mwh": 475.8,
+"max_pln_mwh": 477,
+"volume_mwh": 36720
+}
+},
+{
+"data_id": "gas_base_month_2",
+"source_url": "https://tge.pl/gaz-otf?dateShow=30-10-2026",
+"trading_date": "2026-10-30",
+"instrument": "GAS_BASE_M-12-26",
+"values": {
+"dkr_pln_mwh": 476.3,
+"max_pln_mwh": 477.5,
+"volume_mwh": 37944
+}
+},
+{
+"data_id": "gas_base_month_3",
+"source_url": "https://tge.pl/gaz-otf?dateShow=30-10-2026",
+"trading_date": "2026-10-30",
+"instrument": "GAS_BASE_M-01-27",
+"values": {
+"dkr_pln_mwh": 473.68,
+"max_pln_mwh": 475.5,
+"volume_mwh": 141360
+}
+},
+{
+"data_id": "gas_base_month_4",
+"source_url": "https://tge.pl/gaz-otf?dateShow=30-10-2026",
+"trading_date": "2026-10-30",
+"instrument": "GAS_BASE_M-02-27",
+"values": {
+"dkr_pln_mwh": 470.48,
+"max_pln_mwh": 472,
+"volume_mwh": 2688
+}
+},
+{
+"data_id": "gas_base_quarter_1",
+"source_url": "https://tge.pl/gaz-otf?dateShow=30-10-2026",
+"trading_date": "2026-10-30",
+"instrument": "GAS_BASE_Q-1-27",
+"values": {
+"dkr_pln_mwh": 465,
+"max_pln_mwh": 466,
+"volume_mwh": 10795
+}
+},
+{
+"data_id": "gas_base_quarter_2",
+"source_url": "https://tge.pl/gaz-otf?dateShow=30-10-2026",
+"trading_date": "2026-10-30",
+"instrument": "GAS_BASE_Q-2-27",
+"values": {
+"dkr_pln_mwh": 364.1,
+"max_pln_mwh": 354,
+"volume_mwh": 4368
+}
+},
+{
+"data_id": "gas_base_year_1",
+"source_url": "https://tge.pl/gaz-otf?dateShow=30-10-2026",
+"trading_date": "2026-10-30",
+"instrument": "GAS_BASE_Y-27",
+"values": {
+"dkr_pln_mwh": 375.99,
+"max_pln_mwh": 375.99,
+"volume_mwh": 17520
+}
+}
+]
+},
+"electricity": {
+"day_ahead": [
+{
+"data_id": "tge_power_da_base",
+"source_url": "https://tge.pl/energia-elektryczna-rdn?dateShow=26-10-2026",
+"trading_date": "2026-10-26",
+"instrument": "TGeBase",
+"values": {
+"price_pln_mwh": 754.22,
+"volume_mwh": 120440,
+"change_pct": 16.43
+}
+},
+{
+"data_id": "tge_power_da_peak",
+"source_url": "https://tge.pl/energia-elektryczna-rdn?dateShow=26-10-2026",
+"trading_date": "2026-10-26",
+"instrument": "TGePeak",
+"values": {
+"price_pln_mwh": 765.02,
+"volume_mwh": 81610.5,
+"change_pct": 33.4
+}
+},
+{
+"data_id": "tge_power_da_offpeak",
+"source_url": "https://tge.pl/energia-elektryczna-rdn?dateShow=26-10-2026",
+"trading_date": "2026-10-26",
+"instrument": "TGeOffpeak",
+"values": {
+"price_pln_mwh": 735.35,
+"volume_mwh": 38541.5,
+"change_pct": 49.35
+}
+},
+{
+"data_id": "tge_power_da_24",
+"source_url": "https://tge.pl/energia-elektryczna-rdn?dateShow=26-10-2026",
+"trading_date": "2026-10-26",
+"instrument": "TGe24",
+"values": {
+"price_pln_mwh": 759.09,
+"volume_mwh": 93365.7,
+"change_pct": 14.5
+}
+},
+{
+"data_id": "tge_power_da_base",
+"source_url": "https://tge.pl/energia-elektryczna-rdn?dateShow=27-10-2026",
+"trading_date": "2026-10-27",
+"instrument": "TGeBase",
+"values": {
+"price_pln_mwh": 1311.93,
+"volume_mwh": 138045.5,
+"change_pct": 73.95
+}
+},
+{
+"data_id": "tge_power_da_peak",
+"source_url": "https://tge.pl/energia-elektryczna-rdn?dateShow=27-10-2026",
+"trading_date": "2026-10-27",
+"instrument": "TGePeak",
+"values": {
+"price_pln_mwh": 1562.57,
+"volume_mwh": 94348.8,
+"change_pct": 104.25
+}
+},
+{
+"data_id": "tge_power_da_offpeak",
+"source_url": "https://tge.pl/energia-elektryczna-rdn?dateShow=27-10-2026",
+"trading_date": "2026-10-27",
+"instrument": "TGeOffpeak",
+"values": {
+"price_pln_mwh": 892.49,
+"volume_mwh": 41992.7,
+"change_pct": 21.37
+}
+},
+{
+"data_id": "tge_power_da_24",
+"source_url": "https://tge.pl/energia-elektryczna-rdn?dateShow=27-10-2026",
+"trading_date": "2026-10-27",
+"instrument": "TGe24",
+"values": {
+"price_pln_mwh": 1383.71,
+"volume_mwh": 96239,
+"change_pct": 82.29
+}
+},
+{
+"data_id": "tge_power_da_base",
+"source_url": "https://tge.pl/energia-elektryczna-rdn?dateShow=28-10-2026",
+"trading_date": "2026-10-28",
+"instrument": "TGeBase",
+"values": {
+"price_pln_mwh": 1379.65,
+"volume_mwh": 129365.5,
+"change_pct": 5.16
+}
+},
+{
+"data_id": "tge_power_da_peak",
+"source_url": "https://tge.pl/energia-elektryczna-rdn?dateShow=28-10-2026",
+"trading_date": "2026-10-28",
+"instrument": "TGePeak",
+"values": {
+"price_pln_mwh": 1587.79,
+"volume_mwh": 87018.7,
+"change_pct": 1.61
+}
+},
+{
+"data_id": "tge_power_da_offpeak",
+"source_url": "https://tge.pl/energia-elektryczna-rdn?dateShow=28-10-2026",
+"trading_date": "2026-10-28",
+"instrument": "TGeOffpeak",
+"values": {
+"price_pln_mwh": 1027.67,
+"volume_mwh": 39970.8,
+"change_pct": 15.15
+}
+},
+{
+"data_id": "tge_power_da_24",
+"source_url": "https://tge.pl/energia-elektryczna-rdn?dateShow=28-10-2026",
+"trading_date": "2026-10-28",
+"instrument": "TGe24",
+"values": {
+"price_pln_mwh": 1387.3,
+"volume_mwh": 96225.1,
+"change_pct": 0.26
+}
+},
+{
+"data_id": "tge_power_da_base",
+"source_url": "https://tge.pl/energia-elektryczna-rdn?dateShow=29-10-2026",
+"trading_date": "2026-10-29",
+"instrument": "TGeBase",
+"values": {
+"price_pln_mwh": 1213.3,
+"volume_mwh": 130454.7,
+"change_pct": 12.06
+}
+},
+{
+"data_id": "tge_power_da_peak",
+"source_url": "https://tge.pl/energia-elektryczna-rdn?dateShow=29-10-2026",
+"trading_date": "2026-10-29",
+"instrument": "TGePeak",
+"values": {
+"price_pln_mwh": 1343.67,
+"volume_mwh": 90724.4,
+"change_pct": 15.37
+}
+},
+{
+"data_id": "tge_power_da_offpeak",
+"source_url": "https://tge.pl/energia-elektryczna-rdn?dateShow=29-10-2026",
+"trading_date": "2026-10-29",
+"instrument": "TGeOffpeak",
+"values": {
+"price_pln_mwh": 995.13,
+"volume_mwh": 38674.3,
+"change_pct": 3.17
+}
+},
+{
+"data_id": "tge_power_da_24",
+"source_url": "https://tge.pl/energia-elektryczna-rdn?dateShow=29-10-2026",
+"trading_date": "2026-10-29",
+"instrument": "TGe24",
+"values": {
+"price_pln_mwh": 1233.14,
+"volume_mwh": 92260.1,
+"change_pct": 11.11
+}
+},
+{
+"data_id": "tge_power_da_base",
+"source_url": "https://tge.pl/energia-elektryczna-rdn?dateShow=30-10-2026",
+"trading_date": "2026-10-30",
+"instrument": "TGeBase",
+"values": {
+"price_pln_mwh": 929.07,
+"volume_mwh": 97598.4,
+"change_pct": 23.43
+}
+},
+{
+"data_id": "tge_power_da_peak",
+"source_url": "https://tge.pl/energia-elektryczna-rdn?dateShow=30-10-2026",
+"trading_date": "2026-10-30",
+"instrument": "TGePeak",
+"values": {
+"price_pln_mwh": 991.22,
+"volume_mwh": 61998,
+"change_pct": 26.23
+}
+},
+{
+"data_id": "tge_power_da_offpeak",
+"source_url": "https://tge.pl/energia-elektryczna-rdn?dateShow=30-10-2026",
+"trading_date": "2026-10-30",
+"instrument": "TGeOffpeak",
+"values": {
+"price_pln_mwh": 825.56,
+"volume_mwh": 32720.4,
+"change_pct": 17.04
+}
+},
+{
+"data_id": "tge_power_da_24",
+"source_url": "https://tge.pl/energia-elektryczna-rdn?dateShow=30-10-2026",
+"trading_date": "2026-10-30",
+"instrument": "TGe24",
+"values": {
+"price_pln_mwh": 933.88,
+"volume_mwh": 72622.1,
+"change_pct": 24.27
+}
+},
+{
+"data_id": "tge_power_da_base",
+"source_url": "https://tge.pl/energia-elektryczna-rdn?dateShow=31-10-2026",
+"trading_date": "2026-10-31",
+"instrument": "TGeBase",
+"values": {
+"price_pln_mwh": 767.31,
+"volume_mwh": 93461.3,
+"change_pct": 17.41
+}
+},
+{
+"data_id": "tge_power_da_peak",
+"source_url": "https://tge.pl/energia-elektryczna-rdn?dateShow=31-10-2026",
+"trading_date": "2026-10-31",
+"instrument": "TGePeak",
+"values": {
+"price_pln_mwh": 804.06,
+"volume_mwh": 64128,
+"change_pct": 18.88
+}
+},
+{
+"data_id": "tge_power_da_offpeak",
+"source_url": "https://tge.pl/energia-elektryczna-rdn?dateShow=31-10-2026",
+"trading_date": "2026-10-31",
+"instrument": "TGeOffpeak",
+"values": {
+"price_pln_mwh": 705.97,
+"volume_mwh": 29261.3,
+"change_pct": 14.49
+}
+},
+{
+"data_id": "tge_power_da_24",
+"source_url": "https://tge.pl/energia-elektryczna-rdn?dateShow=31-10-2026",
+"trading_date": "2026-10-31",
+"instrument": "TGe24",
+"values": {
+"price_pln_mwh": 803.37,
+"volume_mwh": 66621.9,
+"change_pct": 13.98
+}
+},
+{
+"data_id": "tge_power_da_base",
+"source_url": "https://tge.pl/energia-elektryczna-rdn?dateShow=01-11-2026",
+"trading_date": "2026-11-01",
+"instrument": "TGeBase",
+"values": {
+"price_pln_mwh": 1488.85,
+"volume_mwh": 126776.1,
+"change_pct": 94.04
+}
+},
+{
+"data_id": "tge_power_da_peak",
+"source_url": "https://tge.pl/energia-elektryczna-rdn?dateShow=01-11-2026",
+"trading_date": "2026-11-01",
+"instrument": "TGePeak",
+"values": {
+"price_pln_mwh": 1855.9,
+"volume_mwh": 90650.5,
+"change_pct": 130.82
+}
+},
+{
+"data_id": "tge_power_da_offpeak",
+"source_url": "https://tge.pl/energia-elektryczna-rdn?dateShow=01-11-2026",
+"trading_date": "2026-11-01",
+"instrument": "TGeOffpeak",
+"values": {
+"price_pln_mwh": 878.76,
+"volume_mwh": 35477.6,
+"change_pct": 24.48
+}
+},
+{
+"data_id": "tge_power_da_24",
+"source_url": "https://tge.pl/energia-elektryczna-rdn?dateShow=01-11-2026",
+"trading_date": "2026-11-01",
+"instrument": "TGe24",
+"values": {
+"price_pln_mwh": 1447.4,
+"volume_mwh": 90162.8,
+"change_pct": 80.17
+}
+}
+],
+"futures": [
+{
+"data_id": "power_base_week_1",
+"source_url": "https://tge.pl/energia-elektryczna-otf?dateShow=30-10-2026",
+"trading_date": "2026-10-30",
+"instrument": "BASE_W-46-26",
+"values": {
+"dkr_pln_mwh": 925.5,
+"max_pln_mwh": null,
+"volume_mwh": 0
+}
+},
+{
+"data_id": "power_base_week_2",
+"source_url": "https://tge.pl/energia-elektryczna-otf?dateShow=30-10-2026",
+"trading_date": "2026-10-30",
+"instrument": "BASE_W-47-26",
+"values": {
+"dkr_pln_mwh": 992,
+"max_pln_mwh": 1000,
+"volume_mwh": 168
+}
+},
+{
+"data_id": "power_base_week_3",
+"source_url": "https://tge.pl/energia-elektryczna-otf?dateShow=30-10-2026",
+"trading_date": "2026-10-30",
+"instrument": "BASE_W-48-26",
+"values": {
+"dkr_pln_mwh": 995.5,
+"max_pln_mwh": null,
+"volume_mwh": 0
+}
+},
+{
+"data_id": "power_base_month_2",
+"source_url": "https://tge.pl/energia-elektryczna-otf?dateShow=30-10-2026",
+"trading_date": "2026-10-30",
+"instrument": "BASE_M-12-26",
+"values": {
+"dkr_pln_mwh": 888.2,
+"max_pln_mwh": 890,
+"volume_mwh": 17856
+}
+},
+{
+"data_id": "power_base_month_3",
+"source_url": "https://tge.pl/energia-elektryczna-otf?dateShow=30-10-2026",
+"trading_date": "2026-10-30",
+"instrument": "BASE_M-01-27",
+"values": {
+"dkr_pln_mwh": 850.51,
+"max_pln_mwh": 855,
+"volume_mwh": 23064
+}
+},
+{
+"data_id": "power_base_month_4",
+"source_url": "https://tge.pl/energia-elektryczna-otf?dateShow=30-10-2026",
+"trading_date": "2026-10-30",
+"instrument": "BASE_M-02-27",
+"values": {
+"dkr_pln_mwh": 791.63,
+"max_pln_mwh": 793,
+"volume_mwh": 11424
+}
+},
+{
+"data_id": "power_base_quarter_1",
+"source_url": "https://tge.pl/energia-elektryczna-otf?dateShow=30-10-2026",
+"trading_date": "2026-10-30",
+"instrument": "BASE_Q-1-27",
+"values": {
+"dkr_pln_mwh": 724.46,
+"max_pln_mwh": 726,
+"volume_mwh": 53975
+}
+},
+{
+"data_id": "power_base_quarter_2",
+"source_url": "https://tge.pl/energia-elektryczna-otf?dateShow=30-10-2026",
+"trading_date": "2026-10-30",
+"instrument": "BASE_Q-2-27",
+"values": {
+"dkr_pln_mwh": 504.01,
+"max_pln_mwh": 504,
+"volume_mwh": 24024
+}
+},
+{
+"data_id": "power_base_year_1",
+"source_url": "https://tge.pl/energia-elektryczna-otf?dateShow=30-10-2026",
+"trading_date": "2026-10-30",
+"instrument": "BASE_Y-27",
+"values": {
+"dkr_pln_mwh": 584.55,
+"max_pln_mwh": 585,
+"volume_mwh": 438000
+}
+}
+]
+},
+"coal": {
+"futures": [
+{
+"data_id": "coal_rotterdam_futures",
+"source_url": "https://www.investing.com/commodities/rotterdam-coal-futures-historical-data",
+"trading_date": "2026-10-30",
+"instrument": "Rotterdam Coal Futures",
+"values": {
+"price": "145.20",
+"open": "145.20",
+"high": "145.20",
+"low": "145.20",
+"volume": null,
+"change_pct": "+0.24%"
+}
+},
+{
+"data_id": "coal_rotterdam_futures",
+"source_url": "https://www.investing.com/commodities/rotterdam-coal-futures-historical-data",
+"trading_date": "2026-10-29",
+"instrument": "Rotterdam Coal Futures",
+"values": {
+"price": "144.85",
+"open": "145.60",
+"high": "145.70",
+"low": "145.60",
+"volume": "0.01K",
+"change_pct": "-0.69%"
+}
+},
+{
+"data_id": "coal_rotterdam_futures",
+"source_url": "https://www.investing.com/commodities/rotterdam-coal-futures-historical-data",
+"trading_date": "2026-10-28",
+"instrument": "Rotterdam Coal Futures",
+"values": {
+"price": "145.85",
+"open": "146.10",
+"high": "146.10",
+"low": "145.75",
+"volume": "0.02K",
+"change_pct": "-0.27%"
+}
+},
+{
+"data_id": "coal_rotterdam_futures",
+"source_url": "https://www.investing.com/commodities/rotterdam-coal-futures-historical-data",
+"trading_date": "2026-10-27",
+"instrument": "Rotterdam Coal Futures",
+"values": {
+"price": "146.25",
+"open": "146.75",
+"high": "146.75",
+"low": "146.75",
+"volume": "0.01K",
+"change_pct": "-0.68%"
+}
+},
+{
+"data_id": "coal_rotterdam_futures",
+"source_url": "https://www.investing.com/commodities/rotterdam-coal-futures-historical-data",
+"trading_date": "2026-10-26",
+"instrument": "Rotterdam Coal Futures",
+"values": {
+"price": "147.25",
+"open": "147.25",
+"high": "147.25",
+"low": "147.25",
+"volume": null,
+"change_pct": "+0.17%"
+}
+},
+{
+"data_id": "coal_rotterdam_futures",
+"source_url": "https://www.investing.com/commodities/rotterdam-coal-futures-historical-data",
+"trading_date": "2026-10-23",
+"instrument": "Rotterdam Coal Futures",
+"values": {
+"price": "147.00",
+"open": "147.00",
+"high": "147.00",
+"low": "147.00",
+"volume": null,
+"change_pct": "+0.68%"
+}
+},
+{
+"data_id": "coal_rotterdam_futures",
+"source_url": "https://www.investing.com/commodities/rotterdam-coal-futures-historical-data",
+"trading_date": "2026-10-22",
+"instrument": "Rotterdam Coal Futures",
+"values": {
+"price": "146.00",
+"open": "146.00",
+"high": "146.00",
+"low": "146.00",
+"volume": "0.01K",
+"change_pct": "+0.48%"
+}
+},
+{
+"data_id": "coal_rotterdam_futures",
+"source_url": "https://www.investing.com/commodities/rotterdam-coal-futures-historical-data",
+"trading_date": "2026-10-21",
+"instrument": "Rotterdam Coal Futures",
+"values": {
+"price": "145.30",
+"open": "145.30",
+"high": "145.30",
+"low": "145.30",
+"volume": "0.01K",
+"change_pct": "-0.14%"
+}
+},
+{
+"data_id": "coal_rotterdam_futures",
+"source_url": "https://www.investing.com/commodities/rotterdam-coal-futures-historical-data",
+"trading_date": "2026-10-20",
+"instrument": "Rotterdam Coal Futures",
+"values": {
+"price": "145.50",
+"open": "147.10",
+"high": "147.10",
+"low": "147.10",
+"volume": "0.01K",
+"change_pct": "-1.09%"
+}
+},
+{
+"data_id": "coal_rotterdam_futures",
+"source_url": "https://www.investing.com/commodities/rotterdam-coal-futures-historical-data",
+"trading_date": "2026-10-19",
+"instrument": "Rotterdam Coal Futures",
+"values": {
+"price": "147.10",
+"open": "147.10",
+"high": "147.10",
+"low": "147.10",
+"volume": "0.01K",
+"change_pct": "+1.00%"
+}
+},
+{
+"data_id": "coal_rotterdam_futures",
+"source_url": "https://www.investing.com/commodities/rotterdam-coal-futures-historical-data",
+"trading_date": "2026-10-16",
+"instrument": "Rotterdam Coal Futures",
+"values": {
+"price": "145.65",
+"open": "145.65",
+"high": "145.65",
+"low": "145.65",
+"volume": null,
+"change_pct": "+0.48%"
+}
+},
+{
+"data_id": "coal_rotterdam_futures",
+"source_url": "https://www.investing.com/commodities/rotterdam-coal-futures-historical-data",
+"trading_date": "2026-10-15",
+"instrument": "Rotterdam Coal Futures",
+"values": {
+"price": "144.95",
+"open": "145.10",
+"high": "145.10",
+"low": "145.10",
+"volume": "0.00K",
+"change_pct": "-0.03%"
+}
+},
+{
+"data_id": "coal_rotterdam_futures",
+"source_url": "https://www.investing.com/commodities/rotterdam-coal-futures-historical-data",
+"trading_date": "2026-10-14",
+"instrument": "Rotterdam Coal Futures",
+"values": {
+"price": "145.00",
+"open": "144.90",
+"high": "144.90",
+"low": "144.90",
+"volume": "0.02K",
+"change_pct": "-0.34%"
+}
+},
+{
+"data_id": "coal_rotterdam_futures",
+"source_url": "https://www.investing.com/commodities/rotterdam-coal-futures-historical-data",
+"trading_date": "2026-10-13",
+"instrument": "Rotterdam Coal Futures",
+"values": {
+"price": "145.50",
+"open": "145.10",
+"high": "145.80",
+"low": "145.10",
+"volume": "0.04K",
+"change_pct": "+0.48%"
+}
+},
+{
+"data_id": "coal_rotterdam_futures",
+"source_url": "https://www.investing.com/commodities/rotterdam-coal-futures-historical-data",
+"trading_date": "2026-10-12",
+"instrument": "Rotterdam Coal Futures",
+"values": {
+"price": "144.80",
+"open": "145.50",
+"high": "145.50",
+"low": "144.75",
+"volume": "0.03K",
+"change_pct": "+0.49%"
+}
+},
+{
+"data_id": "coal_rotterdam_futures",
+"source_url": "https://www.investing.com/commodities/rotterdam-coal-futures-historical-data",
+"trading_date": "2026-10-09",
+"instrument": "Rotterdam Coal Futures",
+"values": {
+"price": "144.10",
+"open": "143.40",
+"high": "143.40",
+"low": "143.40",
+"volume": "0.02K",
+"change_pct": "-0.31%"
+}
+},
+{
+"data_id": "coal_rotterdam_futures",
+"source_url": "https://www.investing.com/commodities/rotterdam-coal-futures-historical-data",
+"trading_date": "2026-10-08",
+"instrument": "Rotterdam Coal Futures",
+"values": {
+"price": "144.55",
+"open": "145.55",
+"high": "146.10",
+"low": "143.85",
+"volume": "0.12K",
+"change_pct": "+0.77%"
+}
+},
+{
+"data_id": "coal_rotterdam_futures",
+"source_url": "https://www.investing.com/commodities/rotterdam-coal-futures-historical-data",
+"trading_date": "2026-10-07",
+"instrument": "Rotterdam Coal Futures",
+"values": {
+"price": "143.45",
+"open": "143.80",
+"high": "144.00",
+"low": "143.00",
+"volume": "0.08K",
+"change_pct": "-0.83%"
+}
+},
+{
+"data_id": "coal_rotterdam_futures",
+"source_url": "https://www.investing.com/commodities/rotterdam-coal-futures-historical-data",
+"trading_date": "2026-10-06",
+"instrument": "Rotterdam Coal Futures",
+"values": {
+"price": "144.65",
+"open": "145.45",
+"high": "145.45",
+"low": "144.40",
+"volume": "0.05K",
+"change_pct": "+0.56%"
+}
+},
+{
+"data_id": "coal_rotterdam_futures",
+"source_url": "https://www.investing.com/commodities/rotterdam-coal-futures-historical-data",
+"trading_date": "2026-10-05",
+"instrument": "Rotterdam Coal Futures",
+"values": {
+"price": "143.85",
+"open": "143.70",
+"high": "144.30",
+"low": "143.50",
+"volume": "0.30K",
+"change_pct": "+0.49%"
+}
+}
+]
+},
+"emissions": {
+"futures": [
+{
+"data_id": "eua_year_futures",
+"source_url": "https://www.investing.com/commodities/european-union-allowance-eua-year-futures-historical-data",
+"trading_date": "2026-10-30",
+"instrument": "European Union Allowance (EUA) Year Futures",
+"values": {
+"price": "89.19",
+"open": "89.10",
+"high": "90.15",
+"low": "88.83",
+"volume": "19.65K",
+"change_pct": "-0.01%"
+}
+},
+{
+"data_id": "eua_year_futures",
+"source_url": "https://www.investing.com/commodities/european-union-allowance-eua-year-futures-historical-data",
+"trading_date": "2026-10-29",
+"instrument": "European Union Allowance (EUA) Year Futures",
+"values": {
+"price": "89.20",
+"open": "88.91",
+"high": "89.48",
+"low": "88.14",
+"volume": "19.07K",
+"change_pct": "+0.11%"
+}
+},
+{
+"data_id": "eua_year_futures",
+"source_url": "https://www.investing.com/commodities/european-union-allowance-eua-year-futures-historical-data",
+"trading_date": "2026-10-28",
+"instrument": "European Union Allowance (EUA) Year Futures",
+"values": {
+"price": "89.10",
+"open": "88.00",
+"high": "89.31",
+"low": "87.87",
+"volume": "26.46K",
+"change_pct": "+1.19%"
+}
+},
+{
+"data_id": "eua_year_futures",
+"source_url": "https://www.investing.com/commodities/european-union-allowance-eua-year-futures-historical-data",
+"trading_date": "2026-10-27",
+"instrument": "European Union Allowance (EUA) Year Futures",
+"values": {
+"price": "88.05",
+"open": "88.26",
+"high": "88.93",
+"low": "87.60",
+"volume": "20.00K",
+"change_pct": "-0.16%"
+}
+},
+{
+"data_id": "eua_year_futures",
+"source_url": "https://www.investing.com/commodities/european-union-allowance-eua-year-futures-historical-data",
+"trading_date": "2026-10-26",
+"instrument": "European Union Allowance (EUA) Year Futures",
+"values": {
+"price": "88.19",
+"open": "86.30",
+"high": "88.49",
+"low": "86.29",
+"volume": "25.31K",
+"change_pct": "+2.24%"
+}
+},
+{
+"data_id": "eua_year_futures",
+"source_url": "https://www.investing.com/commodities/european-union-allowance-eua-year-futures-historical-data",
+"trading_date": "2026-10-23",
+"instrument": "European Union Allowance (EUA) Year Futures",
+"values": {
+"price": "86.26",
+"open": "86.35",
+"high": "86.80",
+"low": "85.55",
+"volume": "21.65K",
+"change_pct": "-0.24%"
+}
+},
+{
+"data_id": "eua_year_futures",
+"source_url": "https://www.investing.com/commodities/european-union-allowance-eua-year-futures-historical-data",
+"trading_date": "2026-10-22",
+"instrument": "European Union Allowance (EUA) Year Futures",
+"values": {
+"price": "86.47",
+"open": "85.51",
+"high": "86.58",
+"low": "84.80",
+"volume": "21.85K",
+"change_pct": "+0.65%"
+}
+},
+{
+"data_id": "eua_year_futures",
+"source_url": "https://www.investing.com/commodities/european-union-allowance-eua-year-futures-historical-data",
+"trading_date": "2026-10-21",
+"instrument": "European Union Allowance (EUA) Year Futures",
+"values": {
+"price": "85.91",
+"open": "85.69",
+"high": "86.65",
+"low": "85.34",
+"volume": "18.27K",
+"change_pct": "+0.30%"
+}
+},
+{
+"data_id": "eua_year_futures",
+"source_url": "https://www.investing.com/commodities/european-union-allowance-eua-year-futures-historical-data",
+"trading_date": "2026-10-20",
+"instrument": "European Union Allowance (EUA) Year Futures",
+"values": {
+"price": "85.65",
+"open": "85.49",
+"high": "85.85",
+"low": "84.54",
+"volume": "20.40K",
+"change_pct": "+0.29%"
+}
+},
+{
+"data_id": "eua_year_futures",
+"source_url": "https://www.investing.com/commodities/european-union-allowance-eua-year-futures-historical-data",
+"trading_date": "2026-10-19",
+"instrument": "European Union Allowance (EUA) Year Futures",
+"values": {
+"price": "85.40",
+"open": "84.85",
+"high": "86.03",
+"low": "84.61",
+"volume": "21.09K",
+"change_pct": "-0.01%"
+}
+},
+{
+"data_id": "eua_year_futures",
+"source_url": "https://www.investing.com/commodities/european-union-allowance-eua-year-futures-historical-data",
+"trading_date": "2026-10-16",
+"instrument": "European Union Allowance (EUA) Year Futures",
+"values": {
+"price": "85.41",
+"open": "85.73",
+"high": "86.10",
+"low": "84.85",
+"volume": "16.50K",
+"change_pct": "-0.50%"
+}
+},
+{
+"data_id": "eua_year_futures",
+"source_url": "https://www.investing.com/commodities/european-union-allowance-eua-year-futures-historical-data",
+"trading_date": "2026-10-15",
+"instrument": "European Union Allowance (EUA) Year Futures",
+"values": {
+"price": "85.84",
+"open": "86.87",
+"high": "86.87",
+"low": "85.37",
+"volume": "24.81K",
+"change_pct": "-1.49%"
+}
+},
+{
+"data_id": "eua_year_futures",
+"source_url": "https://www.investing.com/commodities/european-union-allowance-eua-year-futures-historical-data",
+"trading_date": "2026-10-14",
+"instrument": "European Union Allowance (EUA) Year Futures",
+"values": {
+"price": "87.14",
+"open": "88.10",
+"high": "88.24",
+"low": "86.62",
+"volume": "23.25K",
+"change_pct": "-1.03%"
+}
+},
+{
+"data_id": "eua_year_futures",
+"source_url": "https://www.investing.com/commodities/european-union-allowance-eua-year-futures-historical-data",
+"trading_date": "2026-10-13",
+"instrument": "European Union Allowance (EUA) Year Futures",
+"values": {
+"price": "88.05",
+"open": "88.22",
+"high": "88.65",
+"low": "87.01",
+"volume": "27.28K",
+"change_pct": "-0.33%"
+}
+},
+{
+"data_id": "eua_year_futures",
+"source_url": "https://www.investing.com/commodities/european-union-allowance-eua-year-futures-historical-data",
+"trading_date": "2026-10-12",
+"instrument": "European Union Allowance (EUA) Year Futures",
+"values": {
+"price": "88.34",
+"open": "87.20",
+"high": "88.82",
+"low": "86.50",
+"volume": "22.64K",
+"change_pct": "+1.61%"
+}
+},
+{
+"data_id": "eua_year_futures",
+"source_url": "https://www.investing.com/commodities/european-union-allowance-eua-year-futures-historical-data",
+"trading_date": "2026-10-09",
+"instrument": "European Union Allowance (EUA) Year Futures",
+"values": {
+"price": "86.94",
+"open": "86.70",
+"high": "87.49",
+"low": "86.41",
+"volume": "15.85K",
+"change_pct": "+0.07%"
+}
+},
+{
+"data_id": "eua_year_futures",
+"source_url": "https://www.investing.com/commodities/european-union-allowance-eua-year-futures-historical-data",
+"trading_date": "2026-10-08",
+"instrument": "European Union Allowance (EUA) Year Futures",
+"values": {
+"price": "86.88",
+"open": "85.52",
+"high": "87.03",
+"low": "85.22",
+"volume": "22.66K",
+"change_pct": "+1.91%"
+}
+},
+{
+"data_id": "eua_year_futures",
+"source_url": "https://www.investing.com/commodities/european-union-allowance-eua-year-futures-historical-data",
+"trading_date": "2026-10-07",
+"instrument": "European Union Allowance (EUA) Year Futures",
+"values": {
+"price": "85.25",
+"open": "84.71",
+"high": "85.78",
+"low": "84.01",
+"volume": "24.24K",
+"change_pct": "+0.55%"
+}
+},
+{
+"data_id": "eua_year_futures",
+"source_url": "https://www.investing.com/commodities/european-union-allowance-eua-year-futures-historical-data",
+"trading_date": "2026-10-06",
+"instrument": "European Union Allowance (EUA) Year Futures",
+"values": {
+"price": "84.78",
+"open": "83.64",
+"high": "85.18",
+"low": "83.23",
+"volume": "19.43K",
+"change_pct": "+1.09%"
+}
+},
+{
+"data_id": "eua_year_futures",
+"source_url": "https://www.investing.com/commodities/european-union-allowance-eua-year-futures-historical-data",
+"trading_date": "2026-10-05",
+"instrument": "European Union Allowance (EUA) Year Futures",
+"values": {
+"price": "83.87",
+"open": "84.24",
+"high": "84.24",
+"low": "82.35",
+"volume": "28.73K",
+"change_pct": "-0.65%"
+}
+}
+]
+}
+},
+"errors": [
+{
+"section": "ENERGIA ELEKTRYCZNA OTF — BASE_M-11-26",
+"source_url": "https://tge.pl/energia-elektryczna-otf?dateShow=30-10-2026",
+"message": "Nie znaleziono instrumentu BASE_M-11-26 w wyrenderowanej tabeli Kontrakty BASE. Pozostałe wymagane kontrakty zostały odczytane."
+},
+{
+"section": "WĘGIEL — ROTTERDAM COAL FUTURES",
+"source_url": "https://www.investing.com/commodities/rotterdam-coal-futures-historical-data",
+"message": "Tabela zawiera dostępne sesje od 2026-10-05 do 2026-10-30. Brak rekordu dla 2026-11-02; najnowsza opublikowana sesja to 2026-10-30. Nie utworzono rekordów dla dni bez sesji."
+},
+{
+"section": "EUA — EUROPEAN UNION ALLOWANCE YEAR FUTURES",
+"source_url": "https://www.investing.com/commodities/european-union-allowance-eua-year-futures-historical-data",
+"message": "Tabela zawiera dostępne sesje od 2026-10-05 do 2026-10-30. Brak rekordu dla 2026-11-02; najnowsza opublikowana sesja to 2026-10-30. Nie utworzono rekordów dla dni bez sesji."
+}
+]
+}

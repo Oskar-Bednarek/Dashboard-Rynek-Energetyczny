@@ -99,14 +99,18 @@ class DateStageTests(unittest.TestCase):
                 "GAS_BASE_M-12-26",
                 "GAS_BASE_M-01-27",
                 "GAS_BASE_M-02-27",
+                "GAS_BASE_M-03-27",
             ),
         )
-        self.assertEqual(gas.quarters, ("GAS_BASE_Q-1-27", "GAS_BASE_Q-2-27"))
-        self.assertEqual(gas.years, ("GAS_BASE_Y-27",))
+        self.assertEqual(
+            gas.quarters,
+            ("GAS_BASE_Q-1-27", "GAS_BASE_Q-2-27", "GAS_BASE_Q-3-27"),
+        )
+        self.assertEqual(gas.years, ("GAS_BASE_Y-27", "GAS_BASE_Y-28"))
         self.assertEqual(power.weeks[0], "BASE_W-44-26")
 
     def test_prompt_receives_dates_links_and_contracts(self) -> None:
-        template = Path("prompt_template.txt").read_text(encoding="utf-8")
+        template = Path("prompt_market_data.txt").read_text(encoding="utf-8")
         prompt = build_prompt(
             template,
             source_dates={

@@ -44,7 +44,102 @@ class ManualCompletionTests(unittest.TestCase):
         payload["data"]["electricity"]["day_ahead"] = []
         payload["data"]["electricity"]["futures"] = []
         missing = find_missing_tge_records(payload, SOURCE_DATES, SESSION_DATE)
-        self.assertEqual(len(missing), 25)
+        self.assertEqual(len(missing), 23)
+
+    def test_only_latest_non_base_electricity_indices_are_requested(self) -> None:
+        payload = valid_payload()
+        dates = [date(2026, 10, 20), date(2026, 10, 21), date(2026, 10, 22)]
+        base_record = deepcopy(
+            next(
+                record
+                for record in payload["data"]["electricity"]["day_ahead"]
+                if record["data_id"] == "tge_power_da_base"
+            )
+        )
+        payload["data"]["electricity"]["day_ahead"] = [base_record]
+        for trading_date in dates[1:]:
+            record = deepcopy(base_record)
+            record["trading_date"] = trading_date.isoformat()
+            record["source_url"] = (
+                "https://tge.pl/energia-elektryczna-rdn"
+                f"?dateShow={trading_date.strftime('%d-%m-%Y')}"
+            )
+            payload["data"]["electricity"]["day_ahead"].append(record)
+
+        missing = find_missing_tge_records(
+            payload,
+            {**SOURCE_DATES, "electricity_rdn": dates},
+            SESSION_DATE,
+        )
+        electricity_non_base = [
+            record
+            for record in missing
+            if record.section == "electricity.day_ahead"
+            and record.data_id != "tge_power_da_base"
+        ]
+
+        self.assertEqual(
+            {(record.data_id, record.trading_date, record.value_fields)
+             for record in electricity_non_base},
+            {
+                ("tge_power_da_peak", dates[-1].isoformat(), ("price_pln_mwh",)),
+                ("tge_power_da_offpeak", dates[-1].isoformat(), ("price_pln_mwh",)),
+                ("tge_power_da_24", dates[-1].isoformat(), ("price_pln_mwh",)),
+            },
+        )
+
+    def test_saving_price_only_electricity_index_leaves_other_values_blank(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory) / "DataMaster.xlsx"
+            shutil.copy2("DataMaster.xlsx", target)
+            payload = valid_payload()
+            for record in payload["data"]["electricity"]["day_ahead"]:
+                record["trading_date"] = "2026-10-21"
+                record["source_url"] = record["source_url"].replace(
+                    "20-10-2026", "21-10-2026"
+                )
+            payload["data"]["electricity"]["day_ahead"] = [
+                record
+                for record in payload["data"]["electricity"]["day_ahead"]
+                if record["data_id"] != "tge_power_da_peak"
+            ]
+            payload["data"]["electricity"]["day_ahead"].append({
+                "data_id": "tge_power_da_peak",
+                "source_url": "https://tge.pl/energia-elektryczna-rdn?dateShow=21-10-2026",
+                "trading_date": "2026-10-21",
+                "instrument": "TGePeak",
+                "values": {"price_pln_mwh": 222.0},
+            })
+
+            save_market_data(target, payload, WINDOW, WINDOW)
+
+            workbook = load_workbook(target, read_only=True, data_only=True)
+            try:
+                sheet = workbook["EE_RDN"]
+                headers = [cell.value for cell in sheet[1]]
+                row = next(
+                    row
+                    for row in sheet.iter_rows(min_row=2, values_only=True)
+                    if row[headers.index("data_id")] == "tge_power_da_peak"
+                    and str(row[headers.index("trading_date")])[:10] == "2026-10-21"
+                )
+                self.assertEqual(row[headers.index("price_pln_mwh")], 222.0)
+                self.assertIsNone(row[headers.index("volume_mwh")])
+                self.assertIsNone(row[headers.index("change_pct")])
+                for data_id in (
+                    "tge_power_da_peak",
+                    "tge_power_da_offpeak",
+                    "tge_power_da_24",
+                ):
+                    dates = [
+                        str(row[headers.index("trading_date")])[:10]
+                        for row in sheet.iter_rows(min_row=2, values_only=True)
+                        if row[headers.index("data_id")] == data_id
+                    ]
+                    self.assertTrue(dates)
+                    self.assertEqual(set(dates), {"2026-10-21"})
+            finally:
+                workbook.close()
 
     def test_review_table_contains_all_market_records(self) -> None:
         rows = flatten_market_records(valid_payload())
@@ -65,7 +160,7 @@ class ManualCompletionTests(unittest.TestCase):
 
 class ExcelWriterTests(unittest.TestCase):
     def test_complete_payload_is_written_to_copy(self) -> None:
-        with tempfile.TemporaryDirectory(dir=Path.cwd()) as directory:
+        with tempfile.TemporaryDirectory() as directory:
             target = Path(directory) / "DataMaster.xlsx"
             shutil.copy2("DataMaster.xlsx", target)
             payload = deepcopy(valid_payload())
@@ -86,7 +181,7 @@ class ExcelWriterTests(unittest.TestCase):
                 workbook.close()
 
     def test_otf_history_is_preserved_for_next_session(self) -> None:
-        with tempfile.TemporaryDirectory(dir=Path.cwd()) as directory:
+        with tempfile.TemporaryDirectory() as directory:
             target = Path(directory) / "DataMaster.xlsx"
             shutil.copy2("DataMaster.xlsx", target)
             first = deepcopy(valid_payload())
@@ -106,7 +201,7 @@ class ExcelWriterTests(unittest.TestCase):
                         row for row in workbook[sheet_name].iter_rows(min_row=2, values_only=True)
                         if row[0] in {"2026-10-21", "2026-10-22"}
                     ]
-                    self.assertEqual(len(rows), 20)
+                    self.assertEqual(len(rows), 26)
             finally:
                 workbook.close()
 
