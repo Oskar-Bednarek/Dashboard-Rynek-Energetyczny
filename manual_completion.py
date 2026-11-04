@@ -36,7 +36,7 @@ def _existing_keys(payload: dict[str, Any], market: str, collection: str) -> set
 def find_missing_tge_records(
     payload: dict[str, Any],
     source_dates: dict[str, list[date]],
-    otf_session_date: date,
+    otf_session_date: date | None,
 ) -> list[MissingRecord]:
     missing: list[MissingRecord] = []
     rdn_specs = (
@@ -74,6 +74,9 @@ def find_missing_tge_records(
                         f"{market}.day_ahead", text_date, data_id, instrument, url,
                         value_fields,
                     ))
+
+    if otf_session_date is None:
+        return missing
 
     for market, gas, path, prefix in (
         ("gas", True, "/gaz-otf", "gas_base"),

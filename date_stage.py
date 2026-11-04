@@ -4,19 +4,17 @@ from pathlib import Path
 
 from openpyxl import load_workbook
 
+from contract_selection import build_contract_set
+
 
 RDN_SOURCES = {
     "gas_rdn": ("Gaz RDN", "GAZ_RDN"),
     "electricity_rdn": ("Energia RDN", "EE_RDN"),
 }
 OTF_SOURCES = ("gas_otf", "electricity_otf")
-OTF_LOOKBACK_DAYS = 14
+OTF_CANDIDATE_COUNT = 5
+RDN_LOOKBACK_DAYS = 7
 INITIAL_RDN_HISTORY_DAYS = 7
-
-WEEKDAY_NAMES = (
-    "poniedziałek", "wtorek", "środa", "czwartek", "piątek", "sobota", "niedziela"
-)
-
 
 @dataclass(frozen=True)
 class DatePlan:
@@ -97,21 +95,53 @@ def get_dates_between(
 
 
 def get_otf_session_candidates(today: date) -> list[date]:
-    """Return recent weekdays that may be the latest closed OTF session."""
-    first_date = today - timedelta(days=OTF_LOOKBACK_DAYS)
-    last_date = today - timedelta(days=1)
-    return [
-        first_date + timedelta(days=offset)
-        for offset in range((last_date - first_date).days + 1)
-        if (first_date + timedelta(days=offset)).weekday() < 5
-    ]
+    """Return the five most recent weekdays before the report date."""
+    candidates = []
+    current = today - timedelta(days=1)
+    while len(candidates) < OTF_CANDIDATE_COUNT:
+        if current.weekday() < 5:
+            candidates.append(current)
+        current -= timedelta(days=1)
+    return candidates
+
+
+def build_otf_contract_preview(candidates: list[date]) -> list[dict[str, str]]:
+    rows = []
+    for market_label, gas in (("Gaz", True), ("Energia", False)):
+        grouped_contracts: dict[str, list[str]] = {
+            "Tygodniowe": [],
+            "Miesięczne": [],
+            "Kwartalne": [],
+            "Roczne": [],
+        }
+        seen_by_group = {group: set() for group in grouped_contracts}
+        for candidate in sorted(candidates, reverse=True):
+            contracts = build_contract_set(candidate, gas=gas)
+            for group_label, instruments in (
+                ("Tygodniowe", contracts.weeks),
+                ("Miesięczne", contracts.months),
+                ("Kwartalne", contracts.quarters),
+                ("Roczne", contracts.years),
+            ):
+                for instrument in instruments:
+                    if instrument not in seen_by_group[group_label]:
+                        seen_by_group[group_label].add(instrument)
+                        grouped_contracts[group_label].append(instrument)
+        for group_label, instruments in grouped_contracts.items():
+            rows.append(
+                {
+                    "Rynek": market_label,
+                    "Rodzaj": group_label,
+                    "Przykładowe kontrakty": ", ".join(instruments),
+                }
+            )
+    return rows
 
 
 def build_date_plan(
     latest_rdn_dates: dict[str, date | None], today: date
 ) -> DatePlan:
-    # An empty sheet starts with a small bootstrap window. Once data exists,
-    # request every missing calendar day after the latest stored observation.
+    # Limit every RDN request to the latest seven calendar days.
     empty_sheet_baseline = today - timedelta(days=INITIAL_RDN_HISTORY_DAYS + 1)
     effective_dates = {
         source: stored_date or empty_sheet_baseline
@@ -122,11 +152,16 @@ def build_date_plan(
         for source, stored_date in latest_rdn_dates.items()
     }
     end_date = today - timedelta(days=1)
+    window_start = end_date - timedelta(days=RDN_LOOKBACK_DAYS - 1)
+    request_baseline = window_start - timedelta(days=1)
     rdn_dates = {
-        source: get_dates_between(effective_dates[source], end_date)
+        source: get_dates_between(
+            max(effective_dates[source], request_baseline), end_date
+        )
         for source in RDN_SOURCES
     }
-    rolling_window = (today - timedelta(days=29), today)
+    report_date = today - timedelta(days=1)
+    rolling_window = (report_date - timedelta(days=29), report_date)
     return DatePlan(
         latest_rdn_dates=latest_rdn_dates,
         effective_latest_rdn_dates=effective_dates,
@@ -142,8 +177,6 @@ def load_date_plan(workbook_path: Path, today: date) -> DatePlan:
     plan = build_date_plan(get_latest_rdn_dates(workbook_path), today)
     workbook = load_workbook(workbook_path, read_only=True, data_only=True)
     try:
-        end_date = today - timedelta(days=1)
-        start_date = end_date - timedelta(days=INITIAL_RDN_HISTORY_DAYS - 1)
         missing: dict[str, list[date]] = {}
         for source, (_, sheet_name) in RDN_SOURCES.items():
             worksheet = workbook[sheet_name]
@@ -154,130 +187,180 @@ def load_date_plan(workbook_path: Path, today: date) -> DatePlan:
                 for row in worksheet.iter_rows(min_row=2, values_only=True)
                 if (parsed := _parse_date(row[date_column], sheet_name)) is not None
             }
-            required = [
-                start_date + timedelta(days=offset)
-                for offset in range(INITIAL_RDN_HISTORY_DAYS)
+            missing[source] = [
+                value for value in plan.rdn_dates[source] if value not in stored
             ]
-            missing[source] = [value for value in required if value not in stored]
         return replace(plan, rdn_dates=missing)
     finally:
         workbook.close()
 
 
-def select_latest_otf_session(
-    candidates: list[date], holidays: list[date]
-) -> date:
-    holiday_set = set(holidays)
-    valid_dates = [value for value in candidates if value not in holiday_set]
-    if not valid_dates:
-        raise ValueError(
-            "Nie można ustalić ostatniej sesji OTF. "
-            "Wszystkie daty kontrolne oznaczono jako święta."
-        )
-    return max(valid_dates)
+def validate_otf_session_choice(candidates: list[date], selected_date: date) -> date:
+    if selected_date not in candidates:
+        raise ValueError("Wybierz datę sesji OTF z listy dostępnych dni.")
+    return selected_date
 
 
 def show_date_selection(workbook_path: Path) -> None:
     import streamlit as st
 
-    st.title("Weryfikacja dat pobierania")
+    st.title("Wybór dat i zakresu danych")
     report_date: date = st.session_state["report_date"]
-    allow_change = st.toggle(
-        "Zmień datę raportu",
-        value=st.session_state.get("allow_report_date_change", False),
-    )
-    st.session_state["allow_report_date_change"] = allow_change
     selected_report_date = st.date_input(
-        "Raport na dzień",
+        "Data raportu",
         value=report_date,
         max_value=date.today() - timedelta(days=1),
-        disabled=not allow_change,
     )
     if selected_report_date != report_date:
         st.session_state["report_date"] = selected_report_date
-        st.session_state["date_plan"] = load_date_plan(
+        updated_plan = load_date_plan(
             workbook_path, selected_report_date + timedelta(days=1)
         )
-        st.session_state.pop("holiday_date_table", None)
+        st.session_state["date_plan"] = updated_plan
+        st.session_state["selected_otf_session_date"] = (
+            updated_plan.otf_session_candidates[0]
+        )
         st.rerun()
     st.caption(
-        "Data raportu wyznacza koniec zakresu danych. Domyślnie jest to wczoraj."
+        "Data raportu określa, do którego dnia pobierane są dane. "
+        "Jej zmiana aktualizuje zakresy."
     )
     plan: DatePlan = st.session_state["date_plan"]
-    st.subheader("Historia RDN")
-    summary_rows = []
-    for source, (label, sheet_name) in RDN_SOURCES.items():
-        stored = plan.latest_rdn_dates[source]
-        effective = plan.effective_latest_rdn_dates[source]
-        summary_rows.append(
-            {
-                "Rynek": label,
-                "Arkusz": sheet_name,
-                "Ostatnia zapisana data": stored.isoformat() if stored else "brak danych",
-                "Data bazowa": effective.isoformat(),
-                "Dat do uzupełnienia": len(plan.rdn_dates[source]),
-                "Fallback": "tak" if plan.used_fallback[source] else "nie",
-            }
+    candidate_dates = sorted(plan.otf_session_candidates, reverse=True)
+    selection_key = "selected_otf_session_date"
+    if candidate_dates:
+        if st.session_state.get(selection_key) not in candidate_dates:
+            st.session_state[selection_key] = candidate_dates[0]
+        selected_otf_session_date = st.radio(
+            "Wybierz datę sesji kontraktów terminowych (OTF)",
+            options=candidate_dates,
+            format_func=lambda value: value.strftime("%d.%m.%Y"),
+            key=selection_key,
         )
-    st.dataframe(summary_rows, hide_index=True, width="stretch")
-    if any(plan.used_fallback.values()):
-        st.info(
-            "Dla pustego arkusza RDN aplikacja pobierze ostatnie 7 "
-            "zakończonych dni kalendarzowych, osobno dla gazu i energii."
+        weekdays = (
+            "poniedziałek",
+            "wtorek",
+            "środa",
+            "czwartek",
+            "piątek",
+            "sobota",
+            "niedziela",
+        )
+        st.dataframe(
+            [
+                {
+                    "Data": value.strftime("%d.%m.%Y"),
+                    "Dzień tygodnia": weekdays[value.weekday()],
+                    "Wybrana": value == selected_otf_session_date,
+                }
+                for value in candidate_dates
+            ],
+            hide_index=True,
+            width="stretch",
+        )
+        st.caption(
+            "Wybierz ręcznie jedną z pięciu ostatnich dat przypadających "
+            "w dni powszednie. "
+            "Aplikacja użyje tej samej daty dla gazu i energii."
+        )
+    else:
+        selected_otf_session_date = None
+
+    def format_date_range(dates: list[date]) -> str:
+        if not dates:
+            return "Brak nowych dat do pobrania"
+        if dates[0] == dates[-1]:
+            return dates[0].strftime("%d.%m.%Y")
+        return (
+            f"{dates[0].strftime('%d.%m.%Y')}–{dates[-1].strftime('%d.%m.%Y')} "
+            f"({len(dates)} dni)"
         )
 
-    st.subheader("Ostatnia zamknięta sesja OTF")
-    st.write(
-        "Weekend jest odfiltrowany automatycznie. Zaznacz święta giełdowe; "
-        "aplikacja wybierze najnowszy pozostały dzień dla gazu i energii."
-    )
-    selected_holidays = set(st.session_state.get("selected_holidays", []))
-    edited_dates = st.data_editor(
-        [
-            {
-                "Date": (
-                    f"{session_date.isoformat()} "
-                    f"{WEEKDAY_NAMES[session_date.weekday()].capitalize()}"
-                ),
-                "Holiday": session_date in selected_holidays,
-            }
-            for session_date in reversed(plan.otf_session_candidates)
-        ],
-        hide_index=True,
-        disabled=["Date"],
-        column_config={
-            "Date": st.column_config.TextColumn("Data", width="medium"),
-            "Holiday": st.column_config.CheckboxColumn("Święto"),
+    summary_rows = [
+        {
+            "Grupa danych": "Gaz — cena dzienna (RDN)",
+            "Daty / zakres": format_date_range(plan.rdn_dates["gas_rdn"]),
         },
-        key="holiday_date_table",
+        {
+            "Grupa danych": "Energia — TGeBase (historia)",
+            "Daty / zakres": format_date_range(
+                plan.rdn_dates["electricity_rdn"]
+            ),
+        },
+        {
+            "Grupa danych": "Energia — TGePeak, TGeOffpeak, TGe24",
+            "Daty / zakres": (
+                selected_report_date.strftime("%d.%m.%Y")
+                if plan.rdn_dates["electricity_rdn"]
+                else "Brak nowych dat do pobrania"
+            ),
+        },
+        {
+            "Grupa danych": "Gaz i energia — kontrakty terminowe (OTF)",
+            "Daty / zakres": (
+                selected_otf_session_date.strftime("%d.%m.%Y")
+                if selected_otf_session_date is not None
+                else "Brak dostępnych dat"
+            ),
+        },
+        {
+            "Grupa danych": "Węgiel — historia",
+            "Daty / zakres": format_date_range(
+                get_dates_between(plan.coal_window[0] - timedelta(days=1), plan.coal_window[1])
+            ),
+        },
+        {
+            "Grupa danych": "EUA — historia uprawnień do emisji",
+            "Daty / zakres": format_date_range(
+                get_dates_between(plan.eua_window[0] - timedelta(days=1), plan.eua_window[1])
+            ),
+        },
+    ]
+    st.subheader("Zakres pobieranych danych")
+    st.dataframe(summary_rows, hide_index=True, width="stretch")
+    st.caption(
+        "Dla RDN sprawdzamy maksymalnie ostatnie 7 dni. Część indeksów "
+        "pobierana jest tylko dla najnowszej daty."
     )
 
-    start, end = plan.coal_window
-    st.subheader("Pozostałe zakresy")
-    st.write(
-        f"Węgiel i EUA: pełne ruchome okno 30 dni od "
-        f"{start.isoformat()} do {end.isoformat()} włącznie."
-    )
-    if st.button("Potwierdź daty", type="primary", key="confirm_table_dates"):
-        holidays = [
-            date.fromisoformat(row["Date"].split()[0])
-            for row in edited_dates
-            if row["Holiday"]
-        ]
+    contract_rows = build_otf_contract_preview(candidate_dates)
+    with st.expander("Podgląd kontraktów terminowych"):
+        if not candidate_dates:
+            st.caption("Brak dostępnych kontraktów do podglądu.")
+        else:
+            st.caption("Unikalne kontrakty z bieżącego zakresu — podgląd.")
+        st.dataframe(contract_rows, hide_index=True, width="stretch")
+
+    if not candidate_dates:
+        st.warning("Brak dostępnych dat do sprawdzenia.")
+    if st.button(
+        "Potwierdź zakres i sprawdź dane",
+        type="primary",
+        key="confirm_table_dates",
+        disabled=not candidate_dates,
+    ):
         try:
-            confirm_dates(holidays, workbook_path)
+            if selected_otf_session_date is None:
+                raise ValueError("Wybierz datę sesji OTF.")
+            confirm_dates(selected_otf_session_date, workbook_path)
         except ValueError as error:
             st.error(str(error))
 
 
-def confirm_dates(holidays: list[date], workbook_path: Path | None = None) -> None:
+def confirm_dates(
+    selected_otf_date: date, workbook_path: Path | None = None
+) -> None:
     import streamlit as st
 
     plan: DatePlan = st.session_state["date_plan"]
-    otf_session_date = select_latest_otf_session(
-        plan.otf_session_candidates, holidays
+    otf_session_candidates = sorted(plan.otf_session_candidates, reverse=True)
+    if not otf_session_candidates:
+        raise ValueError("Brak dni roboczych do sprawdzenia dla tej daty raportu.")
+    otf_session_date = validate_otf_session_choice(
+        otf_session_candidates, selected_otf_date
     )
-    st.session_state["selected_holidays"] = holidays
+    st.session_state["data_saved"] = False
+    st.session_state["otf_session_candidates"] = [otf_session_date]
     st.session_state["confirmed_source_dates"] = {
         **plan.rdn_dates,
         "gas_otf": [otf_session_date],
@@ -290,6 +373,7 @@ def confirm_dates(holidays: list[date], workbook_path: Path | None = None) -> No
         st.session_state["page"] = "prompt"
     else:
         from data_coverage import assess_coverage
+
         coverage = assess_coverage(workbook_path, plan.rdn_dates, otf_session_date, plan.coal_window, plan.eua_window)
         st.session_state["coverage_result"] = coverage
         st.session_state["page"] = "ready" if coverage.complete else "prompt"

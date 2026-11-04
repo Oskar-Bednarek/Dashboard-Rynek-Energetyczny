@@ -50,8 +50,42 @@ def initialize_session() -> None:
     st.session_state.setdefault("page", "dates")
 
 
+def show_workflow_progress() -> None:
+    page = st.session_state["page"]
+    steps = ("Wybierz daty", "Pobierz dane", "Sprawdź dane", "Gotowe")
+    if page == "dates":
+        active_step = 0
+    elif page == "prompt":
+        active_step = 1
+    elif page == "review" and not st.session_state.get("data_saved"):
+        active_step = 2
+    else:
+        active_step = 3
+
+    if page == "ready":
+        st.caption(
+            "Dane dla wybranego zakresu są już w pliku, więc pobieranie i "
+            "kontrolę pominięto."
+        )
+    else:
+        st.caption(f"Krok {active_step + 1} z 4")
+
+    columns = st.columns(len(steps))
+    for index, (column, label) in enumerate(zip(columns, steps)):
+        if page == "ready" and index in (1, 2):
+            text = f"— {label}"
+        elif index < active_step:
+            text = f"✓ {label}"
+        elif index == active_step:
+            text = f"**{label}**"
+        else:
+            text = label
+        column.markdown(text)
+
+
 def main() -> None:
     initialize_session()
+    show_workflow_progress()
 
     if st.session_state["page"] == "ready":
         show_ready_page(WORKBOOK_PATH)

@@ -21,7 +21,7 @@ def build_link_list(base_url: str, dates: list[date], task_label: str) -> str:
         return "Brak nowych dat do pobrania."
     return "\n\n".join(
         f"ZADANIE {task_label} {index}\n"
-        f"- data sesji z parametru dateShow: {trading_date.isoformat()}\n"
+        f"- żądana data (do sprawdzenia na stronie): {trading_date.isoformat()}\n"
         f"- otwórz osobno ten URL: "
         f"{base_url}{trading_date.strftime('%d-%m-%Y')}"
         for index, trading_date in enumerate(dates, 1)
@@ -38,6 +38,33 @@ def format_contracts(contracts: ContractSet) -> str:
     return "\n".join(
         f"- {group}: {', '.join(values)}" for group, values in groups
     )
+
+
+def format_otf_selection(session_date: date) -> str:
+    lines = []
+    for market, gas in (("gaz", True), ("energia elektryczna", False)):
+        contracts = build_contract_set(session_date, gas=gas)
+        prefix = "gas_base" if gas else "power_base"
+        base_url = (
+            "https://tge.pl/gaz-otf?dateShow="
+            if gas
+            else "https://tge.pl/energia-elektryczna-otf?dateShow="
+        )
+        lines.append(
+            f"{market}: {base_url}{session_date.strftime('%d-%m-%Y')}"
+        )
+        for group, instruments in (
+            ("week", contracts.weeks),
+            ("month", contracts.months),
+            ("quarter", contracts.quarters),
+            ("year", contracts.years),
+        ):
+            contract_list = ", ".join(
+                f"{instrument}={prefix}_{group}_{index}"
+                for index, instrument in enumerate(instruments, 1)
+            )
+            lines.append(f"{group}: {contract_list}")
+    return "\n".join(lines)
 
 
 def build_prompt_replacements(
@@ -69,6 +96,7 @@ def build_prompt_replacements(
             f"{otf_session_date.strftime('%d-%m-%Y')}"
         ),
         "{{otf_session_date}}": otf_session_date.isoformat(),
+        "{{otf_selection}}": format_otf_selection(otf_session_date),
         "{{gas_contracts}}": format_contracts(gas_contracts),
         "{{electricity_contracts}}": format_contracts(electricity_contracts),
         "{{coal_start_date}}": coal_start.isoformat(),
@@ -109,25 +137,46 @@ def build_prompt(
 def show_prompt_page(workbook_path: Path) -> None:
     import streamlit as st
 
-    st.title("Prompt i odpowiedź")
+    st.title("Pobierz dane ze źródeł")
     source_dates = st.session_state["confirmed_source_dates"]
     otf_session_date = st.session_state["otf_session_date"]
     coal_window = st.session_state["coal_window"]
     eua_window = st.session_state["eua_window"]
 
-    st.success("Daty i kontrakty zostały przygotowane.")
-    with st.expander("Dane przekazywane do promptu"):
+    st.subheader("1. Otwórz kilka sesji AI")
+    st.markdown(
+        "Otwórz [https://chatgpt.com/](https://chatgpt.com/) w "
+        "**trybie incognito/prywatnym** "
+        "i upewnij się, że nie jesteś zalogowany. Przygotuj **3–5 osobnych "
+        "rozmów**. Dzięki temu porównasz niezależne odpowiedzi."
+    )
+    st.subheader("2–3. Uruchom prompt i poczekaj na odpowiedzi")
+    st.markdown(
+        "Skopiuj prompt z pola poniżej i wklej go do każdej przygotowanej "
+        "rozmowy. Poczekaj, aż wszystkie sesje zakończą pracę."
+    )
+    with st.expander("Zakres danych przygotowany przez aplikację"):
         for source, dates in source_dates.items():
-            st.write(source, [value.isoformat() for value in dates])
-        st.write("OTF — sesja", otf_session_date.isoformat())
-        st.write("Kontrakty gazowe")
+            label = {
+                "gas_rdn": "Ceny dzienne gazu",
+                "electricity_rdn": "Ceny dzienne energii",
+                "gas_otf": "Kontrakty terminowe na gaz",
+                "electricity_otf": "Kontrakty terminowe na energię",
+            }[source]
+            if source.endswith("_otf"):
+                st.write(label, otf_session_date.isoformat())
+            else:
+                st.write(label, [value.isoformat() for value in dates])
+        st.write("Wybrana data sesji OTF")
+        st.write(otf_session_date.isoformat())
+        st.write("Kontrakty gazowe dla wybranej daty")
         st.code(format_contracts(build_contract_set(otf_session_date, gas=True)))
-        st.write("Kontrakty energii")
+        st.write("Kontrakty energetyczne dla wybranej daty")
         st.code(
             format_contracts(build_contract_set(otf_session_date, gas=False))
         )
-        st.write("Węgiel", f"{coal_window[0]} – {coal_window[1]}")
-        st.write("EUA", f"{eua_window[0]} – {eua_window[1]}")
+        st.write("Historia węgla", f"{coal_window[0]} – {coal_window[1]}")
+        st.write("Historia uprawnień do emisji EUA", f"{eua_window[0]} – {eua_window[1]}")
 
     try:
         prompt = build_prompt(
@@ -142,18 +191,28 @@ def show_prompt_page(workbook_path: Path) -> None:
         return
 
     st.subheader("Prompt do skopiowania")
-    st.caption("Użyj ikony kopiowania widocznej przy bloku promptu.")
+    st.caption(
+        "Skopiuj cały tekst przyciskiem kopiowania w rogu pola. Użyj tego "
+        "samego promptu w każdej rozmowie."
+    )
     st.code(prompt, language=None, height=450)
 
-    st.subheader("Odpowiedź")
+    st.subheader("4–6. Wybierz odpowiedź i wklej ją tutaj")
+    st.caption(
+        "Sprawdź pole `errors` w każdej odpowiedzi. Najpierw wybierz tę z "
+        "pustą listą `errors` (`[]`). Jeśli wszystkie mają błędy, wybierz "
+        "odpowiedź z najmniejszą liczbą wpisów w `errors`. Skopiuj ją w całości "
+        "i wklej poniżej."
+    )
     with st.form("response_form"):
         response = st.text_area(
-            "Wklej tutaj odpowiedź otrzymaną na powyższy prompt",
+            "Pełna odpowiedź",
             value=st.session_state.get("response", ""),
             height=300,
         )
-        validate_json = st.form_submit_button("Waliduj JSON", type="primary")
+        validate_json = st.form_submit_button("Sprawdź odpowiedź", type="primary")
     if validate_json:
+        st.session_state["data_saved"] = False
         st.session_state.pop("validation_report", None)
         st.session_state.pop("parsed_response", None)
         st.session_state.pop("validated_payload", None)
@@ -189,7 +248,7 @@ def show_prompt_page(workbook_path: Path) -> None:
 
     report = st.session_state.get("validation_report")
     if report is not None:
-        st.subheader("Wynik walidacji")
+        st.subheader("Wynik sprawdzenia")
         global_errors = [
             issue
             for issue in report.issues
@@ -197,15 +256,15 @@ def show_prompt_page(workbook_path: Path) -> None:
         ]
         if report.is_structurally_valid:
             st.success(
-                "Struktura JSON-a jest poprawna. Przechodzę do kontroli "
+                "Odpowiedź ma poprawny format. Otwieram teraz kontrolę "
                 "kompletności danych."
             )
         else:
             st.error(
-                "Struktura JSON-a jest niepoprawna. Popraw błędy globalne "
-                "lub składnię przed przejściem dalej."
+                "Nie udało się odczytać odpowiedzi. Popraw wskazane problemy "
+                "lub wklej pełną odpowiedź ponownie."
             )
-        st.subheader("Kontrola kompletności danych")
+        st.subheader("Czy są wszystkie potrzebne dane?")
         valid_count = sum(report.section_validity.values())
         if report.is_valid:
             st.success(
@@ -220,8 +279,15 @@ def show_prompt_page(workbook_path: Path) -> None:
         st.dataframe(
             [
                 {
-                    "Sekcja": section,
-                    "Kompletność": "kompletna" if valid else "wymaga uzupełnienia",
+                    "Rodzaj danych": {
+                        "gas.day_ahead": "Ceny dzienne gazu",
+                        "gas.futures": "Kontrakty terminowe na gaz",
+                        "electricity.day_ahead": "Ceny dzienne energii",
+                        "electricity.futures": "Kontrakty terminowe na energię",
+                        "coal.futures": "Historia węgla",
+                        "emissions.futures": "Historia uprawnień EUA",
+                    }.get(section, section),
+                    "Stan": "gotowe" if valid else "wymaga sprawdzenia",
                 }
                 for section, valid in report.section_validity.items()
             ],
@@ -230,26 +296,33 @@ def show_prompt_page(workbook_path: Path) -> None:
         )
         if global_errors:
             st.error(
-                f"Kontrole globalne: {len(global_errors)} błędów. "
-                "Poprawność 6 sekcji nie oznacza jeszcze, że cały JSON można zapisać."
+                f"Pozostało {len(global_errors)} problemów z odczytem. "
+                "Sprawdź szczegóły poniżej."
             )
         if report.issues:
-            st.dataframe(
-                [
-                    {
-                        "Sekcja": issue.section,
-                        "Ścieżka": issue.path,
-                        "Komunikat": issue.message,
-                    }
-                    for issue in report.issues
-                ],
-                hide_index=True,
-                width="stretch",
-            )
+            with st.expander("Szczegóły problemów do poprawy"):
+                st.dataframe(
+                    [
+                        {
+                            "Rodzaj danych": issue.section,
+                            "Miejsce": issue.path,
+                            "Szczegóły": issue.message,
+                        }
+                        for issue in report.issues
+                    ],
+                    hide_index=True,
+                    width="stretch",
+                )
 
         if report.is_structurally_valid and report.data is not None:
             missing_records = find_missing_tge_records(
-                report.data, source_dates, otf_session_date
+                report.data,
+                source_dates,
+                (
+                    date.fromisoformat(report.data["otf_session_date"])
+                    if isinstance(report.data.get("otf_session_date"), str)
+                    else None
+                ),
             )
             if missing_records:
                 st.subheader("Uzupełnianie brakujących danych TGE")

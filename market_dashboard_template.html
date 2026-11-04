@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ENERGY &amp; COMMODITIES MARKET REPORT</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172a3a;
+      --muted: #647789;
+      --line: #dce5eb;
+      --paper: #fff;
+      --canvas: #f0eee8;
+      --navy: #102638;
+      --teal: #087e83;
+      --blue: #3d7198;
+      --amber: #b87924;
+      --red: #a64e43;
+      --green: #647d61;
+      --brown: #8a6743;
+      --graphite: #535b60;
+      --soft: #f8f7f3;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--canvas);
+      color: var(--ink);
+      font: 13px/1.4 "Segoe UI", Arial, sans-serif;
+    }
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px max(20px, calc((100vw - 1200px) / 2));
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,.96);
+      box-shadow: 0 2px 12px rgba(16,43,64,.06);
+    }
+    .toolbar label { color: var(--muted); font-size: 12px; font-weight: 700; }
+    .toolbar-controls { display: flex; align-items: center; gap: 10px; }
+    input[type="date"], .button {
+      min-height: 38px;
+      border: 1px solid #cbd8e1;
+      border-radius: 8px;
+      background: white;
+      color: var(--ink);
+      font: inherit;
+      padding: 7px 11px;
+    }
+    .button {
+      cursor: pointer;
+      border-color: var(--navy);
+      background: var(--navy);
+      color: white;
+      font-weight: 700;
+    }
+    .button:hover { background: #1b405b; }
+    main { width: min(1260px, calc(100% - 32px)); margin: 22px auto 42px; }
+    .masthead {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 22px 28px;
+      margin-bottom: 14px;
+      border-top: 3px solid #91b5bd;
+      background: var(--navy);
+      color: #fff;
+    }
+    .eyebrow { color: #9dc7d4; font-size: 10px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+    h1 { margin: 5px 0 0; font-size: 25px; letter-spacing: .01em; }
+    .masthead p { margin: 7px 0 0; color: #c5d5df; }
+    .report-date { text-align: right; white-space: nowrap; }
+    .report-date strong { display: block; font-size: 19px; }
+    .report-date span { color: #c5d5df; font-size: 11px; }
+    .notice {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin: 0 0 12px;
+      padding: 7px 0;
+      border-bottom: 1px solid #c9c6bd;
+      color: var(--muted);
+      font-size: 10px;
+    }
+    .market-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 12px; }
+    .market-card {
+      min-width: 0;
+      grid-column: span 4;
+      padding: 10px 4px 12px;
+      border: 0;
+      border-top: 2px solid var(--accent, var(--teal));
+      border-bottom: 1px solid #dedbd3;
+      break-inside: avoid;
+    }
+    .market-card.wide { grid-column: span 6; }
+    .market-card.gas { --accent: var(--amber); }
+    .market-card.power { --accent: var(--blue); }
+    .market-card.coal { --accent: var(--graphite); }
+    .market-card.eua { --accent: var(--green); }
+    .market-card.biomass { --accent: var(--brown); }
+    .section-heading {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    h2 { margin: 0; font-size: 16px; letter-spacing: -.01em; }
+    .subheading { margin-top: 3px; color: var(--muted); font-size: 11px; }
+    .date-badge {
+      padding: 4px 7px;
+      border-left: 2px solid var(--accent, var(--teal));
+      background: var(--soft);
+      color: var(--ink);
+      font-size: 10px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .kpis { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 5px; }
+    .kpi {
+      min-height: 44px;
+      padding: 5px 8px 5px 4px;
+      border-right: 1px solid #e3e0d8;
+      border-bottom: 1px solid #ebe8e1;
+    }
+    .kpi.emphasis { border-color: color-mix(in srgb, var(--accent) 45%, white); }
+    .kpi-label { display: block; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .045em; text-transform: uppercase; }
+    .kpi-value { display: block; margin-top: 3px; color: var(--navy); font-size: 15px; font-weight: 800; line-height: 1.2; font-variant-numeric: tabular-nums; }
+    .kpi-value.positive { color: var(--green); }
+    .kpi-value.negative { color: var(--red); }
+    .kpi.emphasis .kpi-value { color: var(--accent); font-size: 16px; white-space: nowrap; }
+    .range-position { margin-top: 8px; }
+    .range-labels, .comparison-row { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 9px; }
+    .range-labels { margin-bottom: 3px; }
+    .range-track { position: relative; height: 4px; background: #e5e2da; }
+    .range-track span { position: absolute; top: -3px; width: 2px; height: 10px; background: var(--accent); }
+    .range-position output { display: block; margin-top: 3px; color: var(--muted); font-size: 9px; text-align: right; }
+    .comparison-row { justify-content: flex-start; margin-top: 6px; }
+    .comparison-row span { margin-right: 10px; }
+    .chart-wrap { margin-top: 9px; }
+    .chart-title { margin-bottom: 5px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+    canvas.history-chart { display: block; width: 100% !important; height: 128px !important; }
+    .table-heading { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; margin: 10px 0 5px; }
+    .table-heading h3 { margin: 0; font-size: 12px; }
+    .table-heading span { color: var(--muted); font-size: 10px; }
+    .table-scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 10px; }
+    th { padding: 6px 5px; border-bottom: 1px solid #d5d1c8; color: #506477; font-size: 9px; font-weight: 800; text-align: left; white-space: nowrap; }
+    td { padding: 6px 5px; border-bottom: 1px solid #eeeae2; vertical-align: top; }
+    td.numeric, th.numeric { text-align: right; font-variant-numeric: tabular-nums; }
+    tbody tr:last-child td { border-bottom: 0; }
+    .empty { padding: 14px 8px; color: var(--muted); text-align: center; }
+    .demo-badge { color: #76542f; font-size: 9px; font-weight: 800; text-transform: uppercase; }
+    footer { display: flex; justify-content: space-between; gap: 12px; margin: 16px 3px 0; color: var(--muted); font-size: 9px; }
+    .error { margin: 24px auto; width: min(760px, calc(100% - 32px)); padding: 15px; border: 1px solid #e8c1bc; border-radius: 9px; background: #fff1ef; color: #8c3026; }
+    @media (max-width: 720px) {
+      .toolbar { position: static; flex-wrap: wrap; padding: 12px 16px; }
+      .toolbar-controls { width: 100%; }
+      .toolbar-controls input { flex: 1; }
+      main { width: calc(100% - 20px); margin-top: 12px; }
+      .masthead { align-items: flex-start; flex-direction: column; padding: 20px; }
+      .report-date { text-align: left; }
+      .market-grid { grid-template-columns: repeat(12, minmax(0,1fr)); }
+      .market-card, .market-card.wide { grid-column: span 12; }
+      .kpis { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    }
+    @page { size: A4 landscape; margin: 5mm; }
+    @media print {
+      body { background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .toolbar { display: none; }
+      main { width: 100%; height: 199mm; margin: 0; display: grid; grid-template-rows: auto auto minmax(0,1fr) auto; gap: 2mm; }
+      .masthead { min-height: 16mm; padding: 2mm 3mm; margin: 0; border-top-width: 1mm; }
+      h1 { font-size: 14pt; }
+      .masthead p { margin-top: 1mm; font-size: 7pt; }
+      .eyebrow, .report-date span { font-size: 6pt; }
+      .report-date strong { font-size: 11pt; }
+      .notice { margin: 0; padding: 1mm 0; font-size: 6pt; }
+      .market-grid { min-height: 0; grid-template-columns: repeat(12,minmax(0,1fr)); grid-template-rows: repeat(2,minmax(0,1fr)); gap: 2mm; }
+      .market-card, .market-card.wide { min-height: 0; padding: 1.5mm; overflow: hidden; }
+      .market-card.wide { grid-column: span 6; }
+      .market-card:not(.wide) { grid-column: span 4; }
+      .section-heading { margin-bottom: 1mm; }
+      h2 { font-size: 8pt; }
+      .subheading, .date-badge { font-size: 5pt; }
+      .date-badge { padding: .5mm 1mm; }
+      .kpis { gap: .7mm; }
+      .kpi { min-height: 0; padding: .8mm 1mm; }
+      .kpi-label { font-size: 4.5pt; }
+      .kpi-value { margin-top: .3mm; font-size: 6.5pt; }
+      .kpi.emphasis .kpi-value { font-size: 8pt; }
+      .range-position { margin-top: 1mm; }
+      .range-labels, .range-position output, .comparison-row { font-size: 4.5pt; }
+      .chart-wrap { margin-top: 1mm; }
+      .chart-title { margin-bottom: .3mm; font-size: 4.5pt; }
+      canvas.history-chart { height: 14mm !important; }
+      .comparison-row { display: none; }
+      .table-heading { margin: .7mm 0 .3mm; }
+      .table-heading h3 { font-size: 6pt; }
+      .table-heading span, table { font-size: 4.6pt; }
+      table { line-height: .9; }
+      th { padding: .5mm; font-size: 4.2pt; }
+      td { padding: .2mm .4mm; }
+      .history-table tbody tr:nth-child(n+6) { display: none; }
+      footer { margin: 0; font-size: 5pt; }
+      .market-card, .masthead, .notice, footer { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <div><label for="report-date">Data raportu</label><br><span id="date-range"></span></div>
+    <div class="toolbar-controls">
+      <input id="report-date" type="date" aria-label="Wybierz datę raportu">
+      <button class="button" id="print-button" type="button">Drukuj / Zapisz PDF</button>
+    </div>
+  </div>
+  <main>
+    <header class="masthead">
+      <div>
+        <div class="eyebrow">Market intelligence · raport dzienny</div>
+        <h1>ENERGY &amp; COMMODITIES MARKET REPORT</h1>
+        <p>Gaz · energia elektryczna · węgiel · EUA · zrębka</p>
+      </div>
+      <div class="report-date"><span>DATA RAPORTU</span><strong id="report-date-label">—</strong></div>
+    </header>
+    <div class="notice">
+      <span>Dane z DataMaster.xlsx · najnowsze notowanie nie późniejsze niż data raportu · historia do 30 dni</span>
+      <span id="last-updated"></span>
+    </div>
+    <div id="dashboard" class="market-grid" aria-live="polite"></div>
+    <footer><span>Źródło: DataMaster.xlsx</span><span id="generated-at"></span></footer>
+  </main>
+  <script>__CHARTJS_SCRIPT__</script>
+  <script id="dashboard-data" type="application/json">__DASHBOARD_DATA__</script>
+  <script>
+    (() => {
+      "use strict";
+      const DATA = JSON.parse(document.getElementById("dashboard-data").textContent);
+      const oneDay = 86400000;
+      const dateInput = document.getElementById("report-date");
+      const dateLabel = document.getElementById("report-date-label");
+      const dashboard = document.getElementById("dashboard");
+      const chartInstances = [];
+      const locale = "pl-PL";
+      const chartColors = {
+        gas: {line:"#b87924",fill:"rgba(184,121,36,.12)"},
+        power: {line:"#3d7198",fill:"rgba(61,113,152,.12)"},
+        coal: {line:"#535b60",fill:"rgba(83,91,96,.12)"},
+        eua: {line:"#647d61",fill:"rgba(100,125,97,.12)"},
+      };
+      const parseDate = value => {
+        const [year, month, day] = String(value).slice(0, 10).split("-").map(Number);
+        return new Date(Date.UTC(year, month - 1, day));
+      };
+      const iso = value => {
+        const d = value instanceof Date ? value : parseDate(value);
+        return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}-${String(d.getUTCDate()).padStart(2,"0")}`;
+      };
+      const formatDate = value => parseDate(value).toLocaleDateString(locale, {day:"2-digit",month:"2-digit",year:"numeric",timeZone:"UTC"});
+      const formatNumber = value => {
+        const number = numeric(value);
+        return number === null ? "—" : new Intl.NumberFormat(locale,{maximumFractionDigits:2}).format(number);
+      };
+      const numeric = value => {
+        if (typeof value === "number" && Number.isFinite(value)) return value;
+        if (typeof value !== "string") return null;
+        const text = value.trim().replace(/\s/g,"").replace(/%$/,"").replace(",",".");
+        const match = text.match(/^([+-]?\d+(?:\.\d+)?)([kKmM])?$/);
+        if (!match) return null;
+        const multiplier = match[2] ? (match[2].toLowerCase() === "k" ? 1000 : 1000000) : 1;
+        return Number(match[1]) * multiplier;
+      };
+      const fmtMoney = (value, unit=" zł") => {
+        const number = numeric(value);
+        return number === null ? "—" : `${formatNumber(number)}${unit}`;
+      };
+      const fmtVolume = value => {
+        const number = numeric(value);
+        return number === null ? (value == null || value === "" ? "—" : String(value)) : `${formatNumber(number)} MWh`;
+      };
+      const sorted = rows => [...rows].sort((a,b) => a.trading_date.localeCompare(b.trading_date));
+      const through = (rows, end) => sorted(rows.filter(row => row.trading_date.slice(0,10) <= end));
+      const latest = rows => rows.length ? rows[rows.length-1] : null;
+      const el = (tag, cls, text) => {
+        const node = document.createElement(tag);
+        if (cls) node.className = cls;
+        if (text !== undefined) node.textContent = text;
+        return node;
+      };
+      const card = (title, subtitle, date, marketClass, wide=false) => {
+        const section = el("section", `market-card ${marketClass}${wide ? " wide" : ""}`);
+        const heading = el("div", "section-heading");
+        const left = document.createElement("div");
+        left.append(el("h2", "", title), el("div", "subheading", subtitle));
+        heading.append(left, el("span", "date-badge", date ? formatDate(date) : "Brak notowań"));
+        section.append(heading);
+        return section;
+      };
+      const table = (headers, rows, numericColumns=[]) => {
+        const wrap = el("div", "table-scroll");
+        const t = document.createElement("table");
+        const thead = document.createElement("thead");
+        const head = document.createElement("tr");
+        headers.forEach((value,index) => {
+          const th = el("th", numericColumns.includes(index) ? "numeric" : "", value);
+          head.append(th);
+        });
+        thead.append(head);
+        const body = document.createElement("tbody");
+        if (!rows.length) {
+          const tr = document.createElement("tr"), td = el("td","empty","Brak danych dla wybranej daty.");
+          td.colSpan = headers.length;
+          tr.append(td); body.append(tr);
+        } else {
+          rows.forEach(row => {
+            const tr = document.createElement("tr");
+            row.forEach((value,index) => tr.append(el("td", numericColumns.includes(index) ? "numeric" : "", value == null ? "—" : String(value))));
+            body.append(tr);
+          });
+        }
+        t.append(thead,body); wrap.append(t); return wrap;
+      };
+      const addTable = (section, title, caption, headers, rows, numericColumns=[]) => {
+        const titleRow = el("div","table-heading");
+        titleRow.append(el("h3","",title),el("span","",caption));
+        const tableElement=table(headers,rows,numericColumns);
+        section.append(titleRow,tableElement);
+        return tableElement;
+      };
+      const addKpis = (section, items) => {
+        const grid = el("div","kpis");
+        items.forEach((item,index) => {
+          const box = el("div",`kpi${item.emphasis ? " emphasis" : ""}`);
+          box.append(el("span","kpi-label",item.label),el("span",`kpi-value${item.tone ? " "+item.tone : ""}`,item.value));
+          grid.append(box);
+        });
+        section.append(grid);
+      };
+      const createChart = (rows, cfg) => {
+        const wrap = el("div","chart-wrap");
+        wrap.append(el("div","chart-title","Cena historyczna · do 30 dni"));
+        if (!rows.length) {
+          wrap.append(el("div","empty","Brak danych do wykresu."));
+          return wrap;
+        }
+        const values=rows.map(row=>numeric(row[cfg.priceField]));
+        if (!values.some(value=>value!==null)) {
+          wrap.append(el("div","empty","Brak wartości liczbowych do wykresu."));
+          return wrap;
+        }
+        const lastValueIndex=values.reduce((last,value,index)=>value===null?last:index,-1);
+        const colors=chartColors[cfg.marketClass];
+        const canvas=el("canvas","history-chart");
+        canvas.setAttribute("role","img");
+        canvas.setAttribute("aria-label",`Wykres historycznej ceny: ${cfg.title}`);
+        const chart=new Chart(canvas,{
+          type:"line",
+          data:{
+            labels:rows.map(row=>formatDate(row.trading_date)),
+            datasets:[{
+              data:values,
+              borderColor:colors.line,
+              backgroundColor:colors.fill,
+              borderWidth:1.6,
+              fill:true,
+              tension:0,
+              spanGaps:false,
+              pointRadius:context=>context.dataIndex===lastValueIndex?3:0,
+              pointHoverRadius:4,
+              pointBackgroundColor:colors.line,
+              pointBorderColor:"#fff",
+              pointBorderWidth:1.5,
+            }],
+          },
+          options:{
+            responsive:true,
+            maintainAspectRatio:false,
+            animation:false,
+            interaction:{intersect:false,mode:"index"},
+            plugins:{
+              legend:{display:false},
+              tooltip:{
+                backgroundColor:"#102638",
+                titleColor:"#fff",
+                bodyColor:"#fff",
+                displayColors:false,
+                padding:8,
+                callbacks:{
+                  label:context=>`${formatNumber(context.parsed.y)}${cfg.priceUnit}`,
+                },
+              },
+            },
+            scales:{
+              x:{
+                border:{display:false},
+                grid:{display:false},
+                ticks:{color:"#647789",maxTicksLimit:2,maxRotation:0,font:{size:9}},
+              },
+              y:{
+                border:{display:false},
+                grid:{color:"#e7edf1"},
+                ticks:{
+                  color:"#647789",
+                  maxTicksLimit:3,
+                  font:{size:9},
+                  callback:value=>new Intl.NumberFormat(locale,{maximumFractionDigits:0}).format(value),
+                },
+              },
+            },
+          },
+        });
+        chartInstances.push(chart);
+        wrap.append(canvas);
+        return wrap;
+      };
+      const windowRows = (rows, asOf) => {
+        const start = iso(new Date(parseDate(asOf).getTime() - 29*oneDay));
+        return rows.filter(r => r.trading_date.slice(0,10) >= start && r.trading_date.slice(0,10) <= asOf);
+      };
+      const latestMetrics = (rows, asOf) => {
+        const visible=through(rows,asOf), current=latest(visible);
+        if (!current) return {current:null,window:[],previous:null};
+        const history=windowRows(visible,asOf);
+        const previous=visible.length>1 ? visible[visible.length-2] : null;
+        return {current,window:history,previous};
+      };
+      const priceDelta = (current, previous, field) => {
+        const latestPrice=numeric(current?.[field]), previousPrice=numeric(previous?.[field]);
+        if (latestPrice===null || previousPrice===null) return null;
+        const change=latestPrice-previousPrice;
+        return {change,percent:previousPrice===0?null:change/previousPrice*100};
+      };
+      const signed = value => `${value>0?"+":""}${formatNumber(value)}`;
+      const displayDelta = delta => {
+        if (!delta) return "—";
+        const arrow=delta.change>0?"↑ ":delta.change<0?"↓ ":"";
+        return `${arrow}${signed(delta.change)}`;
+      };
+      const addRangePosition = (section, current, prices, field, unit) => {
+        const value=numeric(current?.[field]);
+        if (value===null || !prices.length) return;
+        const min=Math.min(...prices), max=Math.max(...prices);
+        if (value<min || value>max) return;
+        const position=max===min?50:Math.max(0,Math.min(100,(value-min)/(max-min)*100));
+        const range=el("div","range-position");
+        const labels=el("div","range-labels");
+        labels.append(el("span","",`Min ${fmtMoney(min,unit)}`),el("span","",`Max ${fmtMoney(max,unit)}`));
+        const track=el("div","range-track");
+        const marker=document.createElement("span");
+        marker.style.left=`${position}%`;
+        marker.setAttribute("aria-hidden","true");
+        track.append(marker);
+        const output=el("output","",`Pozycja ceny: ${formatNumber(position)}%`);
+        range.setAttribute("aria-label",`Pozycja ceny w przedziale 30 dni: ${formatNumber(position)}%`);
+        range.append(labels,track,output);
+        section.append(range);
+      };
+      const periodDelta = (rows, asOf, days, field) => {
+        const target=iso(new Date(parseDate(asOf).getTime()-days*oneDay));
+        const baseline=latest(through(rows,target));
+        return priceDelta(latest(through(rows,asOf)),baseline,field);
+      };
+      const addComparisons = (section, rows, asOf, field, unit) => {
+        const comparisons=el("div","comparison-row");
+        [7,30].forEach(days=>{
+          const delta=periodDelta(rows,asOf,days,field);
+          const text=delta?`${displayDelta(delta)}${unit}${delta.percent===null?"":` · ${signed(delta.percent)}%`}`:"—";
+          const value=el("span",changeTone(delta?.change),`${days} dni: ${text}`);
+          comparisons.append(value);
+        });
+        section.append(comparisons);
+      };
+      const volumeChange = (current, previous) => {
+        const a=numeric(current?.volume_mwh ?? current?.volume), b=numeric(previous?.volume_mwh ?? previous?.volume);
+        if (a===null || b===null) return "—";
+        const diff=a-b;
+        const pct=b===0 ? null : diff/b*100;
+        return `${diff>0?"+":""}${formatNumber(diff)}${pct===null?"":` (${pct>0?"+":""}${formatNumber(pct)}%)`}`;
+      };
+      const changeTone = value => {
+        const number=numeric(value);
+        return number===null ? "" : number>0 ? "positive" : number<0 ? "negative" : "";
+      };
+      const addPriceMetrics = (section, metrics, cfg) => {
+        const row=metrics.current, prices=metrics.window.map(item=>numeric(item[cfg.priceField])).filter(value=>value!==null);
+        const delta=priceDelta(row,metrics.previous,cfg.priceField);
+        const percent=delta?.percent===null||!delta?"—":`${delta.percent>0?"↑ ":delta.percent<0?"↓ ":""}${signed(delta.percent)}%`;
+        addKpis(section,[
+          {label:"Kurs",value:fmtMoney(row?.[cfg.priceField],cfg.priceUnit),emphasis:true},
+          {label:"Zmiana ceny",value:delta?`${displayDelta(delta)}${cfg.priceUnit}`:"—",tone:changeTone(delta?.change)},
+          {label:"Zmiana %",value:percent,tone:changeTone(delta?.percent)},
+          {label:"Wolumen",value:cfg.volumeField==="volume_mwh"?fmtVolume(row?.[cfg.volumeField]):(row?.[cfg.volumeField]??"—")},
+          {label:"Zmiana wolumenu",value:volumeChange(row,metrics.previous)},
+          {label:"Minimum · 30 dni",value:prices.length?fmtMoney(Math.min(...prices),cfg.priceUnit):"—"},
+          {label:"Maksimum · 30 dni",value:prices.length?fmtMoney(Math.max(...prices),cfg.priceUnit):"—"},
+        ]);
+        addRangePosition(section,row,prices,cfg.priceField,cfg.priceUnit);
+        addComparisons(section,metrics.allRows,metrics.asOf,cfg.priceField,cfg.priceUnit);
+        section.append(createChart(metrics.window,cfg));
+      };
+      const addPriceMarket = (target, cfg, asOf) => {
+        const allRows=DATA[cfg.key]||[];
+        const rows=cfg.instrumentId?allRows.filter(row=>row.data_id===cfg.instrumentId):allRows;
+        const metrics=latestMetrics(rows,asOf);
+        metrics.allRows=rows;
+        metrics.asOf=asOf;
+        const row=metrics.current;
+        const section=card(cfg.title,cfg.subtitle,row?.trading_date,cfg.marketClass,cfg.wide);
+        addPriceMetrics(section,metrics,cfg);
+        if (cfg.otfKey) {
+          const contracts=through(DATA[cfg.otfKey]||[],asOf);
+          const sessionDate=contracts.length?contracts[contracts.length-1].trading_date.slice(0,10):null;
+          const sessionRows=contracts.filter(item=>item.trading_date.slice(0,10)===sessionDate);
+          const groups=[
+            ["Tygodniowy","week",3],["Miesięczny","month",4],["Kwartalny","quarter",2],["Roczny","year",1],
+          ];
+          const selected=[];
+          groups.forEach(([label,group,count])=>{
+            sessionRows.filter(item=>item.data_id.startsWith(`${cfg.otfPrefix}_${group}_`))
+              .sort((a,b)=>a.data_id.localeCompare(b.data_id,undefined,{numeric:true}))
+              .slice(0,count).forEach(item=>selected.push([label,item.instrument,fmtMoney(item.dkr_pln_mwh," zł/MWh"),fmtMoney(item.max_pln_mwh," zł/MWh"),fmtVolume(item.volume_mwh)]));
+          });
+          addTable(section,"Kontrakty terminowe",sessionDate?`Sesja ${formatDate(sessionDate)}`:"Brak kontraktów",["Typ","Kontrakt","DKR","Maks. kurs","Wolumen"],selected,[2,3,4]);
+        }
+        if (cfg.key==="power_rdn") addPowerIndices(section,allRows,asOf);
+        target.append(section);
+      };
+      const addPowerIndices = (section, records, asOf) => {
+        const available=through(records,asOf);
+        const ids=[...new Set(available.map(row=>row.data_id).filter(id=>id&&id!=="tge_power_da_base"))].sort();
+        const rows=ids.map(id=>{
+          const series=available.filter(row=>row.data_id===id), current=latest(series);
+          const previous=series.length>1?series[series.length-2]:null;
+          const delta=priceDelta(current,previous,"price_pln_mwh");
+          const change=delta?`${displayDelta(delta)} zł/MWh${delta.percent===null?"":` · ${signed(delta.percent)}%`}`:"—";
+          return [current?.instrument||id,current?formatDate(current.trading_date):"—",fmtMoney(current?.price_pln_mwh," zł/MWh"),change];
+        });
+        addTable(section,"Pozostałe indeksy energii","Ostatnie notowanie ≤ data raportu",["Indeks","Data","Kurs","Zmiana"],rows,[2,3]);
+      };
+      const addHistoryMarket = (target, key, title, subtitle, cfg, asOf) => {
+        const rows=through(DATA[key]||[],asOf);
+        const metrics=latestMetrics(DATA[key]||[],asOf);
+        metrics.allRows=DATA[key]||[];
+        metrics.asOf=asOf;
+        const section=card(title,subtitle,latest(rows)?.trading_date,cfg.marketClass);
+        const current=metrics.current;
+        addPriceMetrics(section,metrics,cfg);
+        const recent=rows.slice(-10).reverse().map(r=>[formatDate(r.trading_date),fmtMoney(r.price,cfg.priceUnit),fmtMoney(r.open,cfg.priceUnit),fmtMoney(r.high,cfg.priceUnit),fmtMoney(r.low,cfg.priceUnit),r.volume??"—",r.change_pct??"—"]);
+        const historyTable=addTable(section,"Ostatnie notowania","Do 10 sesji",["Data","Kurs","Otwarcie","Maks.","Min.","Wolumen","Zmiana"],recent,[1,2,3,4,5,6]);
+        historyTable.querySelector("table").classList.add("history-table");
+        target.append(section);
+      };
+      const addBiomass = (target, asOf) => {
+        const samples=(DATA.sample_biomass||[]).filter(row=>row.date<=asOf).sort((a,b)=>b.date.localeCompare(a.date));
+        const section=card("Zrębka","Przykładowe dane demonstracyjne",samples[0]?.date,"biomass");
+        section.querySelector(".date-badge").textContent=samples.length?`DEMO · ${formatDate(samples[0].date)}`:"DEMO";
+        section.querySelector(".date-badge").classList.add("demo-badge");
+        const rows=samples.map(row=>[formatDate(row.date),row.buyer,row.kind,formatNumber(row.volume),fmtMoney(row.price," zł/t"),row.source]);
+        addTable(section,"Notowania zrębki","Dane demonstracyjne",["Data","Nabywca","Rodzaj","Wolumen","Cena","Źródło"],rows,[3,4]);
+        target.append(section);
+      };
+      const render = () => {
+        const asOf=dateInput.value || DATA.max_date;
+        dateLabel.textContent=formatDate(asOf);
+        document.getElementById("date-range").textContent=`Dostępne dane: ${formatDate(DATA.min_date)} – ${formatDate(DATA.max_date)}`;
+        chartInstances.forEach(chart=>chart.destroy());
+        chartInstances.length=0;
+        dashboard.replaceChildren();
+        addPriceMarket(dashboard,{key:"gas_rdn",title:"Gaz",subtitle:"Rynek dnia następnego · TGEgasDA",priceField:"price_pln_mwh",volumeField:"volume_mwh",priceUnit:" zł/MWh",marketClass:"gas",wide:true,otfKey:"gas_otf",otfPrefix:"gas_base"},asOf);
+        addPriceMarket(dashboard,{key:"power_rdn",title:"Energia elektryczna",subtitle:"TGeBase · rynek dnia następnego",instrumentId:"tge_power_da_base",priceField:"price_pln_mwh",volumeField:"volume_mwh",priceUnit:" zł/MWh",marketClass:"power",wide:true},asOf);
+        addHistoryMarket(dashboard,"coal","Węgiel","Rotterdam Coal Futures",{priceField:"price",volumeField:"volume",priceUnit:" USD/t",marketClass:"coal"},asOf);
+        addHistoryMarket(dashboard,"eua","EUA","European Union Allowance · Year Futures",{priceField:"price",volumeField:"volume",priceUnit:" EUR/t",marketClass:"eua"},asOf);
+        addBiomass(dashboard,asOf);
+      };
+      dateInput.min=DATA.min_date;
+      dateInput.max=DATA.max_date;
+      dateInput.value=DATA.max_date;
+      dateInput.addEventListener("change",render);
+      document.getElementById("print-button").addEventListener("click",()=>window.print());
+      window.addEventListener("beforeprint",()=>chartInstances.forEach(chart=>chart.resize()));
+      document.getElementById("generated-at").textContent=`Wygenerowano ${new Date().toLocaleString(locale)}`;
+      document.getElementById("last-updated").textContent=DATA.updated_at
+        ?`Aktualizacja danych: ${new Date(DATA.updated_at).toLocaleString(locale)}`
+        :"";
+      render();
+    })();
+  </script>
+</body>
+</html>

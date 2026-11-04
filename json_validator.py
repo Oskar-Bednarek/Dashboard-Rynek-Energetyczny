@@ -128,8 +128,12 @@ def _validate_tge_source_url(
     section: str,
     path: str,
     report: ValidationReport,
+    allowed_urls: set[str] | None = None,
 ) -> None:
     if not _valid_url(value, "tge.pl"):
+        return
+    if allowed_urls is not None and value not in allowed_urls:
+        report.add(section, path, "URL nie należy do linków przekazanych dla kandydata.")
         return
     parsed = urlparse(value)
     if parsed.path.rstrip("/") != expected_path:
@@ -310,10 +314,20 @@ def _contract_map(contracts: ContractSet, market: str) -> dict[str, str]:
 
 
 def _validate_otf(
-    payload: dict[str, Any], market: str, session_date: date, report: ValidationReport
+    payload: dict[str, Any],
+    market: str,
+    session_date: date | None,
+    report: ValidationReport,
 ) -> None:
     section = f"{market}.futures"
     records = _get_section(payload, market, "futures", report)
+    if session_date is None:
+        report.add(
+            section,
+            "otf_session_date",
+            "Brak potwierdzonej wspólnej daty sesji OTF.",
+        )
+        return
     contracts = build_contract_set(session_date, gas=market == "gas")
     contract_groups = {
         "week": contracts.weeks,
@@ -340,6 +354,10 @@ def _validate_otf(
         if record.get("trading_date") != session_date.isoformat():
             report.add(section, f"{path}.trading_date", f"Oczekiwano {session_date.isoformat()}.")
         expected_path = "/gaz-otf" if market == "gas" else "/energia-elektryczna-otf"
+        candidate_url = (
+            f"https://tge.pl{expected_path}?dateShow="
+            f"{session_date.strftime('%d-%m-%Y')}"
+        )
         _validate_tge_source_url(
             record.get("source_url"),
             expected_path,
@@ -347,6 +365,7 @@ def _validate_otf(
             section,
             f"{path}.source_url",
             report,
+            {candidate_url},
         )
         _validate_tge_values(
             record.get("values"),
@@ -414,13 +433,40 @@ def _validate_investing(
 def validate_payload(
     payload: dict[str, Any],
     source_dates: dict[str, list[date]],
-    otf_session_date: date,
+    otf_session_date: date | None,
     coal_window: tuple[date, date],
     eua_window: tuple[date, date],
+    otf_session_candidates: list[date] | None = None,
 ) -> ValidationReport:
     report = ValidationReport(data=payload)
     if payload.get("schema_version") != "market-data-1.0":
         report.add("global", "schema_version", 'Oczekiwano wartości "market-data-1.0".')
+    raw_session_date = payload.get("otf_session_date")
+    selected_session_date: date | None = None
+    if raw_session_date is None:
+        if "otf_session_date" not in payload:
+            report.add(
+                "global",
+                "otf_session_date",
+                "Brak wymaganego pola potwierdzonej daty sesji OTF.",
+            )
+    elif _valid_iso_date(raw_session_date):
+        selected_session_date = date.fromisoformat(raw_session_date)
+        allowed_candidates = set(
+            otf_session_candidates or ([otf_session_date] if otf_session_date else [])
+        )
+        if selected_session_date not in allowed_candidates:
+            report.add(
+                "global",
+                "otf_session_date",
+                "Data sesji OTF nie znajduje się na liście kandydatów.",
+            )
+    else:
+        report.add(
+            "global",
+            "otf_session_date",
+            "Oczekiwano daty YYYY-MM-DD albo null.",
+        )
     retrieved_at = payload.get("retrieved_at")
     try:
         parsed_at = datetime.fromisoformat(retrieved_at) if isinstance(retrieved_at, str) else None
@@ -448,8 +494,8 @@ def validate_payload(
 
     _validate_rdn(payload, "gas", source_dates["gas_rdn"], report)
     _validate_rdn(payload, "electricity", source_dates["electricity_rdn"], report)
-    _validate_otf(payload, "gas", otf_session_date, report)
-    _validate_otf(payload, "electricity", otf_session_date, report)
+    _validate_otf(payload, "gas", selected_session_date, report)
+    _validate_otf(payload, "electricity", selected_session_date, report)
     _validate_investing(
         payload, "coal", "coal_rotterdam_futures", "Rotterdam Coal Futures",
         coal_window, report,
@@ -477,9 +523,10 @@ def validate_payload(
 def validate_response(
     response: str,
     source_dates: dict[str, list[date]],
-    otf_session_date: date,
+    otf_session_date: date | None,
     coal_window: tuple[date, date],
     eua_window: tuple[date, date],
+    otf_session_candidates: list[date] | None = None,
 ) -> ValidationReport:
     try:
         payload = parse_json_response(response)
@@ -488,5 +535,10 @@ def validate_response(
         report.add("global", "$", str(error))
         return report
     return validate_payload(
-        payload, source_dates, otf_session_date, coal_window, eua_window
+        payload,
+        source_dates,
+        otf_session_date,
+        coal_window,
+        eua_window,
+        otf_session_candidates,
     )

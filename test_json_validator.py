@@ -5,9 +5,12 @@ import unittest
 
 from contract_selection import build_contract_set
 from json_validator import parse_json_response, validate_payload, validate_response
+from manual_completion import find_missing_tge_records
 
 
 SESSION_DATE = date(2026, 10, 21)
+EARLIER_SESSION_DATE = date(2026, 10, 20)
+OTF_CANDIDATES = [SESSION_DATE, EARLIER_SESSION_DATE]
 SOURCE_DATES = {
     "gas_rdn": [date(2026, 10, 20)],
     "electricity_rdn": [date(2026, 10, 20)],
@@ -17,10 +20,15 @@ SOURCE_DATES = {
 WINDOW = (date(2026, 9, 23), date(2026, 10, 22))
 
 
-def _otf_records(market: str) -> list[dict]:
+def _otf_records(market: str, session_date: date = SESSION_DATE) -> list[dict]:
     gas = market == "gas"
-    contracts = build_contract_set(SESSION_DATE, gas=gas)
+    contracts = build_contract_set(session_date, gas=gas)
     prefix = "gas_base" if gas else "power_base"
+    url = (
+        "https://tge.pl/gaz-otf?dateShow="
+        if gas
+        else "https://tge.pl/energia-elektryczna-otf?dateShow="
+    )
     records = []
     for group, values in (
         ("week", contracts.weeks),
@@ -32,12 +40,8 @@ def _otf_records(market: str) -> list[dict]:
             records.append(
                 {
                     "data_id": f"{prefix}_{group}_{index}",
-                    "source_url": (
-                        "https://tge.pl/gaz-otf?dateShow=21-10-2026"
-                        if gas
-                        else "https://tge.pl/energia-elektryczna-otf?dateShow=21-10-2026"
-                    ),
-                    "trading_date": SESSION_DATE.isoformat(),
+                    "source_url": f"{url}{session_date.strftime('%d-%m-%Y')}",
+                    "trading_date": session_date.isoformat(),
                     "instrument": instrument,
                     "values": {"dkr_pln_mwh": 1.0, "max_pln_mwh": 2.0, "volume_mwh": None},
                 }
@@ -45,7 +49,7 @@ def _otf_records(market: str) -> list[dict]:
     return records
 
 
-def valid_payload() -> dict:
+def valid_payload(session_date: date = SESSION_DATE) -> dict:
     power = {
         "tge_power_da_base": "TGeBase",
         "tge_power_da_peak": "TGePeak",
@@ -55,6 +59,7 @@ def valid_payload() -> dict:
     return {
         "schema_version": "market-data-1.0",
         "retrieved_at": "2026-10-22T12:00:00+02:00",
+        "otf_session_date": session_date.isoformat(),
         "status": "success",
         "data": {
             "gas": {
@@ -65,7 +70,7 @@ def valid_payload() -> dict:
                     "instrument": "TGEgasDA",
                     "values": {"price_pln_mwh": 100.0, "volume_mwh": 20.0, "change_pct": -1.2},
                 }],
-                "futures": _otf_records("gas"),
+                "futures": _otf_records("gas", session_date),
             },
             "electricity": {
                 "day_ahead": [
@@ -78,7 +83,7 @@ def valid_payload() -> dict:
                     }
                     for data_id, instrument in power.items()
                 ],
-                "futures": _otf_records("electricity"),
+                "futures": _otf_records("electricity", session_date),
             },
             "coal": {"futures": [{
                 "data_id": "coal_rotterdam_futures",
@@ -101,12 +106,114 @@ def valid_payload() -> dict:
 
 class JsonValidatorTests(unittest.TestCase):
     def validate(self, payload: dict):
-        return validate_payload(payload, SOURCE_DATES, SESSION_DATE, WINDOW, WINDOW)
+        return validate_payload(
+            payload,
+            SOURCE_DATES,
+            SESSION_DATE,
+            WINDOW,
+            WINDOW,
+            OTF_CANDIDATES,
+        )
 
     def test_valid_payload_passes(self) -> None:
         report = self.validate(valid_payload())
         self.assertTrue(report.is_valid, report.issues)
         self.assertTrue(all(report.section_validity.values()))
+
+    def test_earlier_candidate_is_validated_using_its_contracts(self) -> None:
+        payload = valid_payload(EARLIER_SESSION_DATE)
+
+        report = self.validate(payload)
+
+        self.assertTrue(report.is_valid, report.issues)
+        self.assertEqual(
+            payload["data"]["gas"]["futures"][0]["trading_date"],
+            EARLIER_SESSION_DATE.isoformat(),
+        )
+
+    def test_otf_date_outside_candidate_list_is_rejected(self) -> None:
+        payload = deepcopy(valid_payload())
+        payload["otf_session_date"] = "2026-10-19"
+
+        report = self.validate(payload)
+
+        self.assertFalse(report.is_structurally_valid)
+        self.assertTrue(
+            any(
+                issue.path == "otf_session_date"
+                and "kandydatów" in issue.message
+                for issue in report.issues
+            )
+        )
+
+    def test_null_otf_date_blocks_both_otf_sections(self) -> None:
+        payload = deepcopy(valid_payload())
+        payload["otf_session_date"] = None
+        payload["data"]["gas"]["futures"] = []
+        payload["data"]["electricity"]["futures"] = []
+        payload["status"] = "partial"
+        payload["errors"] = [{
+            "section": "OTF",
+            "source_url": "https://tge.pl/gaz-otf?dateShow=21-10-2026",
+            "message": "Nie udało się potwierdzić wspólnej daty.",
+        }]
+
+        report = self.validate(payload)
+
+        self.assertTrue(report.is_structurally_valid, report.issues)
+        self.assertFalse(report.section_validity["gas.futures"])
+        self.assertFalse(report.section_validity["electricity.futures"])
+        self.assertEqual(
+            find_missing_tge_records(payload, SOURCE_DATES, None),
+            [],
+        )
+
+    def test_otf_trading_date_must_not_be_inferred_from_url(self) -> None:
+        payload = deepcopy(valid_payload())
+        payload["data"]["gas"]["futures"][0]["trading_date"] = (
+            EARLIER_SESSION_DATE.isoformat()
+        )
+        report = self.validate(payload)
+        self.assertFalse(report.section_validity["gas.futures"])
+
+    def test_otf_source_url_must_be_one_of_the_candidate_links(self) -> None:
+        payload = deepcopy(valid_payload())
+        payload["data"]["gas"]["futures"][0]["source_url"] += "&unexpected=1"
+
+        report = self.validate(payload)
+
+        self.assertFalse(report.section_validity["gas.futures"])
+
+        payload = deepcopy(valid_payload())
+        payload["data"]["gas"]["futures"][0]["source_url"] = (
+            "https://tge.pl/gaz-otf?dateShow=20-10-2026"
+        )
+        report = self.validate(payload)
+        self.assertFalse(report.section_validity["gas.futures"])
+
+    def test_manual_otf_completion_uses_payload_session_date(self) -> None:
+        payload = valid_payload(EARLIER_SESSION_DATE)
+        payload["data"]["gas"]["futures"] = [
+            record
+            for record in payload["data"]["gas"]["futures"]
+            if record["data_id"] not in {"gas_base_week_1", "gas_base_week_2"}
+        ]
+
+        missing = find_missing_tge_records(
+            payload, SOURCE_DATES, date.fromisoformat(payload["otf_session_date"])
+        )
+        gas_missing = [record for record in missing if record.section == "gas.futures"]
+
+        self.assertEqual(len(gas_missing), 1)
+        self.assertEqual(gas_missing[0].trading_date, EARLIER_SESSION_DATE.isoformat())
+        self.assertEqual(
+            gas_missing[0].source_url,
+            "https://tge.pl/gaz-otf?dateShow=20-10-2026",
+        )
+        self.assertEqual(
+            gas_missing[0].instrument,
+            build_contract_set(EARLIER_SESSION_DATE, gas=True).weeks[0],
+        )
 
     def test_fenced_json_is_accepted(self) -> None:
         text = "```json\n" + json.dumps(valid_payload()) + "\n```"
@@ -120,6 +227,7 @@ class JsonValidatorTests(unittest.TestCase):
             SESSION_DATE,
             WINDOW,
             WINDOW,
+            OTF_CANDIDATES,
         )
         self.assertIsNone(report.data)
         self.assertFalse(report.is_valid)

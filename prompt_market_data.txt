@@ -3,9 +3,9 @@ ZADANIE
 Pobierz dane gazowe i dane energii elektrycznej z Towarowej Giełdy Energii (TGE) oraz dane historyczne węgla i EUA:
 
 1. gazowy RDN dla dat wskazanych przez aplikację;
-2. gazowy OTF dla jednej wskazanej sesji;
+2. gazowy OTF dla najnowszej sesji, którą uda się jednoznacznie potwierdzić;
 3. RDN energii elektrycznej dla dat wskazanych przez aplikację;
-4. OTF energii elektrycznej dla jednej wskazanej sesji;
+4. OTF energii elektrycznej dla tej samej potwierdzonej sesji;
 5. Rotterdam Coal Futures z przekazanego zakresu 30 dni;
 6. European Union Allowance (EUA) Year Futures z przekazanego zakresu 30 dni.
 
@@ -17,13 +17,20 @@ Strony TGE zawierają tabele ładowane dynamicznie przez JavaScript. Każdy poda
 
 1. otwórz bezpośrednio dokładny adres wraz z parametrem dateShow;
 2. nie korzystaj z wyników wyszukiwarki, fragmentów wyników, pamięci podręcznej ani strony bez parametru daty;
-3. poczekaj na wyrenderowanie tabeli;
-4. odczytaj dane z widocznej tabeli, a nie z tekstowego opisu strony;
-5. jeśli pierwszy odczyt nie pokazuje tabeli, odśwież dokładny URL, poczekaj na wykonanie JavaScriptu i spróbuj ponownie;
-6. zakończ odczyt jednego URL-a przed otwarciem następnego;
-7. nie przenoś wyniku ani błędu pomiędzy adresami i sekcjami.
+3. poczekaj na załadowanie strony i pojawienie się tabeli;
+4. odczytaj wartości z odpowiednich wierszy i kolumn tabeli;
+5. dla RDN zakończ odczyt jednego URL-a przed przejściem do następnego;
+6. nie przenoś wyniku ani błędu pomiędzy adresami i sekcjami.
 
-Przekierowanie lub zmiana adresu widocznego po otwarciu nie jest samo w sobie dowodem błędnej daty. Zweryfikuj datę również na podstawie nagłówków i treści wyrenderowanej strony. Jeżeli strona pokazuje domyślne notowanie z innej sesji, nie używaj go zamiast wskazanej daty.
+Obsługuj każdy przekazany URL osobno i zweryfikuj każdą wskazaną datę RDN. Jeśli nie uda się odczytać danych lub potwierdzić daty RDN, dodaj wpis errors dla dokładnego URL-a i opisz konkretną przeszkodę. Nie otwieraj ponownie ani nie odświeżaj adresu po jego odczytaniu. Nie łącz kilku adresów RDN w jeden ogólny błąd zakresu i nie pomijaj adresów z listy. Dla OTF użyj wyłącznie daty wybranej przez użytkownika i podanych dla niej adresów.
+
+Przekierowanie lub zmiana adresu widocznego po otwarciu nie jest samo w sobie dowodem błędnej daty ani dowodem, że pokazana tabela dotyczy daty z URL-a. Parametr dateShow jest tylko prośbą o wyświetlenie daty i nie potwierdza daty danych.
+
+Aby potwierdzić datę RDN, sprawdź jednoznaczne wskazanie daty faktycznie wyświetlanej przez stronę przy danych. Tabela kontraktów może zawierać kontrakty dostawy z przyszłych miesięcy; ich nazwy NIE potwierdzają daty sesji. Nie wyciągaj daty RDN z samego URL-a ani daty dostawy z nagłówka.
+
+Jeżeli strona po otwarciu URL-a RDN pokazuje inną datę sesji niż data żądana, nie używaj wartości z tej tabeli. Dla OTF obowiązuje data wybrana ręcznie w aplikacji; jeśli strona wyraźnie pokazuje inną datę, nie używaj jej danych. Nie przechodź samodzielnie do innego dnia.
+
+Jeśli dla RDN nie da się odczytać daty sesji, nie pobieraj danych i zapisz osobny błąd dla URL-a. Dla OTF nie wymagaj odczytania nienazwanego pola daty, jeśli strona nie wskazuje innej daty; użyj tylko adresów dla daty wybranej ręcznie. Jeśli strona OTF wyraźnie pokazuje inną datę lub nie ładuje tabeli, zapisz błąd dla tego URL-a i nie pobieraj z niego danych.
 
 GAZ RDN
 
@@ -42,33 +49,17 @@ Pobierz z tego samego wiersza:
 - change_pct — pierwsza kolumna „Zmiana”, bezpośrednio po kursie; nie używaj drugiej zmiany dotyczącej wolumenu;
 - volume_mwh — „Wolumen (MWh)”.
 
-Parametr dateShow wskazuje trading_date. Nagłówek dotyczący dostawy może wskazywać następny dzień — nie zapisuj daty dostawy jako daty sesji.
+Dla RDN parametr dateShow jest datą żądaną, a nie potwierdzoną. Zwróć trading_date zgodny z datą widoczną przy danych na stronie. Nagłówek dotyczący dostawy może wskazywać następny dzień — nie zapisuj daty dostawy jako daty sesji.
 
 GAZ OTF
 
-Data wymaganej sesji: {{otf_session_date}}
-Dokładny URL: {{gas_otf_url}}
+Użytkownik wybrał datę sesji OTF w aplikacji: {{otf_session_date}}. Użyj wyłącznie tej daty dla obu rynków. Nie wybieraj daty samodzielnie ani nie sprawdzaj innych dni.
 
-Po wyrenderowaniu tabeli wyszukaj osobno każdy instrument:
+{{otf_selection}}
 
-{{gas_contracts}}
+Otwórz oba podane adresy. Jeśli strona wyraźnie pokazuje inną datę niż wybrana, nie używaj danych z tej strony i dodaj osobny wpis errors dla jej URL-a. Nie próbuj zastępować wybranej daty innym dniem. Brak czytelnej etykiety pola daty sam w sobie nie jest błędem. Jeśli tabela się nie ładuje lub nie da się odczytać, zapisz osobny błąd dla danego URL-a; nie otwieraj go ponownie.
 
-Lista zawiera 3 kontrakty tygodniowe, 5 miesięcznych, 3 kwartalne i 2 roczne.
-Pobierz wszystkie dostępne pozycje. Aplikacja wymaga co najmniej 2 tygodniowych,
-4 miesięcznych, 2 kwartalnych i 1 rocznego kontraktu. Dodatkowy miesięczny,
-kwartalny i roczny kontrakt to zapas na wypadek, gdy najbliższy kontrakt nie jest
-już widoczny w tabeli; jeśli brakuje kontraktu z początku grupy, wykorzystaj
-dalszy dostępny kontrakt z tej samej grupy, zachowując jego numer data_id.
-Jeśli kontraktu brakuje, sprawdź dalsze pozycje z tej samej grupy; nie przesuwaj
-identyfikatorów data_id pozostałych kontraktów. Zwróć wszystkie odczytane
-kontrakty, nawet jeśli nie udało się znaleźć jednej z pozycji.
-
-Nadaj data_id zgodnie z kolejnością w każdej grupie:
-
-- gas_base_week_1 do gas_base_week_3;
-- gas_base_month_1 do gas_base_month_5;
-- gas_base_quarter_1 do gas_base_quarter_3;
-- gas_base_year_1 do gas_base_year_2.
+Odczytaj wszystkie dostępne kontrakty z obu tabel. Zachowaj przypisane data_id. Aplikacja wymaga minimum 2 tygodniowych, 4 miesięcznych, 2 kwartalnych i 1 rocznego kontraktu.
 
 Dla każdego kontraktu pobierz z jego własnego wiersza:
 
@@ -103,33 +94,11 @@ Dla TGePeak, TGeOffpeak i TGe24 pobierz wyłącznie price_pln_mwh („Kurs
 (PLN/MWh)”) dla najpóźniejszej przekazanej daty. Nie pobieraj ani nie zwracaj
 dla tych indeksów historii z wcześniejszych dat, change_pct ani volume_mwh.
 
-Nie przenoś wartości pomiędzy indeksami. Parametr dateShow wskazuje trading_date; nie zastępuj go datą dostawy z nagłówka.
+Nie przenoś wartości pomiędzy indeksami. Data dateShow jest żądana, nie potwierdzona; zwróć trading_date widoczne na stronie. Nie zastępuj jej datą dostawy z nagłówka.
 
 ENERGIA ELEKTRYCZNA OTF
 
-Data wymaganej sesji: {{otf_session_date}}
-Dokładny URL: {{electricity_otf_url}}
-
-Po wyrenderowaniu tabeli wyszukaj osobno każdy instrument BASE:
-
-{{electricity_contracts}}
-
-Lista zawiera 3 kontrakty tygodniowe, 5 miesięcznych, 3 kwartalne i 2 roczne.
-Pobierz wszystkie dostępne pozycje. Aplikacja wymaga co najmniej 2 tygodniowych,
-4 miesięcznych, 2 kwartalnych i 1 rocznego kontraktu. Dodatkowy miesięczny,
-kwartalny i roczny kontrakt to zapas na wypadek, gdy najbliższy kontrakt nie jest
-już widoczny w tabeli; jeśli brakuje kontraktu z początku grupy, wykorzystaj
-dalszy dostępny kontrakt z tej samej grupy, zachowując jego numer data_id.
-Jeśli kontraktu brakuje, sprawdź dalsze pozycje z tej samej grupy; nie przesuwaj
-identyfikatorów data_id pozostałych kontraktów. Zwróć wszystkie odczytane
-kontrakty, nawet jeśli nie udało się znaleźć jednej z pozycji.
-
-Nadaj data_id zgodnie z kolejnością w każdej grupie:
-
-- power_base_week_1 do power_base_week_3;
-- power_base_month_1 do power_base_month_5;
-- power_base_quarter_1 do power_base_quarter_3;
-- power_base_year_1 do power_base_year_2.
+Użyj tabeli energii dla daty wybranej ręcznie i podanej w sekcji GAZ OTF. Nie łącz kontraktów ani danych z różnych dat.
 
 Dla każdego kontraktu pobierz z jego własnego wiersza:
 
@@ -209,6 +178,7 @@ Zwróć wyłącznie jeden poprawny obiekt JSON. Bez bloku Markdown i bez tekstu 
 {
   "schema_version": "market-data-1.0",
   "retrieved_at": "rzeczywista data i godzina pobrania w ISO 8601 ze strefą czasową",
+  "otf_session_date": "YYYY-MM-DD — data wybrana przez użytkownika w aplikacji",
   "status": "success | partial | error",
   "data": {
     "gas": {
@@ -303,6 +273,8 @@ Zwróć wyłącznie jeden poprawny obiekt JSON. Bez bloku Markdown i bez tekstu 
     }
   ]
 }
+
+Dla błędów TGE każdy wpis errors dotyczy jednego konkretnego URL-a. Jeśli kilka dat nie udało się odczytać, utwórz oddzielny wpis dla każdej z nich; nie zastępuj ich jednym wpisem opisującym cały zakres.
 
 Zasady statusu:
 

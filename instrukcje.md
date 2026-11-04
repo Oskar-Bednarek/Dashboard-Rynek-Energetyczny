@@ -31,22 +31,31 @@
 ## Podzial aplikacji
 - `app.py` inicjalizuje sesje i przełącza miedzy etapami.
 - `date_stage.py` odczytuje osobno arkusze `GAZ_RDN` i `EE_RDN`, a nastepnie
-  obsluguje zakres historii RDN oraz wybor ostatniej zamknietej sesji OTF.
+  obsluguje zakres historii RDN oraz reczny wybor daty sesji OTF.
 - `contract_selection.py` wylicza nazwy kontraktow OTF z konfigurowalnych
   przesuniec tygodni, miesiecy, kwartalow i lat.
-- `json_validator.py` parsuje odpowiedz, sprawdza schemat JSON 2.0 oraz
-  porownuje rekordy z datami, kontraktami i zakresami biezacej sesji.
+- `json_validator.py` parsuje odpowiedz, sprawdza schemat JSON 1.0 oraz
+  porownuje rekordy z wybrana data, kontraktami i zakresami.
 - `prompt_stage.py` przygotowuje prompt i obsluguje wklejona odpowiedz.
-- RDN obejmuje wszystkie dni kalendarzowe od ostatniej zapisanej daty do
-  wczoraj. OTF pobierany jest tylko dla ostatniej zamknietej sesji: aplikacja
-  pomija weekendy i swieta wskazane przez uzytkownika.
-- Jesli arkusz RDN jest pusty, pierwszy import obejmuje 30 zakonczonych dni
-  kalendarzowych: od dzisiaj minus 30 dni do wczoraj wlacznie.
+- RDN obejmuje brakujace dni kalendarzowe, maksymalnie z ostatnich 7 dni do
+  wczoraj. Dla OTF ekran pokazuje piec ostatnich dat przypadajacych w dni
+  powszednie. Uzytkownik
+  recznie wybiera date; aplikacja przekazuje tylko ja do promptu i walidatora
+  dla obu rynkow.
+- Jesli arkusz RDN jest pusty, pierwszy import obejmuje 7 zakonczonych dni
+  kalendarzowych do wczoraj wlacznie.
 - Wegiel i EUA korzystaja z ruchomego okna 30 dni, od dzisiaj minus 29 dni
   do dzisiaj wlacznie.
-- Aplikacja korzysta z `prompt_template.txt`. Szablon otrzymuje osobne listy
-  linkow RDN, jedna date sesji OTF, wyliczone kontrakty gazu i energii oraz
-  zakresy 30 dni dla wegla i EUA. Jest to rozbudowana wersja pierwotnego
-  promptu, zachowujaca jego szczegolowe zasady pobierania i kontroli jakosci.
-- Przycisk `Waliduj JSON` nie zapisuje danych do Excela. Poprawny obiekt oraz
-  raport sekcji sa przechowywane tylko w biezacej sesji Streamlit.
+- Aplikacja korzysta z `prompt_market_data.txt`. Szablon otrzymuje osobne listy
+  linkow RDN, URL-e OTF i kontrakty dla recznie wybranej daty oraz zakresy
+  30 dni dla wegla i EUA. Odpowiedz zawiera `otf_session_date`; walidator
+  sprawdza, czy odpowiada wybranej dacie i czy rekordy OTF oraz ich linki
+  wskazuja te sama date.
+- Nowy, samodzielny dashboard HTML generuje `python generate_market_dashboard.py`.
+  Skrypt odczytuje arkusze z `DataMaster.xlsx` i tworzy `market_dashboard.html`;
+  raport mozna filtrowac data w przegladarce i drukowac w formacie A4.
+  Dane i biblioteka Chart.js sa osadzone w HTML, wiec otwarcie raportu nie
+  wymaga polaczenia z siecia.
+- Przycisk `Sprawdz odpowiedz` kontroluje wklejone dane, ale nie zapisuje ich
+  do Excela. Zapis nastepuje dopiero po kontroli brakow i wybraniu przycisku
+  zapisu na ekranie podgladu.
