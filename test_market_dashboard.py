@@ -22,9 +22,10 @@ class MarketDashboardTests(unittest.TestCase):
                     "source_url",
                     "instrument",
                     *fields[3:],
+                    "retrieved_at",
                 ]
             )
-            value_fields = fields[3:]
+            value_fields = fields[3:-1] if fields[-1] == "retrieved_at" else fields[3:]
             values = {
                 "price_pln_mwh": 100.5,
                 "volume_mwh": 250,
@@ -36,7 +37,6 @@ class MarketDashboardTests(unittest.TestCase):
                 "high": "96.00",
                 "low": "93.50",
                 "volume": "10.0K",
-                "retrieved_at": "2026-11-03T10:00:00+01:00",
             }
             row = [
                 date(2026, 11, 2),
@@ -44,6 +44,7 @@ class MarketDashboardTests(unittest.TestCase):
                 "https://example.test/data",
                 "Test instrument",
                 *(values[field] for field in value_fields),
+                "2026-11-03T10:00:00+01:00",
             ]
             worksheet.append(row)
         workbook.save(path)
@@ -61,7 +62,6 @@ class MarketDashboardTests(unittest.TestCase):
         self.assertEqual(data["gas_rdn"][0]["price_pln_mwh"], 100.5)
         self.assertEqual(data["coal"][0]["volume"], "10.0K")
         self.assertEqual(data["sample_biomass"][0]["source"], "Dane demonstracyjne")
-        self.assertEqual(data["updated_at"], "2026-11-03T10:00:00+01:00")
 
     def test_rendered_html_is_self_contained_and_embeds_excel_data(self) -> None:
         with TemporaryDirectory() as directory:
@@ -76,12 +76,20 @@ class MarketDashboardTests(unittest.TestCase):
             html = output_path.read_text(encoding="utf-8")
 
         self.assertIn("@page { size: A4 landscape;", html)
-        self.assertIn("grid-template-columns: repeat(12,minmax(0,1fr));", html)
-        self.assertIn(".history-table tbody tr:nth-child(n+6) { display: none; }", html)
+        self.assertIn("grid-template-columns: repeat(12, minmax(0, 1fr));", html)
+        self.assertIn("Chart.js v4.5.1", html)
+        self.assertIn(".history-table tbody tr:nth-child(n+6) { display: table-row; }", html)
         self.assertIn('classList.add("history-table")', html)
         self.assertIn('id="report-date"', html)
-        self.assertIn("Chart.js v4.5.1", html)
-        self.assertIn("new Chart(canvas", html)
+        self.assertIn("Premium energy intelligence", html)
+        self.assertIn("--navy: #102338", html)
+        self.assertIn("grid-column: span 2;", html)
+        self.assertIn("table { font-size: 5.3pt; }", html)
+        self.assertIn('content: counter(market, decimal-leading-zero)', html)
+        self.assertIn('otfKey:"power_otf",otfPrefix:"power_base",contractPrefix:"BASE_"', html)
+        self.assertIn('contractPrefix:"GAS_BASE_"', html)
+        self.assertIn('label:"Wolumen",unit:"(MWh)"', html)
+        self.assertIn("const split=Math.ceil(rows.length/2);", html)
         self.assertNotIn("__DASHBOARD_DATA__", html)
         self.assertNotIn("__CHARTJS_SCRIPT__", html)
         data_text = html.split('<script id="dashboard-data" type="application/json">', 1)[1]

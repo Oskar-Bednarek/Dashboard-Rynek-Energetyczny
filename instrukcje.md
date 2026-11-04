@@ -55,7 +55,8 @@
   Skrypt odczytuje arkusze z `DataMaster.xlsx` i tworzy `market_dashboard.html`;
   raport mozna filtrowac data w przegladarce i drukowac w formacie A4.
   Dane i biblioteka Chart.js sa osadzone w HTML, wiec otwarcie raportu nie
-  wymaga polaczenia z siecia.
+  wymaga polaczenia z siecia. Kontrakty terminowe gazu i energii sa
+  prezentowane w dwoch polowach tabeli z jednostkami w naglowkach.
 - Przycisk `Sprawdz odpowiedz` kontroluje wklejone dane, ale nie zapisuje ich
   do Excela. Zapis nastepuje dopiero po kontroli brakow i wybraniu przycisku
   zapisu na ekranie podgladu.

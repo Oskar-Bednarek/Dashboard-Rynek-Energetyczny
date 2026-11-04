@@ -211,6 +211,380 @@
       footer { margin: 0; font-size: 5pt; }
       .market-card, .masthead, .notice, footer { break-inside: avoid; }
     }
+    :root {
+      color-scheme: light;
+      --ink: #172b3e;
+      --muted: #657587;
+      --line: #d8d9d7;
+      --paper: #fffefa;
+      --canvas: #eeede8;
+      --navy: #102338;
+      --navy-raised: #172d43;
+      --amber: #bf8846;
+      --red: #a54f43;
+      --green: #537258;
+      --brown: #8c6542;
+      --graphite: #59636b;
+      --soft: #f5f4ef;
+    }
+    body {
+      background: var(--canvas);
+      color: var(--ink);
+      font: 13px/1.4 "Segoe UI", "Aptos", Arial, sans-serif;
+      letter-spacing: .005em;
+    }
+    .toolbar {
+      padding: 10px max(24px, calc((100vw - 1280px) / 2));
+      border-bottom: 1px solid #2a3d50;
+      background: #0c1928;
+      color: #e7edf3;
+      box-shadow: none;
+    }
+    .toolbar label {
+      color: #d3b184;
+      font-size: 10px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    #date-range { color: #9aabba; font-size: 10px; }
+    input[type="date"], .button {
+      min-height: 36px;
+      border: 1px solid #405267;
+      border-radius: 2px;
+      background: #172a3e;
+      color: #f3f5f7;
+      padding: 6px 10px;
+    }
+    input[type="date"]:focus-visible, .button:focus-visible {
+      outline: 2px solid #d5a261;
+      outline-offset: 2px;
+    }
+    .button {
+      border-color: #c28c4c;
+      background: #c28c4c;
+      color: #172333;
+      font-size: 11px;
+      letter-spacing: .02em;
+    }
+    .button:hover { background: #d5a261; }
+    main { width: min(1280px, calc(100% - 40px)); margin: 22px auto 38px; }
+    .masthead {
+      min-height: 112px;
+      padding: 21px 26px 19px;
+      margin-bottom: 12px;
+      border-top: 2px solid #c28c4c;
+      background: var(--navy);
+    }
+    .eyebrow { color: #d5a261; font-size: 9px; letter-spacing: .2em; }
+    h1 {
+      margin: 7px 0 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 25px;
+      font-weight: 500;
+      letter-spacing: .035em;
+    }
+    .masthead p { margin: 6px 0 0; color: #aebdca; font-size: 11px; letter-spacing: .04em; }
+    .report-date {
+      min-width: 154px;
+      padding: 3px 0 3px 18px;
+      border-left: 1px solid #3b5064;
+    }
+    .report-date strong {
+      margin-top: 3px;
+      color: #f0c17f;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 22px;
+      font-weight: 500;
+    }
+    .report-date span { color: #aab7c4; font-size: 9px; letter-spacing: .14em; }
+    .notice {
+      margin-bottom: 12px;
+      padding: 7px 2px;
+      border: 0;
+      border-bottom: 1px solid #d1cfc7;
+      background: transparent;
+      color: #596a79;
+      font-size: 9px;
+    }
+    #last-updated { color: #84633e; text-align: right; }
+    .market-grid { gap: 10px 12px; counter-reset: market; }
+    .market-card {
+      padding: 12px 13px 11px;
+      border: 1px solid #d9d9d4;
+      border-top: 2px solid var(--accent);
+      border-radius: 0;
+      background: var(--paper);
+      box-shadow: 0 2px 8px rgba(16,35,56,.035);
+      counter-increment: market;
+    }
+    .market-card.gas { --accent: #bd8644; }
+    .market-card.power { --accent: #63839a; }
+    .market-card.coal { --accent: #67737d; }
+    .market-card.eua { --accent: #668068; }
+    .market-card.biomass { --accent: #9a7049; }
+    .section-heading {
+      align-items: center;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #e4e3de;
+    }
+    h2 { color: #1a3045; font-size: 15px; font-weight: 650; letter-spacing: .025em; }
+    h2::before {
+      margin-right: 7px;
+      color: var(--accent);
+      content: counter(market, decimal-leading-zero) " /";
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      vertical-align: 2px;
+    }
+    .subheading { color: #72808d; font-size: 10px; }
+    .date-badge {
+      border: 1px solid #dcdedc;
+      border-left: 2px solid var(--accent);
+      background: #f4f4f0;
+      color: #33475a;
+      font-size: 9px;
+      font-variant-numeric: tabular-nums;
+    }
+    .date-badge.demo-badge {
+      border-color: #e3d6c5;
+      border-left-color: #9a7049;
+      background: #f7f1e8;
+      color: #76552f;
+    }
+    .kpi {
+      border: 1px solid #e7e7e2;
+      border-radius: 0;
+      background: #f7f7f3;
+    }
+    .kpi.emphasis {
+      border-color: #273d51;
+      border-left: 2px solid var(--accent);
+      background: var(--navy);
+      grid-column: span 2;
+    }
+    .kpi-label { color: #72808d; font-size: 8px; letter-spacing: .075em; }
+    .kpi-value { color: #1b3044; font-size: 13px; font-weight: 650; }
+    .kpi.emphasis .kpi-label { color: #a7b5c2; }
+    .kpi.emphasis .kpi-value {
+      color: #f0c17f;
+      font-size: 17px;
+      line-height: 1.15;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+    .kpi-value.positive, .comparison-row .positive { color: #537258; }
+    .kpi-value.negative, .comparison-row .negative { color: #a54f43; }
+    .kpi.emphasis .kpi-value.positive { color: #b4cda9; }
+    .kpi.emphasis .kpi-value.negative { color: #e6a093; }
+    .range-labels, .comparison-row { color: #71808d; }
+    .range-track { background: #e3e3de; }
+    .range-track span { background: #bd8644; }
+    .range-position output { color: #657587; }
+    .chart-title { color: #687a89; letter-spacing: .09em; }
+    .table-heading { border-bottom: 1px solid #e2e2dc; }
+    .table-heading h3 { color: #263d52; font-size: 11px; }
+    .table-heading span { color: #788591; font-size: 9px; }
+    table { color: #26394b; font-size: 9px; }
+    th {
+      border-bottom: 1px solid #c28c4c;
+      background: #e9ecec;
+      color: #33495d;
+      font-size: 8px;
+      letter-spacing: .065em;
+      text-transform: uppercase;
+    }
+    td { border-bottom-color: #e9e9e4; }
+    .history-table { table-layout: fixed; }
+    .history-table th:first-child { width: 13%; }
+    .history-table th:not(:first-child) { width: 14.5%; }
+    .market-card.biomass table { table-layout: fixed; }
+    .market-card.biomass th:nth-child(1) { width: 15%; }
+    .market-card.biomass th:nth-child(2) { width: 19%; }
+    .market-card.biomass th:nth-child(3) { width: 17%; }
+    .market-card.biomass th:nth-child(4) { width: 15%; }
+    .market-card.biomass th:nth-child(5) { width: 13%; }
+    .market-card.biomass th:nth-child(6) { width: 21%; }
+    .market-card.biomass th { white-space: normal; font-size: 7px; }
+    tbody tr:nth-child(even) { background: #f7f7f3; }
+    tbody tr:hover { background: #f3eadc; }
+    .empty { color: #7a8792; }
+    .demo-badge { color: #76552f; }
+    footer {
+      margin-top: 10px;
+      padding-top: 6px;
+      border-top: 1px solid #d6d5ce;
+      color: #73808b;
+    }
+    @media (max-width: 900px) {
+      main { width: calc(100% - 28px); }
+      .market-card.wide, .market-card:not(.wide) { grid-column: span 6; }
+    }
+    @media (max-width: 720px) {
+      .toolbar { position: static; flex-wrap: wrap; padding: 10px 14px; }
+      .toolbar-controls { width: 100%; }
+      .toolbar-controls input { flex: 1; }
+      main { width: calc(100% - 20px); margin-top: 12px; }
+      .masthead { align-items: flex-start; flex-direction: column; min-height: 0; padding: 17px; }
+      .report-date { min-width: 0; padding: 0; border-left: 0; text-align: left; }
+      .notice { align-items: flex-start; flex-direction: column; gap: 4px; }
+      #last-updated { text-align: left; }
+      .market-card, .market-card.wide { grid-column: span 12; }
+      .kpis { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    }
+    @page { size: A4 landscape; margin: 5mm; }
+    @media print {
+      body {
+        background: #eeede8;
+        color: var(--ink);
+        font-size: 8px;
+        line-height: 1.12;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .toolbar { display: none; }
+      main { width: 100%; height: 199mm; margin: 0; overflow: hidden; display: grid; grid-template-rows: auto auto minmax(0,1fr) auto; gap: 1.5mm; }
+      .masthead { min-height: 16mm; padding: 2mm 3mm; margin: 0; }
+      h1 { margin-top: 1mm; font-size: 14pt; }
+      .eyebrow, .report-date span { font-size: 6pt; }
+      .report-date strong { font-size: 11pt; }
+      .masthead p { margin-top: 1mm; font-size: 6.5pt; }
+      .notice { margin: 0; padding: .8mm 1mm; font-size: 5.5pt; }
+      .market-grid { min-height: 0; grid-template-columns: repeat(12,minmax(0,1fr)); grid-template-rows: repeat(2,minmax(0,1fr)); gap: 1.5mm; }
+      .market-card, .market-card.wide, .market-card:not(.wide) { min-height: 0; padding: 1mm; overflow: hidden; }
+      .market-card.wide { grid-column: span 6; }
+      .market-card:not(.wide) { grid-column: span 4; }
+      .section-heading { margin-bottom: .7mm; padding-bottom: .5mm; }
+      h2 { font-size: 7.5pt; line-height: 1.05; }
+      .subheading, .date-badge { font-size: 4.7pt; }
+      .date-badge { padding: .35mm .7mm; }
+      .kpis { gap: .5mm; }
+      .kpi { min-height: 0; padding: .55mm .7mm; }
+      .kpi-label { font-size: 4.2pt; }
+      .kpi-value { margin-top: .2mm; font-size: 5.4pt; line-height: 1.05; }
+      .kpi.emphasis .kpi-value { font-size: 8pt; }
+      .range-position { margin-top: .7mm; }
+      .range-labels, .range-position output { font-size: 4.2pt; }
+      .range-track { height: 2px; }
+      .range-track span { top: -2px; height: 6px; }
+      .chart-wrap { margin-top: .6mm; }
+      .chart-title { margin-bottom: .2mm; font-size: 4.2pt; }
+      canvas.history-chart { height: 16mm !important; }
+      .comparison-row { display: none; }
+      .table-heading { margin: .5mm 0 .2mm; padding-bottom: .2mm; }
+      .table-heading h3 { font-size: 5.8pt; }
+      .table-heading span, table { font-size: 5.3pt; }
+      table { line-height: 1; }
+      .table-scroll { overflow: visible; }
+      th { padding: .4mm .5mm; font-size: 4.5pt; }
+      td { padding: .35mm .5mm; }
+      .history-table tbody tr:nth-child(n+6) { display: table-row; }
+      footer { margin: 0; padding-top: .5mm; font-size: 4.7pt; }
+      .market-card, .masthead, .notice, footer { break-inside: avoid; }
+    }
+    :root {
+      color-scheme: dark;
+      --ink: #e7edf3;
+      --muted: #9aabba;
+      --line: #2a3c50;
+      --paper: #132337;
+      --canvas: #091522;
+      --navy: #102238;
+      --navy-raised: #192b3f;
+      --amber: #e0a34d;
+      --red: #df8377;
+      --green: #9cb48e;
+      --brown: #c58f62;
+      --graphite: #aab8c2;
+      --soft: #192b3f;
+    }
+    body { background: var(--canvas); color: var(--ink); }
+    .toolbar { border-bottom-color: #26394d; background: #0c1928; color: var(--ink); }
+    .toolbar label { color: #d3b184; }
+    #date-range { color: #8498aa; }
+    input[type="date"], .button {
+      border-color: #34495e;
+      border-radius: 2px;
+      background: #14263a;
+      color: #eef2f6;
+    }
+    .button {
+      border-color: #b57d3d;
+      background: #bd8644;
+      color: #111b26;
+    }
+    .button:hover { background: #d29a55; }
+    .masthead { border-color: #c58f52 #2e4358 #2e4358; background: #102238; color: #fff; }
+    .eyebrow { color: #d5a261; }
+    .masthead p { color: #a4b4c3; }
+    .report-date { border-left-color: #34485c; }
+    .report-date strong { color: #f0c17f; }
+    .report-date span { color: #aab7c4; }
+    .notice { border-color: #26394d; background: #0e1c2b; color: #a3b1be; }
+    #last-updated { color: #c0a27c; }
+    .market-card {
+      border-color: #26394d;
+      border-top-color: var(--accent);
+      border-radius: 3px;
+      background: #112135;
+      box-shadow: 0 5px 16px rgba(0,0,0,.12);
+    }
+    .market-card.gas { --accent: #e0a34d; }
+    .market-card.power { --accent: #79a8cc; }
+    .market-card.coal { --accent: #aab8c2; }
+    .market-card.eua { --accent: #9cb48e; }
+    .market-card.biomass { --accent: #c58f62; }
+    .section-heading { border-bottom-color: #283b4f; }
+    h2 { color: #f0f3f6; }
+    .subheading { color: #91a2b3; }
+    .date-badge { border-color: #33475b; background: #172a3f; color: #dce4eb; }
+    .date-badge.demo-badge { border-color: #594732; background: #292719; color: #e6bd84; }
+    .kpi { border-color: #273a4e; background: #172a3e; }
+    .kpi.emphasis { border-color: #755838; border-left-color: var(--accent); background: #202c38; }
+    .kpi-label { color: #94a5b5; }
+    .kpi-value { color: #e9eef3; }
+    .kpi-value.positive, .comparison-row .positive { color: #a8c69b; }
+    .kpi-value.negative, .comparison-row .negative { color: #e89588; }
+    .kpi.emphasis .kpi-value { color: #f0c17f; }
+    .kpi.emphasis .kpi-value.positive { color: #b4cda9; }
+    .kpi.emphasis .kpi-value.negative { color: #e6a093; }
+    .range-labels, .comparison-row { color: #98a8b7; }
+    .range-track { background: #2a3d50; }
+    .range-track span { background: #e0a34d; }
+    .range-position output { color: #bdc7d0; }
+    .chart-title { color: #b7c2cc; }
+    .table-heading { border-bottom-color: #2a3c50; }
+    .table-heading h3 { color: #e1e7ed; }
+    .table-heading span { color: #95a5b4; }
+    .contract-pair { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+    .contract-pair .table-scroll { min-width: 0; overflow: hidden; }
+    .contract-table { table-layout: fixed; }
+    .contract-table th:first-child { width: 34%; }
+    .contract-table th:nth-child(2), .contract-table th:nth-child(3) { width: 22%; }
+    .contract-table th:nth-child(4) { width: 22%; }
+    .contract-table th { white-space: normal; vertical-align: bottom; }
+    .th-label, .th-unit { display: block; }
+    .th-unit { margin-top: 1px; color: #8fa0af; font-size: .88em; font-weight: 500; letter-spacing: 0; text-transform: none; }
+    table { color: #dbe3ea; }
+    th { border-bottom-color: #405267; background: #172a3e; color: #b3c0cc; }
+    td { border-bottom-color: #26394d; }
+    tbody tr:nth-child(even) { background: rgba(255,255,255,.018); }
+    tbody tr:hover { background: rgba(224,163,77,.07); }
+    .empty { color: #9babb9; }
+    .demo-badge { color: #e6bd84; }
+    footer { border-top-color: #26394d; color: #8496a7; }
+    @media print {
+      body { background: #091522; color: #e7edf3; }
+      .market-card { border-color: #26394d; border-top-color: var(--accent); background: #112135; box-shadow: none; }
+      .kpi, .date-badge { background: #172a3e; }
+      .kpi.emphasis { background: #202c38; }
+      .notice { background: #0e1c2b; }
+      .history-table tbody tr:nth-child(n+6) { display: table-row; }
+      .contract-pair { gap: 1mm; }
+      .contract-table th { font-size: 4.1pt; }
+      .contract-table td { white-space: nowrap; }
+    }
   </style>
 </head>
 <body>
@@ -224,7 +598,7 @@
   <main>
     <header class="masthead">
       <div>
-        <div class="eyebrow">Market intelligence · raport dzienny</div>
+        <div class="eyebrow">Premium energy intelligence · raport dzienny</div>
         <h1>ENERGY &amp; COMMODITIES MARKET REPORT</h1>
         <p>Gaz · energia elektryczna · węgiel · EUA · zrębka</p>
       </div>
@@ -309,7 +683,13 @@
         const thead = document.createElement("thead");
         const head = document.createElement("tr");
         headers.forEach((value,index) => {
-          const th = el("th", numericColumns.includes(index) ? "numeric" : "", value);
+          const th = el("th", numericColumns.includes(index) ? "numeric" : "");
+          if (typeof value === "string") {
+            th.textContent = value;
+          } else {
+            th.append(el("span","th-label",value.label));
+            if (value.unit) th.append(el("span","th-unit",value.unit));
+          }
           head.append(th);
         });
         thead.append(head);
@@ -333,6 +713,25 @@
         const tableElement=table(headers,rows,numericColumns);
         section.append(titleRow,tableElement);
         return tableElement;
+      };
+      const addContractTables = (section, caption, rows) => {
+        const titleRow=el("div","table-heading contract-heading");
+        titleRow.append(el("h3","","Kontrakty terminowe"),el("span","",caption));
+        const pair=el("div","contract-pair");
+        const headers=[
+          {label:"Kontrakt"},
+          {label:"DKR",unit:"(zł/MWh)"},
+          {label:"Max",unit:"(zł/MWh)"},
+          {label:"Wolumen",unit:"(MWh)"},
+        ];
+        const split=Math.ceil(rows.length/2);
+        const halves=[rows.slice(0,split),rows.slice(split)];
+        halves.forEach(items=>{
+          const wrapper=table(headers,items,[1,2,3]);
+          wrapper.querySelector("table").classList.add("contract-table");
+          pair.append(wrapper);
+        });
+        section.append(titleRow,pair);
       };
       const addKpis = (section, items) => {
         const grid = el("div","kpis");
@@ -401,13 +800,13 @@
               x:{
                 border:{display:false},
                 grid:{display:false},
-                ticks:{color:"#647789",maxTicksLimit:2,maxRotation:0,font:{size:9}},
+                ticks:{color:"#9aabba",maxTicksLimit:2,maxRotation:0,font:{size:9}},
               },
               y:{
                 border:{display:false},
-                grid:{color:"#e7edf1"},
+                grid:{color:"#2a3c50"},
                 ticks:{
-                  color:"#647789",
+                  color:"#9aabba",
                   maxTicksLimit:3,
                   font:{size:9},
                   callback:value=>new Intl.NumberFormat(locale,{maximumFractionDigits:0}).format(value),
@@ -518,16 +917,19 @@
           const contracts=through(DATA[cfg.otfKey]||[],asOf);
           const sessionDate=contracts.length?contracts[contracts.length-1].trading_date.slice(0,10):null;
           const sessionRows=contracts.filter(item=>item.trading_date.slice(0,10)===sessionDate);
-          const groups=[
-            ["Tygodniowy","week",3],["Miesięczny","month",4],["Kwartalny","quarter",2],["Roczny","year",1],
-          ];
+          const groups=[["week",3],["month",4],["quarter",2],["year",1]];
           const selected=[];
-          groups.forEach(([label,group,count])=>{
+          groups.forEach(([group,count])=>{
             sessionRows.filter(item=>item.data_id.startsWith(`${cfg.otfPrefix}_${group}_`))
               .sort((a,b)=>a.data_id.localeCompare(b.data_id,undefined,{numeric:true}))
-              .slice(0,count).forEach(item=>selected.push([label,item.instrument,fmtMoney(item.dkr_pln_mwh," zł/MWh"),fmtMoney(item.max_pln_mwh," zł/MWh"),fmtVolume(item.volume_mwh)]));
+              .slice(0,count).forEach(item=>selected.push([
+                String(item.instrument||"").replace(cfg.contractPrefix,""),
+                formatNumber(item.dkr_pln_mwh),
+                formatNumber(item.max_pln_mwh),
+                formatNumber(item.volume_mwh),
+              ]));
           });
-          addTable(section,"Kontrakty terminowe",sessionDate?`Sesja ${formatDate(sessionDate)}`:"Brak kontraktów",["Typ","Kontrakt","DKR","Maks. kurs","Wolumen"],selected,[2,3,4]);
+          addContractTables(section,sessionDate?`Sesja ${formatDate(sessionDate)}`:"Brak kontraktów",selected);
         }
         if (cfg.key==="power_rdn") addPowerIndices(section,allRows,asOf);
         target.append(section);
@@ -573,8 +975,8 @@
         chartInstances.forEach(chart=>chart.destroy());
         chartInstances.length=0;
         dashboard.replaceChildren();
-        addPriceMarket(dashboard,{key:"gas_rdn",title:"Gaz",subtitle:"Rynek dnia następnego · TGEgasDA",priceField:"price_pln_mwh",volumeField:"volume_mwh",priceUnit:" zł/MWh",marketClass:"gas",wide:true,otfKey:"gas_otf",otfPrefix:"gas_base"},asOf);
-        addPriceMarket(dashboard,{key:"power_rdn",title:"Energia elektryczna",subtitle:"TGeBase · rynek dnia następnego",instrumentId:"tge_power_da_base",priceField:"price_pln_mwh",volumeField:"volume_mwh",priceUnit:" zł/MWh",marketClass:"power",wide:true},asOf);
+        addPriceMarket(dashboard,{key:"gas_rdn",title:"Gaz",subtitle:"Rynek dnia następnego · TGEgasDA",priceField:"price_pln_mwh",volumeField:"volume_mwh",priceUnit:" zł/MWh",marketClass:"gas",wide:true,otfKey:"gas_otf",otfPrefix:"gas_base",contractPrefix:"GAS_BASE_"},asOf);
+        addPriceMarket(dashboard,{key:"power_rdn",title:"Energia elektryczna",subtitle:"TGeBase · rynek dnia następnego",instrumentId:"tge_power_da_base",priceField:"price_pln_mwh",volumeField:"volume_mwh",priceUnit:" zł/MWh",marketClass:"power",wide:true,otfKey:"power_otf",otfPrefix:"power_base",contractPrefix:"BASE_"},asOf);
         addHistoryMarket(dashboard,"coal","Węgiel","Rotterdam Coal Futures",{priceField:"price",volumeField:"volume",priceUnit:" USD/t",marketClass:"coal"},asOf);
         addHistoryMarket(dashboard,"eua","EUA","European Union Allowance · Year Futures",{priceField:"price",volumeField:"volume",priceUnit:" EUR/t",marketClass:"eua"},asOf);
         addBiomass(dashboard,asOf);
