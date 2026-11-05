@@ -7,6 +7,7 @@ from review_stage import build_dashboard_preview
 from preview_tables import show_market_tables
 from workbook_access import show_workbook_access_error
 from report_pdf import generate_report_pdf, PdfGenerationError
+from biomass_data import read_transactions, as_date
 
 
 _COVERAGE_LABELS = {
@@ -59,6 +60,10 @@ def show_ready_page(workbook_path: Path) -> None:
             )
 
 
+    if st.session_state.get("biomass_checked"):
+        st.caption(f"Zrębki: zapisano {st.session_state.get('biomass_added', 0)} nowych rekordów.")
+    for message in st.session_state.get("biomass_warnings", []):
+        st.warning(f"Wyszukiwanie zrębków — uwaga ze źródła: {message}")
     coverage = st.session_state.get("coverage_result")
     if coverage is not None:
         st.subheader("Sprawdzenie zawartości")
@@ -83,6 +88,20 @@ def show_ready_page(workbook_path: Path) -> None:
     if rows:
         st.subheader("Podgląd zapisanych danych")
         show_market_tables(rows)
+
+    st.subheader("Zrębki drzewne — transakcje i wyniki przetargów")
+    transactions = [row for row in read_transactions(workbook_path) if as_date(row["date"]) <= st.session_state["report_date"]]
+    if transactions:
+        st.dataframe([
+            {"Data": as_date(row["date"]).strftime("%d.%m.%Y"), "Nabywca": row["buyer"] or "—",
+             "Rodzaj": row["kind"], "Cena (PLN/t)": row["price_pln_t"],
+             "VAT": {"net":"Netto","gross":"Brutto","unknown":"Nie podano"}[row["price_basis"]],
+             "Wolumen (t)": row["volume_t"], "Źródło": row["source_url"],
+             "Typ": "Wynik przetargu" if row["record_type"] == "tender_award" else "Transakcja"}
+            for row in sorted(transactions, key=lambda r:r["date"], reverse=True)
+        ], hide_index=True, width="stretch", column_config={"Źródło":st.column_config.LinkColumn("Źródło")})
+    else:
+        st.caption("Brak zapisanych transakcji zrębków do wybranej daty.")
 
     if st.button("Wróć do wyboru dat"):
         st.session_state["page"] = "dates"

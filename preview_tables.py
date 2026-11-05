@@ -64,5 +64,5 @@ def show_market_tables(rows: list[dict]) -> None:
             continue
         st.dataframe(
             records, hide_index=True, width="stretch",
-            column_config={"Źródło": st.column_config.LinkColumn("Źródło", display_text="Otwórz")},
+            column_config={"Źródło": st.column_config.LinkColumn("Źródło")},
         )

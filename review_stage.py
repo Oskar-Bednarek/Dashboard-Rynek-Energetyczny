@@ -159,7 +159,7 @@ def show_review_page(workbook_path: Path) -> None:
             return
         st.session_state["data_saved"] = True
         st.session_state["otf_session_date"] = otf_session_date
-        st.session_state["page"] = "ready"
+        st.session_state["page"] = "biomass"
         st.session_state.pop("coverage_result", None)
         st.session_state.pop("date_plan", None)
         st.rerun()
@@ -195,7 +195,7 @@ def show_review_page(workbook_path: Path) -> None:
             source_errors,
             hide_index=True,
             width="stretch",
-            column_config={"Link": st.column_config.LinkColumn("Otwórz źródło")},
+            column_config={"Link": st.column_config.LinkColumn("Link")},
         )
 
     if missing_records:
@@ -209,7 +209,7 @@ def show_review_page(workbook_path: Path) -> None:
             for index, missing in enumerate(missing_records):
                 st.markdown(
                     f"**{missing.instrument} — {missing.trading_date}**  "
-                    f"[Otwórz stronę źródłową]({missing.source_url})"
+                    f"[{missing.source_url}]({missing.source_url})"
                 )
                 columns = st.columns(len(missing.value_fields) + 1)
                 values = {}

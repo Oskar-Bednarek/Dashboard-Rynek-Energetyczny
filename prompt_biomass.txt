@@ -1,0 +1,55 @@
+ZADANIE — POTWIERDZONE TRANSAKCJE ZRĘBKÓW ENERGETYCZNYCH W POLSCE
+
+Znajdź nowe, udokumentowane transakcje lub opublikowane wyniki rozstrzygniętych przetargów na zrębki drzewne do celów energetycznych w Polsce.
+Zakres dat: {{start_date}}–{{end_date}}, obie daty włącznie. Nie ograniczaj się do przykładowych źródeł. Samodzielnie wyszukuj inne wiarygodne źródła, dokumenty i ogłoszenia o wynikach.
+
+PRZYKŁADOWE ŹRÓDŁA (lista otwarta)
+{{example_sources}}
+
+REKORDY JUŻ ZAPISANE Z DNIA POCZĄTKOWEGO — NIE ZWRACAJ ICH PONOWNIE
+{{existing_records}}
+Nie zwracaj też tych samych transakcji opisanych przez inne źródło. Wyszukuj od dnia początkowego włącznie, aby znaleźć inne transakcje z tego samego dnia.
+
+ZASADY
+- Tylko rzeczywiste transakcje i potwierdzone wyniki przetargów. Bez ofert sprzedaży, ogłoszeń planowanych przetargów, cen orientacyjnych i artykułów bez dowodu transakcji.
+- Wymagany bezpośredni link i krótki fragment/opis dowodu potwierdzającego cenę oraz zawarcie transakcji lub wybór oferty. Nie twórz brakujących informacji.
+- date to faktyczna data transakcji (date_basis=transaction). Jeśli przy wyniku przetargu jej nie podano, użyj daty publikacji wyniku (date_basis=award_publication); nigdy nie zgaduj daty.
+- price_pln_t to jednostkowa cena w PLN za tonę, NIE całkowita wartość zamówienia. Nie przeliczaj ceny za m³ na tonę na podstawie założonej gęstości ani wilgotności. Nie mieszaj zrębków z pelletem, drewnem opałowym ani trocinami.
+- Możesz obliczyć PLN/t z całkowitej wartości i ilości wyłącznie gdy źródło jednoznacznie potwierdza ten sam zakres dostawy, tonaż i podstawę VAT. Opisz obliczenie w evidence. Nie wyceniaj kontraktu ramowego jako dokonanych dostaw.
+- price_basis: net, gross albo unknown. transport: included, excluded albo unknown. Nie zakładaj VAT ani kosztów transportu.
+- buyer oraz volume_t mogą być null. kind, price_pln_t, source_name, source_url i evidence są wymagane. reference to identyfikator transakcji/przetargu lub null.
+- Podawaj liczby JSON bez jednostek i spacji tysięcznych. Daty RRRR-MM-DD. retrieved_at jako czas rzeczywistego wyszukiwania ISO 8601 ze strefą czasową.
+- Jeśli źródło jest niedostępne, opisz problem w errors. Brak nowych wyników nie jest błędem i może dać status success z pustą listą transactions.
+
+ODPOWIEDŹ — WYŁĄCZNIE JEDEN OBIEKT JSON, BEZ KOMENTARZY
+Struktura analogiczna do osobnej odpowiedzi danych energetycznych. Nie łącz tych odpowiedzi.
+{
+  "schema_version": "biomass-data-1.0",
+  "status": "success",
+  "retrieved_at": "RRRR-MM-DDTHH:MM:SS+01:00",
+  "data": {
+    "biomass": {
+      "transactions": [
+        {
+          "date": "RRRR-MM-DD",
+          "date_basis": "transaction",
+          "record_type": "transaction",
+          "buyer": null,
+          "kind": "Rodzaj zrębków zgodny ze źródłem",
+          "price_pln_t": 150.0,
+          "price_basis": "unknown",
+          "transport": "unknown",
+          "volume_t": null,
+          "source_name": "Nazwa źródła",
+          "source_url": "https://adres-bezposredniego-dowodu",
+          "reference": null,
+          "evidence": "Fragment lub opis dowodu ceny i transakcji"
+        }
+      ]
+    }
+  },
+  "errors": []
+}
+Powyższy rekord jest tylko przykładem schematu, nie wolno go zwracać jako znalezionej transakcji.
+record_type dla wyniku przetargu: tender_award. status: success (wyszukiwanie zakończone), partial (znaleziono rekordy, ale część źródeł niedostępna), error (wyszukiwanie się nie powiodło).
+Wpis errors: {"section":"biomass.transactions","source_url":"https://... lub null","message":"Opis problemu"}.

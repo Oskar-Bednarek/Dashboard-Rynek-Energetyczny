@@ -344,7 +344,7 @@ def confirm_dates(
     otf_session_date = validate_otf_session_choice(
         otf_session_candidates, selected_otf_date
     )
-    for key in ("validation_report", "response", "parsed_response", "validated_payload", "validated_sections"):
+    for key in ("validation_report", "response", "parsed_response", "validated_payload", "validated_sections", "biomass_response", "biomass_added", "biomass_checked", "biomass_warnings"):
         st.session_state.pop(key, None)
     st.session_state["data_saved"] = False
     st.session_state["otf_session_candidates"] = [otf_session_date]
@@ -363,5 +363,5 @@ def confirm_dates(
 
         coverage = assess_coverage(workbook_path, plan.rdn_dates, otf_session_date, plan.coal_window, plan.eua_window)
         st.session_state["coverage_result"] = coverage
-        st.session_state["page"] = "ready" if coverage.complete else "prompt"
+        st.session_state["page"] = "biomass" if coverage.complete else "prompt"
     st.rerun()

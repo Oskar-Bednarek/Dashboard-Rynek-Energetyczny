@@ -79,7 +79,21 @@ class MarketDashboardTests(unittest.TestCase):
         self.assertEqual(data["coal"][0]["price"], 95.25 * 3.5)
         self.assertEqual(data["eua"][0]["price"], 95.25 * 4)
         self.assertEqual(data["coal"][0]["source_values"]["price"], "95.25")
-        self.assertEqual(data["sample_biomass"][0]["source"], "Dane demonstracyjne")
+        self.assertEqual(data["biomass_transactions"], [])
+
+    def test_real_biomass_replaces_demonstration_data(self) -> None:
+        from biomass_data import save_transactions, validate_response
+        from test_biomass import valid_response
+        with TemporaryDirectory() as directory:
+            workbook_path=Path(directory)/"sample.xlsx"
+            self.create_workbook(workbook_path)
+            response=validate_response(json.dumps(valid_response()),date(2026,10,7),date(2026,11,5))
+            save_transactions(workbook_path,response.records)
+            data=load_dashboard_data(workbook_path)
+            self.assertEqual(len(data["biomass_transactions"]),1)
+            self.assertEqual(data["biomass_transactions"][0]["price_pln_t"],150)
+            self.assertEqual(data["biomass_transactions"][0]["record_type"],"tender_award")
+            self.assertNotIn("sample_biomass",data)
 
     def test_rendered_html_is_self_contained_and_embeds_excel_data(self) -> None:
         with TemporaryDirectory() as directory:
@@ -114,7 +128,7 @@ class MarketDashboardTests(unittest.TestCase):
         data_text = data_text.split("</script>", 1)[0]
         data = json.loads(data_text)
         self.assertEqual(data["power_otf"][0]["trading_date"], "2026-11-02")
-        self.assertIn("Dane demonstracyjne", html)
+        self.assertNotIn("Przykładowy odbiorca", html)
 
 
 if __name__ == "__main__":

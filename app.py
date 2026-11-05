@@ -13,6 +13,7 @@ from prompt_stage import (
 )
 from review_stage import show_review_page
 from ready_stage import show_ready_page
+from biomass_stage import show_biomass_page
 from workbook_access import show_workbook_access_error
 
 
@@ -62,20 +63,22 @@ def initialize_session() -> None:
 
 def show_workflow_progress() -> None:
     page = st.session_state["page"]
-    steps = ("Wybierz daty", "Pobierz dane", "Sprawdź dane", "Gotowe")
+    steps = ("Wybierz daty", "Pobierz dane", "Sprawdź dane", "Dane o zrębkach", "Gotowe")
     if page == "dates":
         active_step = 0
     elif page == "prompt":
         active_step = 1
     elif page == "review" and not st.session_state.get("data_saved"):
         active_step = 2
-    else:
+    elif page == "biomass":
         active_step = 3
+    else:
+        active_step = 4
 
     st.markdown(f"### Krok {active_step + 1} z {len(steps)} — {steps[active_step]}")
     cards = []
     for index, label in enumerate(steps):
-        skipped = page == "ready" and not st.session_state.get("data_saved") and index in (1, 2)
+        skipped = page in ("biomass", "ready") and not st.session_state.get("data_saved") and index in (1, 2)
         current = index == active_step
         status = "Teraz" if current else "Pominięto" if skipped else "Ukończono" if index < active_step else "Przed Tobą"
         marker = str(index + 1) if index >= active_step or skipped else "✓"
@@ -98,7 +101,7 @@ def show_workflow_progress() -> None:
         if st.session_state.get("data_saved"):
             st.caption("Dane zostały zapisane. Możesz pobrać raport lub wrócić do wyboru dat.")
         else:
-            st.caption("Dane są już dostępne — pobieranie i kontrolę pominięto. Możesz pobrać raport lub wrócić do wyboru dat.")
+            st.caption("Dane energetyczne są już dostępne — ich pobieranie i kontrolę pominięto. Możesz pobrać raport lub wrócić do wyboru dat.")
 
     report_day = st.session_state["report_date"]
     plan = st.session_state["date_plan"]
@@ -142,6 +145,8 @@ def main() -> None:
     try:
         if st.session_state["page"] == "ready":
             show_ready_page(WORKBOOK_PATH)
+        elif st.session_state["page"] == "biomass":
+            show_biomass_page(WORKBOOK_PATH)
         elif st.session_state["page"] == "review":
             show_review_page(WORKBOOK_PATH)
         elif st.session_state["page"] == "prompt":

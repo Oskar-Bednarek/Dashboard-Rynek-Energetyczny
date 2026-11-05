@@ -1,0 +1,2 @@
+# Przykładowe źródła — wpisz po jednym adresie lub nazwie w wierszu.
+# To wskazówki, a nie zamknięta lista źródeł. Model może szukać również poza nimi.

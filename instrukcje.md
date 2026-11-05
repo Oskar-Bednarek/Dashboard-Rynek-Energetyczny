@@ -91,3 +91,30 @@ Chromium: dostępny systemowo `chromium`/`chromium-browser`/`google-chrome` albo
 `python -m playwright install chromium` (na nowym Linuksie ewentualnie
 `python -m playwright install --with-deps chromium`). Brak przeglądarki nie blokuje
 pobrania HTML. Eksport nie pobiera zewnętrznych zasobów.
+
+## Oddzielny ekran danych o zrębkach
+
+Po kompletnych danych energetycznych (z pliku albo po zapisie odpowiedzi) aplikacja
+przechodzi do jednego ekranu „Dane o zrębkach”. Użytkownik kopiuje osobny prompt,
+wkleja odpowiedź JSON i sprawdza ją na tym samym ekranie. Poprawne rekordy są
+zapisywane automatycznie w arkuszu `ZREBKI`, po czym dostępne są HTML i PDF.
+Przycisk „Model nie znalazł nowych transakcji” pozwala zakończyć etap bez wklejania
+pustej odpowiedzi. Dotychczasowe transakcje nie są wówczas usuwane.
+
+Szablon: `prompt_biomass.txt`. Edytowalna lista przykładowych źródeł:
+`prompt_biomass_sources.txt`, jeden adres lub nazwa na wiersz. Źródła są wskazówkami;
+model ma przeszukiwać również inne źródła. Zakres obejmuje ostatnią rzeczywistą
+datę zapisu do daty raportu włącznie. Rekordy z dnia początkowego są zawarte wyłącznie
+w prompcie jako lista wykluczeń; aplikacja dodatkowo deduplikuje zapis. Przy pierwszym
+wyszukiwaniu zakres obejmuje ostatnie 30 dni. Dane demonstracyjne nie są historią.
+
+Schemat `biomass-data-1.0` zawiera `status`, `retrieved_at`,
+`data.biomass.transactions` oraz `errors`. Obsługiwane są rzeczywiste transakcje
+i rozstrzygnięte przetargi; nie oferty i zapowiedzi. Cena to PLN/t, z osobnym statusem
+VAT i transportu. Brak nabywcy/wolumenu zapisuje się jako null. Zachowane są link,
+nazwa źródła, dowód oraz typ daty (transakcja/publikacja wyniku). Walidacja sprawdza
+strukturę i poprawność wartości, ale nie zastępuje oceny prawdziwości źródła.
+
+Raport pokazuje do 9 najnowszych rzeczywistych rekordów do wybranej daty i puste
+wiersze dla brakujących pozycji. Ceny netto/brutto są oznaczone; gwiazdka oznacza
+nieznaną podstawę VAT. Puste źródło danych nie jest zastępowane przykładami.

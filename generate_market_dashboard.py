@@ -9,6 +9,7 @@ from typing import Any
 from openpyxl import load_workbook
 
 from exchange_rates import ensure_exchange_rates, convert_record_to_pln
+from biomass_data import read_transactions
 
 
 ROOT = Path(__file__).resolve().parent
@@ -26,12 +27,6 @@ SHEETS = {
     "eua": ("EUA", ("trading_date", "data_id", "instrument", "price", "open", "high", "low", "volume", "change_pct", "retrieved_at")),
 }
 
-SAMPLE_BIOMASS = [
-    {"date": "2026-11-02", "buyer": "Przykładowy odbiorca A", "kind": "Zrębka leśna", "volume": 420, "price": 148.0, "source": "Dane demonstracyjne"},
-    {"date": "2026-11-02", "buyer": "Przykładowy odbiorca B", "kind": "Zrębka energetyczna", "volume": 275, "price": 154.5, "source": "Dane demonstracyjne"},
-    {"date": "2026-10-30", "buyer": "Przykładowy odbiorca C", "kind": "Zrębka przemysłowa", "volume": 180, "price": 139.0, "source": "Dane demonstracyjne"},
-    {"date": "2026-10-29", "buyer": "Przykładowy odbiorca A", "kind": "Zrębka leśna", "volume": 360, "price": 146.0, "source": "Dane demonstracyjne"},
-]
 
 
 def _json_value(value: Any) -> Any:
@@ -48,7 +43,7 @@ def load_dashboard_data(workbook_path: Path) -> dict[str, Any]:
     exchange_rates = ensure_exchange_rates(workbook_path)
     workbook = load_workbook(workbook_path, read_only=True, data_only=True)
     try:
-        result: dict[str, Any] = {"sample_biomass": SAMPLE_BIOMASS}
+        result: dict[str, Any] = {"biomass_transactions": read_transactions(workbook_path)}
         all_dates: list[str] = []
         retrieval_times: list[datetime] = []
         for key, (sheet_name, expected_headers) in SHEETS.items():
