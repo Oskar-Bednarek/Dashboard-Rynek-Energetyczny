@@ -143,14 +143,14 @@ def show_prompt_page(workbook_path: Path) -> None:
     coal_window = st.session_state["coal_window"]
     eua_window = st.session_state["eua_window"]
 
-    st.subheader("1. Otwórz kilka sesji AI")
+    st.subheader("Otwórz 3–5 osobnych rozmów AI")
     st.markdown(
         "Otwórz [https://chatgpt.com/](https://chatgpt.com/) w "
         "**trybie incognito/prywatnym** "
         "i upewnij się, że nie jesteś zalogowany. Przygotuj **3–5 osobnych "
         "rozmów**. Dzięki temu porównasz niezależne odpowiedzi."
     )
-    st.subheader("2–3. Uruchom prompt i poczekaj na odpowiedzi")
+    st.subheader("Uruchom ten sam prompt we wszystkich rozmowach")
     st.markdown(
         "Skopiuj prompt z pola poniżej i wklej go do każdej przygotowanej "
         "rozmowy. Poczekaj, aż wszystkie sesje zakończą pracę."
@@ -197,7 +197,7 @@ def show_prompt_page(workbook_path: Path) -> None:
     )
     st.code(prompt, language=None, height=450)
 
-    st.subheader("4–6. Wybierz odpowiedź i wklej ją tutaj")
+    st.subheader("Porównaj odpowiedzi i wklej wybraną")
     st.caption(
         "Sprawdź pole `errors` w każdej odpowiedzi. Najpierw wybierz tę z "
         "pustą listą `errors` (`[]`). Jeśli wszystkie mają błędy, wybierz "

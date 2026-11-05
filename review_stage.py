@@ -8,6 +8,7 @@ from openpyxl import load_workbook
 from excel_writer import SHEET_SPECS, save_market_data
 from json_validator import ValidationReport, validate_response
 from manual_completion import apply_manual_records, find_missing_tge_records
+from preview_tables import show_market_tables
 
 
 _FIELD_LABELS = {
@@ -139,16 +140,17 @@ def show_review_page(workbook_path: Path) -> None:
     eua_window: tuple[date, date] = st.session_state["eua_window"]
 
     st.title("Sprawdź dane przed zapisem")
-    st.success("Odpowiedź została odczytana. Sprawdź braki i podgląd poniżej.")
-    if st.session_state.get("data_saved"):
-        st.success(
-            "Dane zapisano w pliku DataMaster.xlsx. Możesz zakończyć pracę "
-            "albo wrócić i przygotować kolejny raport."
-        )
-
     missing_records = find_missing_tge_records(
         report.data, source_dates, otf_session_date
     )
+    if report.is_valid:
+        st.success("Dane gotowe do zapisu. Sprawdź podgląd i przygotuj raport.")
+    else:
+        invalid_count = sum(not valid for valid in report.section_validity.values())
+        if missing_records:
+            st.warning(f"Do uzupełnienia: {len(missing_records)} pozycji. Wpisz brakujące dane w formularzu poniżej.")
+        else:
+            st.warning(f"Dane wymagają poprawy. Sprawdź wskazane problemy{f' w {invalid_count} grupach danych' if invalid_count else ''} poniżej.")
     if otf_session_date is None:
         st.error(
             "Nie potwierdzono wspólnej daty sesji OTF na stronach TGE. "
@@ -172,10 +174,6 @@ def show_review_page(workbook_path: Path) -> None:
         )
 
     if missing_records:
-        st.warning(
-            f"Do sprawdzenia pozostało {len(missing_records)} pozycji z cen "
-            "dziennej lub notowań terminowych."
-        )
         st.write(
             "Otwórz link i wpisz wartości dokładnie takie, jakie widzisz na "
             "stronie. Zostaw pole puste tylko wtedy, gdy źródło wyraźnie nie "
@@ -231,7 +229,7 @@ def show_review_page(workbook_path: Path) -> None:
                     )
                 st.rerun()
     elif not source_errors:
-        st.success("Nie wykryto pozycji wymagających uzupełnienia.")
+        st.caption("Dla danych TGE nie znaleziono brakujących pozycji.")
 
     invalid_sections = [
         section
@@ -265,19 +263,7 @@ def show_review_page(workbook_path: Path) -> None:
         workbook_path, report.data, coal_window, otf_session_date
     )
     if rows:
-        display_rows = [
-            {
-                key: (str(value) if key == "change_pct" and value is not None else value)
-                for key, value in row.items()
-            }
-            for row in rows
-        ]
-        st.dataframe(
-            display_rows,
-            hide_index=True,
-            width="stretch",
-            column_config={"source_url": st.column_config.LinkColumn("source_url")},
-        )
+        show_market_tables(rows)
     else:
         st.info("Odpowiedź nie zawiera jeszcze danych do pokazania.")
 
@@ -285,7 +271,7 @@ def show_review_page(workbook_path: Path) -> None:
     if report.is_valid:
         if st.session_state.get("data_saved"):
             st.success("Zapis zakończony. Plik został zaktualizowany.")
-        elif st.button("Zapisz dane do pliku Excel", type="primary"):
+        elif st.button("Zapisz dane i przygotuj raport", type="primary"):
             try:
                 save_market_data(
                     workbook_path, report.data, coal_window, eua_window
@@ -294,6 +280,9 @@ def show_review_page(workbook_path: Path) -> None:
                 st.error(f"Nie udało się zapisać danych: {error}")
             else:
                 st.session_state["data_saved"] = True
+                st.session_state["otf_session_date"] = otf_session_date
+                st.session_state["page"] = "ready"
+                st.session_state.pop("coverage_result", None)
                 st.session_state.pop("date_plan", None)
                 st.rerun()
     else:
@@ -302,7 +291,7 @@ def show_review_page(workbook_path: Path) -> None:
             "sprawdzenia. Popraw brakujące wartości lub wróć do odpowiedzi."
         )
         st.button(
-            "Zapisz dane do pliku Excel",
+            "Zapisz dane i przygotuj raport",
             disabled=True,
             type="primary",
             key="review_save_disabled",

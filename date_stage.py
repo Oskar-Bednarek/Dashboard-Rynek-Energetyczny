@@ -237,27 +237,6 @@ def show_date_selection(workbook_path: Path) -> None:
             format_func=lambda value: value.strftime("%d.%m.%Y"),
             key=selection_key,
         )
-        weekdays = (
-            "poniedziałek",
-            "wtorek",
-            "środa",
-            "czwartek",
-            "piątek",
-            "sobota",
-            "niedziela",
-        )
-        st.dataframe(
-            [
-                {
-                    "Data": value.strftime("%d.%m.%Y"),
-                    "Dzień tygodnia": weekdays[value.weekday()],
-                    "Wybrana": value == selected_otf_session_date,
-                }
-                for value in candidate_dates
-            ],
-            hide_index=True,
-            width="stretch",
-        )
         st.caption(
             "Wybierz ręcznie jedną z pięciu ostatnich dat przypadających "
             "w dni powszednie. "

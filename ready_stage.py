@@ -4,6 +4,7 @@ from tempfile import TemporaryDirectory
 from generate_market_dashboard import render_dashboard
 
 from review_stage import build_dashboard_preview
+from preview_tables import show_market_tables
 
 
 _COVERAGE_LABELS = {
@@ -19,11 +20,24 @@ _COVERAGE_LABELS = {
 def show_ready_page(workbook_path: Path) -> None:
     import streamlit as st
 
-    st.title("Dane są już dostępne")
-    st.success(
-        "Wszystkie wymagane dane dla wybranego raportu znajdują się już "
-        "w pliku DataMaster.xlsx."
-    )
+    st.title("Gotowe")
+    if st.session_state.get("data_saved"):
+        st.info("Dane zapisano w pliku DataMaster.xlsx.")
+    else:
+        st.info("Dane dla wybranego raportu znajdują się już w pliku DataMaster.xlsx.")
+    try:
+        with TemporaryDirectory() as directory:
+            output = render_dashboard(workbook_path, output_path=Path(directory) / "dashboard.html")
+            dashboard_html = output.read_bytes()
+    except (OSError, ValueError, KeyError) as error:
+        st.error(f"Nie udało się przygotować dashboardu: {error}")
+    else:
+        st.success("Dashboard jest gotowy do pobrania.")
+        st.download_button(
+            "Pobierz dashboard HTML", data=dashboard_html,
+            file_name="Raport-rynkow-energetycznych.html", mime="text/html", type="primary",
+        )
+
     coverage = st.session_state.get("coverage_result")
     if coverage is not None:
         st.subheader("Sprawdzenie zawartości")
@@ -46,31 +60,9 @@ def show_ready_page(workbook_path: Path) -> None:
         st.session_state["otf_session_date"],
     )
     if rows:
-        display = [
-            {
-                key: (str(value) if key == "change_pct" and value is not None else value)
-                for key, value in row.items()
-            }
-            for row in rows
-        ]
         st.subheader("Podgląd zapisanych danych")
-        st.dataframe(display, hide_index=True, width="stretch")
+        show_market_tables(rows)
 
-    try:
-        with TemporaryDirectory() as directory:
-            output = render_dashboard(workbook_path, output_path=Path(directory) / "dashboard.html")
-            dashboard_html = output.read_bytes()
-    except (OSError, ValueError, KeyError) as error:
-        st.error(f"Nie udało się przygotować dashboardu: {error}")
-    else:
-        st.download_button(
-            "Pobierz dashboard HTML", data=dashboard_html,
-            file_name="Raport-rynkow-energetycznych.html", mime="text/html",
-        )
-    if st.button("Przejdź do pobierania i kontroli", type="primary"):
-        st.session_state["page"] = "prompt"
-        st.session_state["data_saved"] = False
-        st.rerun()
     if st.button("Wróć do wyboru dat"):
         st.session_state["page"] = "dates"
         st.rerun()

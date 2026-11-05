@@ -66,25 +66,44 @@ def show_workflow_progress() -> None:
     else:
         active_step = 3
 
-    if page == "ready":
-        st.caption(
-            "Dane dla wybranego zakresu są już w pliku, więc pobieranie i "
-            "kontrolę pominięto."
+    st.markdown(f"### Krok {active_step + 1} z {len(steps)} — {steps[active_step]}")
+    cards = []
+    for index, label in enumerate(steps):
+        skipped = page == "ready" and not st.session_state.get("data_saved") and index in (1, 2)
+        current = index == active_step
+        status = "Teraz" if current else "Pominięto" if skipped else "Ukończono" if index < active_step else "Przed Tobą"
+        marker = str(index + 1) if index >= active_step or skipped else "✓"
+        background = "#1763a6" if current else "var(--secondary-background-color, #f2f4f7)"
+        color = "#ffffff" if current else "var(--text-color, #475569)"
+        outline = "2px solid #1763a6" if current else "1px solid #8894a344"
+        aria = ' aria-current="step"' if current else ""
+        cards.append(
+            f'<li{aria} style="list-style:none;flex:1;min-width:115px;padding:12px;'
+            f'border-radius:10px;border:{outline};background:{background};color:{color}">'
+            f'<span style="font-size:12px;opacity:.85">{marker} · {status}</span><br>'
+            f'<strong style="font-size:15px">{label}</strong></li>'
         )
-    else:
-        st.caption(f"Krok {active_step + 1} z 4")
-
-    columns = st.columns(len(steps))
-    for index, (column, label) in enumerate(zip(columns, steps)):
-        if page == "ready" and index in (1, 2):
-            text = f"— {label}"
-        elif index < active_step:
-            text = f"✓ {label}"
-        elif index == active_step:
-            text = f"**{label}**"
+    st.markdown(
+        '<nav aria-label="Etapy przygotowania raportu"><ol style="display:flex;flex-wrap:wrap;'
+        'gap:8px;margin:0 0 16px;padding:0">' + "".join(cards) + '</ol></nav>',
+        unsafe_allow_html=True,
+    )
+    if page == "ready":
+        if st.session_state.get("data_saved"):
+            st.caption("Dane zostały zapisane. Możesz pobrać raport lub wrócić do wyboru dat.")
         else:
-            text = label
-        column.markdown(text)
+            st.caption("Dane są już dostępne — pobieranie i kontrolę pominięto. Możesz pobrać raport lub wrócić do wyboru dat.")
+
+    report_day = st.session_state["report_date"]
+    plan = st.session_state["date_plan"]
+    if page == "dates":
+        otf_day = st.session_state.get("selected_otf_session_date", next(iter(plan.otf_session_candidates), None))
+    else:
+        otf_day = st.session_state.get("otf_session_date")
+    with st.container(border=True):
+        left, right = st.columns(2)
+        left.markdown(f"**Dane na dzień:** {report_day.strftime('%d.%m.%Y')}")
+        right.markdown(f"**Sesja OTF:** {otf_day.strftime('%d.%m.%Y') if otf_day else 'Nie wybrano'}")
 
 
 def main() -> None:
