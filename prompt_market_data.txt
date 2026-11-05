@@ -26,11 +26,11 @@ Obsługuj każdy przekazany URL osobno i zweryfikuj każdą wskazaną datę RDN.
 
 Przekierowanie lub zmiana adresu widocznego po otwarciu nie jest samo w sobie dowodem błędnej daty ani dowodem, że pokazana tabela dotyczy daty z URL-a. Parametr dateShow jest tylko prośbą o wyświetlenie daty i nie potwierdza daty danych.
 
-Aby potwierdzić datę RDN, sprawdź jednoznaczne wskazanie daty faktycznie wyświetlanej przez stronę przy danych. Tabela kontraktów może zawierać kontrakty dostawy z przyszłych miesięcy; ich nazwy NIE potwierdzają daty sesji. Nie wyciągaj daty RDN z samego URL-a ani daty dostawy z nagłówka.
+Aby potwierdzić datę RDN, sprawdź jednoznaczne wskazanie daty faktycznie wyświetlanej przez stronę przy danych. Tabela kontraktów może zawierać kontrakty dostawy z przyszłych miesięcy; ich nazwy NIE potwierdzają daty sesji. Nie wyciągaj daty RDN z samego URL-a. RDN jest rynkiem dnia następnego, więc jeśli strona pokazuje datę dostawy, przyjmij, że data sesji przypada dzień wcześniej.
 
 Jeżeli strona po otwarciu URL-a RDN pokazuje inną datę sesji niż data żądana, nie używaj wartości z tej tabeli. Dla OTF obowiązuje data wybrana ręcznie w aplikacji; jeśli strona wyraźnie pokazuje inną datę, nie używaj jej danych. Nie przechodź samodzielnie do innego dnia.
 
-Jeśli dla RDN nie da się odczytać daty sesji, nie pobieraj danych i zapisz osobny błąd dla URL-a. Dla OTF nie wymagaj odczytania nienazwanego pola daty, jeśli strona nie wskazuje innej daty; użyj tylko adresów dla daty wybranej ręcznie. Jeśli strona OTF wyraźnie pokazuje inną datę lub nie ładuje tabeli, zapisz błąd dla tego URL-a i nie pobieraj z niego danych.
+Jeśli dla RDN nie da się odczytać daty sesji ani ustalić jej na podstawie daty dostawy, nie pobieraj danych i zapisz osobny błąd dla URL-a. Dla OTF nie wymagaj odczytania nienazwanego pola daty, jeśli strona nie wskazuje innej daty; użyj tylko adresów dla daty wybranej ręcznie. Jeśli strona OTF wyraźnie pokazuje inną datę lub nie ładuje tabeli, zapisz błąd dla tego URL-a i nie pobieraj z niego danych.
 
 GAZ RDN
 
@@ -49,7 +49,7 @@ Pobierz z tego samego wiersza:
 - change_pct — pierwsza kolumna „Zmiana”, bezpośrednio po kursie; nie używaj drugiej zmiany dotyczącej wolumenu;
 - volume_mwh — „Wolumen (MWh)”.
 
-Dla RDN parametr dateShow jest datą żądaną, a nie potwierdzoną. Zwróć trading_date zgodny z datą widoczną przy danych na stronie. Nagłówek dotyczący dostawy może wskazywać następny dzień — nie zapisuj daty dostawy jako daty sesji.
+Dla RDN parametr dateShow jest datą żądaną, a nie potwierdzoną. Zwróć trading_date zgodny z datą widoczną przy danych na stronie. Jeśli widoczna jest tylko data dostawy, przyjmij, że data sesji (trading_date) przypada dzień wcześniej, ponieważ RDN jest rynkiem dnia następnego.
 
 GAZ OTF
 
