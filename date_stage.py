@@ -238,22 +238,28 @@ def show_date_selection(workbook_path: Path) -> None:
             key=selection_key,
         )
         st.caption(
-            "Wybierz ręcznie jedną z pięciu ostatnich dat przypadających "
-            "w dni powszednie. "
-            "Aplikacja użyje tej samej daty dla gazu i energii."
+            "Wybierz datę ostatniej sesji (ostatni dzień roboczy)."
         )
     else:
         selected_otf_session_date = None
 
     def format_date_range(dates: list[date]) -> str:
         if not dates:
-            return "Brak nowych dat do pobrania"
+            return "Potrzebne dane są już kompletne"
         if dates[0] == dates[-1]:
             return dates[0].strftime("%d.%m.%Y")
         return (
             f"{dates[0].strftime('%d.%m.%Y')}–{dates[-1].strftime('%d.%m.%Y')} "
             f"({len(dates)} dni)"
         )
+
+    from data_coverage import assess_coverage
+    coverage = assess_coverage(
+        workbook_path, plan.rdn_dates, selected_otf_session_date,
+        plan.coal_window, plan.eua_window,
+    ) if selected_otf_session_date is not None else None
+    complete = coverage.section_complete if coverage else {}
+    complete_text = "Potrzebne dane są już kompletne"
 
     summary_rows = [
         {
@@ -271,31 +277,31 @@ def show_date_selection(workbook_path: Path) -> None:
             "Daty / zakres": (
                 selected_report_date.strftime("%d.%m.%Y")
                 if plan.rdn_dates["electricity_rdn"]
-                else "Brak nowych dat do pobrania"
+                else "Potrzebne dane są już kompletne"
             ),
         },
         {
             "Grupa danych": "Gaz i energia — kontrakty terminowe (OTF)",
             "Daty / zakres": (
+                complete_text if complete.get("gas_otf") and complete.get("electricity_otf") else
                 selected_otf_session_date.strftime("%d.%m.%Y")
-                if selected_otf_session_date is not None
-                else "Brak dostępnych dat"
+                if selected_otf_session_date is not None else "Brak dostępnych dat"
             ),
         },
         {
             "Grupa danych": "Węgiel — historia",
-            "Daty / zakres": format_date_range(
+            "Daty / zakres": complete_text if complete.get("coal") else format_date_range(
                 get_dates_between(plan.coal_window[0] - timedelta(days=1), plan.coal_window[1])
             ),
         },
         {
             "Grupa danych": "EUA — historia uprawnień do emisji",
-            "Daty / zakres": format_date_range(
+            "Daty / zakres": complete_text if complete.get("emissions") else format_date_range(
                 get_dates_between(plan.eua_window[0] - timedelta(days=1), plan.eua_window[1])
             ),
         },
     ]
-    st.subheader("Zakres pobieranych danych")
+    st.subheader("Zakres danych do raportu")
     st.dataframe(summary_rows, hide_index=True, width="stretch")
     st.caption(
         "Dla RDN sprawdzamy maksymalnie ostatnie 7 dni. Część indeksów "
@@ -338,6 +344,8 @@ def confirm_dates(
     otf_session_date = validate_otf_session_choice(
         otf_session_candidates, selected_otf_date
     )
+    for key in ("validation_report", "response", "parsed_response", "validated_payload", "validated_sections"):
+        st.session_state.pop(key, None)
     st.session_state["data_saved"] = False
     st.session_state["otf_session_candidates"] = [otf_session_date]
     st.session_state["confirmed_source_dates"] = {

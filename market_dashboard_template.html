@@ -1492,8 +1492,8 @@ SOFTWARE.
         });
       };
       dateInput.min=DATA.min_date;
-      dateInput.max=DATA.max_date;
-      dateInput.value=DATA.max_date;
+      dateInput.max=DATA.report_date && DATA.report_date>DATA.max_date?DATA.report_date:DATA.max_date;
+      dateInput.value=DATA.report_date || DATA.max_date;
       dateInput.addEventListener("change",render);
       document.getElementById("print-button").addEventListener("click",()=>window.print());
       window.addEventListener("beforeprint",()=>{roundMarketCorners();chartInstances.forEach(chart=>chart.resize());});

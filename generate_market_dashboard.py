@@ -99,8 +99,12 @@ def render_dashboard(
     workbook_path: Path = DEFAULT_WORKBOOK,
     template_path: Path = DEFAULT_TEMPLATE,
     output_path: Path = DEFAULT_OUTPUT,
+    *,
+    report_date: date | None = None,
 ) -> Path:
     data = load_dashboard_data(workbook_path)
+    if report_date is not None:
+        data["report_date"] = report_date.isoformat()
     template = template_path.read_text(encoding="utf-8")
     chartjs = CHARTJS_SCRIPT.read_text(encoding="utf-8")
     serialized = json.dumps(data, ensure_ascii=False, separators=(",", ":"), allow_nan=False)

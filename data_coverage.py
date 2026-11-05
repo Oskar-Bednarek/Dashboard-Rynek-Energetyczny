@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path
 
@@ -11,6 +11,7 @@ from contract_selection import OTF_MINIMUM_COUNTS, ContractSet, build_contract_s
 class CoverageResult:
     complete: bool
     details: dict[str, str]
+    section_complete: dict[str, bool] = field(default_factory=dict)
 
 
 def _date_text(value: object) -> str | None:
@@ -65,6 +66,7 @@ def assess_coverage(
     workbook = load_workbook(workbook_path, read_only=True, data_only=True)
     details: dict[str, str] = {}
     is_complete = True
+    section_complete = {}
     try:
         for key, label in (
             ("gas_rdn", "gaz"),
@@ -76,6 +78,7 @@ def assess_coverage(
                 if count == 0
                 else f"brakuje {_day_count_text(count)} do pobrania"
             )
+            section_complete[key] = count == 0
             is_complete &= count == 0
 
         contracts = {
@@ -116,6 +119,7 @@ def assess_coverage(
                 )
                 market_complete &= available >= required
             details[key] = ", ".join(group_status)
+            section_complete[key] = market_complete
             is_complete &= market_complete
 
         for key, sheet_name, window in (
@@ -139,7 +143,8 @@ def assess_coverage(
                 if dates
                 else "brak notowań w wybranym zakresie"
             )
+            section_complete[key] = bool(dates)
             is_complete &= bool(dates)
     finally:
         workbook.close()
-    return CoverageResult(is_complete, details)
+    return CoverageResult(is_complete, details, section_complete)

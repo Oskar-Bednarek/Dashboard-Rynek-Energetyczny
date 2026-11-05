@@ -80,3 +80,14 @@ HTML mnożone są pola price/open/high/low przez kurs z daty notowania. Wolumeny
 pozostają bez zmian. Dane HTML zachowują ceny źródłowe oraz informację o kursie;
 zmiany procentowe dashboard oblicza na podstawie cen już wyrażonych w PLN.
 Gotowy raport można pobrać na ostatnim ekranie aplikacji.
+
+## Eksport PDF
+
+Ostatni ekran udostępnia HTML i PDF z tego samego dashboardu. Nazwa plików:
+`raport energetyczny RRRR-MM-DD`, według daty wybranej w aplikacji.
+PDF powstaje w Chromium przez Playwright, z drukowaniem A4 poziomo i osadzonymi
+wykresami. Wymagana instalacja `python -m pip install -r requirements.txt` oraz
+Chromium: dostępny systemowo `chromium`/`chromium-browser`/`google-chrome` albo
+`python -m playwright install chromium` (na nowym Linuksie ewentualnie
+`python -m playwright install --with-deps chromium`). Brak przeglądarki nie blokuje
+pobrania HTML. Eksport nie pobiera zewnętrznych zasobów.

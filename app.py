@@ -13,6 +13,7 @@ from prompt_stage import (
 )
 from review_stage import show_review_page
 from ready_stage import show_ready_page
+from workbook_access import show_workbook_access_error
 
 
 BASE_DIR  = Path(__file__).resolve().parent
@@ -39,6 +40,11 @@ def initialize_session() -> None:
         )
         date_plan = load_date_plan(WORKBOOK_PATH, report_date + timedelta(days=1))
         prompt_template = load_prompt_template(PROMPT_TEMPLATE_PATH)
+    except PermissionError:
+        show_workbook_access_error()
+        if st.button("Spróbuj ponownie", key="retry_workbook"):
+            st.rerun()
+        st.stop()
     except (
         BadZipFile,
         InvalidFileException,
@@ -106,18 +112,45 @@ def show_workflow_progress() -> None:
         right.markdown(f"**Sesja OTF:** {otf_day.strftime('%d.%m.%Y') if otf_day else 'Nie wybrano'}")
 
 
+def scroll_to_top_on_stage_change() -> None:
+    page = st.session_state["page"]
+    if st.session_state.get("last_scroll_page") == page:
+        return
+    st.session_state["last_scroll_page"] = page
+    render_iframe = getattr(st, "iframe", None)
+    if render_iframe is None:
+        from streamlit.components.v1 import html
+        render_iframe = html
+    render_iframe(f"<!-- stage: {page} -->" + """<script>
+      const resetScroll = () => {
+        try {
+          const doc = window.parent.document;
+          const main = doc.querySelector('[data-testid="stMain"]') || doc.querySelector('section.main');
+          if (main) main.scrollTo({top:0,behavior:'instant'});
+          window.parent.scrollTo({top:0,behavior:'instant'});
+        } catch (_) { window.scrollTo(0,0); }
+      };
+      resetScroll(); setTimeout(resetScroll,150); setTimeout(resetScroll,400);
+    </script>""", height=1)
+
+
 def main() -> None:
     initialize_session()
     show_workflow_progress()
 
-    if st.session_state["page"] == "ready":
-        show_ready_page(WORKBOOK_PATH)
-    elif st.session_state["page"] == "review":
-        show_review_page(WORKBOOK_PATH)
-    elif st.session_state["page"] == "prompt":
-        show_prompt_page(WORKBOOK_PATH)
-    else:
-        show_date_selection(WORKBOOK_PATH)
+    scroll_to_top_on_stage_change()
+    try:
+        if st.session_state["page"] == "ready":
+            show_ready_page(WORKBOOK_PATH)
+        elif st.session_state["page"] == "review":
+            show_review_page(WORKBOOK_PATH)
+        elif st.session_state["page"] == "prompt":
+            show_prompt_page(WORKBOOK_PATH)
+        else:
+            show_date_selection(WORKBOOK_PATH)
+    except PermissionError:
+        show_workbook_access_error()
+        st.button("Spróbuj ponownie", key="retry_workbook_page")
 
 
 if __name__ == "__main__":

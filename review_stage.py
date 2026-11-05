@@ -8,7 +8,7 @@ from openpyxl import load_workbook
 from excel_writer import SHEET_SPECS, save_market_data
 from json_validator import ValidationReport, validate_response
 from manual_completion import apply_manual_records, find_missing_tge_records
-from preview_tables import show_market_tables
+from workbook_access import show_workbook_access_error
 
 
 _FIELD_LABELS = {
@@ -139,7 +139,32 @@ def show_review_page(workbook_path: Path) -> None:
     coal_window: tuple[date, date] = st.session_state["coal_window"]
     eua_window: tuple[date, date] = st.session_state["eua_window"]
 
-    st.title("Sprawdź dane przed zapisem")
+    # Revalidate against this selection immediately before the automatic save.
+    report = validate_response(
+        json.dumps(report.data, ensure_ascii=False), source_dates,
+        st.session_state["otf_session_date"], coal_window, eua_window, otf_session_candidates,
+    )
+    st.session_state["validation_report"] = report
+    if report.is_valid:
+        try:
+            if not st.session_state.get("data_saved"):
+                save_market_data(workbook_path, report.data, coal_window, eua_window)
+        except PermissionError:
+            show_workbook_access_error()
+            st.button("Spróbuj ponownie", key="retry_save")
+            return
+        except (OSError, ValueError, KeyError) as error:
+            st.error(f"Nie udało się zapisać danych: {error}")
+            st.button("Spróbuj ponownie", key="retry_save")
+            return
+        st.session_state["data_saved"] = True
+        st.session_state["otf_session_date"] = otf_session_date
+        st.session_state["page"] = "ready"
+        st.session_state.pop("coverage_result", None)
+        st.session_state.pop("date_plan", None)
+        st.rerun()
+
+    st.title("Uzupełnij brakujące dane")
     missing_records = find_missing_tge_records(
         report.data, source_dates, otf_session_date
     )
@@ -257,45 +282,6 @@ def show_review_page(workbook_path: Path) -> None:
                 hide_index=True,
                 width="stretch",
             )
-
-    st.subheader("Podgląd danych do zapisu")
-    rows = build_dashboard_preview(
-        workbook_path, report.data, coal_window, otf_session_date
-    )
-    if rows:
-        show_market_tables(rows)
-    else:
-        st.info("Odpowiedź nie zawiera jeszcze danych do pokazania.")
-
-    st.subheader("Zapis do pliku")
-    if report.is_valid:
-        if st.session_state.get("data_saved"):
-            st.success("Zapis zakończony. Plik został zaktualizowany.")
-        elif st.button("Zapisz dane i przygotuj raport", type="primary"):
-            try:
-                save_market_data(
-                    workbook_path, report.data, coal_window, eua_window
-                )
-            except (OSError, ValueError, KeyError) as error:
-                st.error(f"Nie udało się zapisać danych: {error}")
-            else:
-                st.session_state["data_saved"] = True
-                st.session_state["otf_session_date"] = otf_session_date
-                st.session_state["page"] = "ready"
-                st.session_state.pop("coverage_result", None)
-                st.session_state.pop("date_plan", None)
-                st.rerun()
-    else:
-        st.warning(
-            "Zapis jest zablokowany, dopóki wymagane dane nie przejdą "
-            "sprawdzenia. Popraw brakujące wartości lub wróć do odpowiedzi."
-        )
-        st.button(
-            "Zapisz dane i przygotuj raport",
-            disabled=True,
-            type="primary",
-            key="review_save_disabled",
-        )
 
     left, right = st.columns(2)
     if left.button("Wróć do odpowiedzi"):
