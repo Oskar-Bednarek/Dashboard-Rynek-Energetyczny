@@ -3,6 +3,8 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
+from datetime import timedelta
 
 from openpyxl import Workbook
 
@@ -10,6 +12,19 @@ from generate_market_dashboard import SHEETS, load_dashboard_data, render_dashbo
 
 
 class MarketDashboardTests(unittest.TestCase):
+    def setUp(self) -> None:
+        def rates(currency, start, end):
+            values=[]
+            day=start
+            while day<=end:
+                if day.weekday()<5:
+                    values.append({"effectiveDate":day.isoformat(),"mid":4 if currency=="EUR" else 3.5,"no":"test/A/NBP"})
+                day+=timedelta(days=1)
+            return values
+        patcher=patch("exchange_rates.fetch_rates",side_effect=rates)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     def create_workbook(self, path: Path) -> None:
         workbook = Workbook()
         workbook.remove(workbook.active)
@@ -61,6 +76,9 @@ class MarketDashboardTests(unittest.TestCase):
         self.assertEqual(data["max_date"], "2026-11-02")
         self.assertEqual(data["gas_rdn"][0]["price_pln_mwh"], 100.5)
         self.assertEqual(data["coal"][0]["volume"], "10.0K")
+        self.assertEqual(data["coal"][0]["price"], 95.25 * 3.5)
+        self.assertEqual(data["eua"][0]["price"], 95.25 * 4)
+        self.assertEqual(data["coal"][0]["source_values"]["price"], "95.25")
         self.assertEqual(data["sample_biomass"][0]["source"], "Dane demonstracyjne")
 
     def test_rendered_html_is_self_contained_and_embeds_excel_data(self) -> None:
@@ -81,7 +99,7 @@ class MarketDashboardTests(unittest.TestCase):
         self.assertIn(".history-table tbody tr:nth-child(n+6) { display: table-row; }", html)
         self.assertIn('classList.add("history-table")', html)
         self.assertIn('id="report-date"', html)
-        self.assertIn("Premium energy intelligence", html)
+        self.assertIn("Notowania i trendy", html)
         self.assertIn("--navy: #102338", html)
         self.assertIn("grid-column: span 2;", html)
         self.assertIn("table { font-size: 5.3pt; }", html)

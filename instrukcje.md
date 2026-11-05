@@ -60,3 +60,23 @@
 - Przycisk `Sprawdz odpowiedz` kontroluje wklejone dane, ale nie zapisuje ich
   do Excela. Zapis nastepuje dopiero po kontroli brakow i wybraniu przycisku
   zapisu na ekranie podgladu.
+
+## Kursy NBP i ceny PLN
+
+Aplikacja przy inicjalizacji sesji oraz generator HTML automatycznie uzupełniają
+arkusz `KURSY_NBP` w `DataMaster.xlsx`: EUR i USD z tabeli A, dla każdego dnia
+kalendarzowego od najstarszego notowania do dzisiaj (Europe/Warsaw). Uzupełniane
+są luki, a kurs na dzisiaj jest sprawdzany ponownie, jeśli używa poprzedniej publikacji.
+W weekendy i święta stosowany jest ostatni kurs opublikowany nie później niż data
+notowania. Arkusz przechowuje datę publikacji, numer tabeli i czas pobrania.
+
+Wymagany jest dostęp HTTPS do `api.nbp.pl`; klucze API nie są potrzebne.
+Zapytania obejmują maksymalnie 93 dni. Kompletny historyczny cache jest używany
+ponownie. Błąd pobierania nie nadpisuje skoroszytu i blokuje przygotowanie raportu,
+zamiast wyświetlać nieprzeliczone ceny jako PLN.
+
+Oryginalne ceny w `WEGIEL` (USD) i `EUA` (EUR) pozostają bez zmian. Przy generowaniu
+HTML mnożone są pola price/open/high/low przez kurs z daty notowania. Wolumeny
+pozostają bez zmian. Dane HTML zachowują ceny źródłowe oraz informację o kursie;
+zmiany procentowe dashboard oblicza na podstawie cen już wyrażonych w PLN.
+Gotowy raport można pobrać na ostatnim ekranie aplikacji.

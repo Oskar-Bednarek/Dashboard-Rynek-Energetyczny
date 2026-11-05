@@ -6,6 +6,7 @@ from openpyxl.utils.exceptions import InvalidFileException
 import streamlit as st
 
 from date_stage import load_date_plan, show_date_selection
+from exchange_rates import ensure_exchange_rates, warsaw_today
 from prompt_stage import (
     load_prompt_template,
     show_prompt_page,
@@ -26,10 +27,13 @@ st.set_page_config(
 
 
 def initialize_session() -> None:
-    if "date_plan" in st.session_state:
-        return
-
     try:
+        fx_key = (warsaw_today(), WORKBOOK_PATH.stat().st_mtime_ns)
+        if st.session_state.get("fx_sync_key") != fx_key:
+            ensure_exchange_rates(WORKBOOK_PATH)
+            st.session_state["fx_sync_key"] = (warsaw_today(), WORKBOOK_PATH.stat().st_mtime_ns)
+        if "date_plan" in st.session_state:
+            return
         report_date = st.session_state.setdefault(
             "report_date", date.today() - timedelta(days=1)
         )

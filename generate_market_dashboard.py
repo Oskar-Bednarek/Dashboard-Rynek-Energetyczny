@@ -8,6 +8,8 @@ from typing import Any
 
 from openpyxl import load_workbook
 
+from exchange_rates import ensure_exchange_rates, convert_record_to_pln
+
 
 ROOT = Path(__file__).resolve().parent
 DEFAULT_WORKBOOK = ROOT / "DataMaster.xlsx"
@@ -43,6 +45,7 @@ def _json_value(value: Any) -> Any:
 
 
 def load_dashboard_data(workbook_path: Path) -> dict[str, Any]:
+    exchange_rates = ensure_exchange_rates(workbook_path)
     workbook = load_workbook(workbook_path, read_only=True, data_only=True)
     try:
         result: dict[str, Any] = {"sample_biomass": SAMPLE_BIOMASS}
@@ -71,6 +74,8 @@ def load_dashboard_data(workbook_path: Path) -> dict[str, Any]:
                 }
                 if not normalized["trading_date"]:
                     continue
+                if key in ("coal", "eua"):
+                    normalized = convert_record_to_pln(normalized, "USD" if key == "coal" else "EUR", exchange_rates)
                 records.append(normalized)
                 all_dates.append(normalized["trading_date"][:10])
                 retrieved_at = normalized.get("retrieved_at")

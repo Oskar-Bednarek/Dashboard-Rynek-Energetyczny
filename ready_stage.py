@@ -1,4 +1,7 @@
 from pathlib import Path
+from tempfile import TemporaryDirectory
+
+from generate_market_dashboard import render_dashboard
 
 from review_stage import build_dashboard_preview
 
@@ -53,10 +56,17 @@ def show_ready_page(workbook_path: Path) -> None:
         st.subheader("Podgląd zapisanych danych")
         st.dataframe(display, hide_index=True, width="stretch")
 
-    st.info(
-        "Tworzenie dashboardu nie jest jeszcze dostępne. Możesz jednak przejść "
-        "przez pobieranie i kontrolę, jeśli chcesz odświeżyć lub sprawdzić dane."
-    )
+    try:
+        with TemporaryDirectory() as directory:
+            output = render_dashboard(workbook_path, output_path=Path(directory) / "dashboard.html")
+            dashboard_html = output.read_bytes()
+    except (OSError, ValueError, KeyError) as error:
+        st.error(f"Nie udało się przygotować dashboardu: {error}")
+    else:
+        st.download_button(
+            "Pobierz dashboard HTML", data=dashboard_html,
+            file_name="Raport-rynkow-energetycznych.html", mime="text/html",
+        )
     if st.button("Przejdź do pobierania i kontroli", type="primary"):
         st.session_state["page"] = "prompt"
         st.session_state["data_saved"] = False

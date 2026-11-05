@@ -1,9 +1,55 @@
 <!doctype html>
 <html lang="pl">
 <head>
+  <!-- Lucide icons: flame, zap, stone, leaf, trees. https://lucide.dev
+ISC License
+
+Copyright (c) 2026 Lucide Icons and Contributors
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+---
+
+The following Lucide icons are derived from the Feather project:
+
+airplay, alert-circle, alert-octagon, alert-triangle, aperture, arrow-down-circle, arrow-down-left, arrow-down-right, arrow-down, arrow-left-circle, arrow-left, arrow-right-circle, arrow-right, arrow-up-circle, arrow-up-left, arrow-up-right, arrow-up, at-sign, calendar, cast, check, chevron-down, chevron-left, chevron-right, chevron-up, chevrons-down, chevrons-left, chevrons-right, chevrons-up, circle, clipboard, clock, code, columns, command, compass, corner-down-left, corner-down-right, corner-left-down, corner-left-up, corner-right-down, corner-right-up, corner-up-left, corner-up-right, crosshair, database, divide-circle, divide-square, dollar-sign, download, external-link, feather, frown, hash, headphones, help-circle, info, italic, key, layout, life-buoy, link-2, link, loader, lock, log-in, log-out, maximize, meh, minimize, minimize-2, minus-circle, minus-square, minus, monitor, moon, more-horizontal, more-vertical, move, music, navigation-2, navigation, octagon, pause-circle, percent, plus-circle, plus-square, plus, power, radio, rss, search, server, share, shopping-bag, sidebar, smartphone, smile, square, table-2, tablet, target, terminal, trash-2, trash, triangle, tv, type, upload, x-circle, x-octagon, x-square, x, zoom-in, zoom-out
+
+The MIT License (MIT) (for the icons listed above)
+
+Copyright (c) 2013-present Cole Bemis
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+  -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ENERGY &amp; COMMODITIES MARKET REPORT</title>
+  <title>Raport rynków energetycznych</title>
   <style>
     :root {
       color-scheme: light;
@@ -146,7 +192,7 @@
     .comparison-row span { margin-right: 10px; }
     .chart-wrap { margin-top: 9px; }
     .chart-title { margin-bottom: 5px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
-    canvas.history-chart { display: block; width: 100% !important; height: 128px !important; }
+    .chart-canvas { display: block; width: 100% !important; height: 128px !important; }
     .table-heading { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; margin: 10px 0 5px; }
     .table-heading h3 { margin: 0; font-size: 12px; }
     .table-heading span { color: var(--muted); font-size: 10px; }
@@ -160,22 +206,12 @@
     .demo-badge { color: #76542f; font-size: 9px; font-weight: 800; text-transform: uppercase; }
     footer { display: flex; justify-content: space-between; gap: 12px; margin: 16px 3px 0; color: var(--muted); font-size: 9px; }
     .error { margin: 24px auto; width: min(760px, calc(100% - 32px)); padding: 15px; border: 1px solid #e8c1bc; border-radius: 9px; background: #fff1ef; color: #8c3026; }
-    @media (max-width: 720px) {
-      .toolbar { position: static; flex-wrap: wrap; padding: 12px 16px; }
-      .toolbar-controls { width: 100%; }
-      .toolbar-controls input { flex: 1; }
-      main { width: calc(100% - 20px); margin-top: 12px; }
-      .masthead { align-items: flex-start; flex-direction: column; padding: 20px; }
-      .report-date { text-align: left; }
-      .market-grid { grid-template-columns: repeat(12, minmax(0,1fr)); }
-      .market-card, .market-card.wide { grid-column: span 12; }
-      .kpis { grid-template-columns: repeat(2, minmax(0,1fr)); }
-    }
+
     @page { size: A4 landscape; margin: 5mm; }
-    @media print {
+    @media print, screen {
       body { background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .toolbar { display: none; }
-      main { width: 100%; height: 199mm; margin: 0; display: grid; grid-template-rows: auto auto minmax(0,1fr) auto; gap: 2mm; }
+      main { width: 100%; height: 199mm; margin: 0; display: grid; grid-template-rows: auto minmax(0,1fr) auto; gap: 2mm; }
       .masthead { min-height: 16mm; padding: 2mm 3mm; margin: 0; border-top-width: 1mm; }
       h1 { font-size: 14pt; }
       .masthead p { margin-top: 1mm; font-size: 7pt; }
@@ -199,7 +235,7 @@
       .range-labels, .range-position output, .comparison-row { font-size: 4.5pt; }
       .chart-wrap { margin-top: 1mm; }
       .chart-title { margin-bottom: .3mm; font-size: 4.5pt; }
-      canvas.history-chart { height: 14mm !important; }
+      .chart-canvas { height: 14mm !important; }
       .comparison-row { display: none; }
       .table-heading { margin: .7mm 0 .3mm; }
       .table-heading h3 { font-size: 6pt; }
@@ -380,7 +416,7 @@
     .kpi.emphasis .kpi-value.negative { color: #e6a093; }
     .range-labels, .comparison-row { color: #71808d; }
     .range-track { background: #e3e3de; }
-    .range-track span { background: #bd8644; }
+    .range-track span { background: var(--accent); }
     .range-position output { color: #657587; }
     .chart-title { color: #687a89; letter-spacing: .09em; }
     .table-heading { border-bottom: 1px solid #e2e2dc; }
@@ -417,24 +453,10 @@
       border-top: 1px solid #d6d5ce;
       color: #73808b;
     }
-    @media (max-width: 900px) {
-      main { width: calc(100% - 28px); }
-      .market-card.wide, .market-card:not(.wide) { grid-column: span 6; }
-    }
-    @media (max-width: 720px) {
-      .toolbar { position: static; flex-wrap: wrap; padding: 10px 14px; }
-      .toolbar-controls { width: 100%; }
-      .toolbar-controls input { flex: 1; }
-      main { width: calc(100% - 20px); margin-top: 12px; }
-      .masthead { align-items: flex-start; flex-direction: column; min-height: 0; padding: 17px; }
-      .report-date { min-width: 0; padding: 0; border-left: 0; text-align: left; }
-      .notice { align-items: flex-start; flex-direction: column; gap: 4px; }
-      #last-updated { text-align: left; }
-      .market-card, .market-card.wide { grid-column: span 12; }
-      .kpis { grid-template-columns: repeat(2, minmax(0,1fr)); }
-    }
+
+
     @page { size: A4 landscape; margin: 5mm; }
-    @media print {
+    @media print, screen {
       body {
         background: #eeede8;
         color: var(--ink);
@@ -444,7 +466,7 @@
         print-color-adjust: exact;
       }
       .toolbar { display: none; }
-      main { width: 100%; height: 199mm; margin: 0; overflow: hidden; display: grid; grid-template-rows: auto auto minmax(0,1fr) auto; gap: 1.5mm; }
+      main { width: 100%; height: 199mm; margin: 0; overflow: hidden; display: grid; grid-template-rows: auto minmax(0,1fr) auto; gap: 1.5mm; }
       .masthead { min-height: 16mm; padding: 2mm 3mm; margin: 0; }
       h1 { margin-top: 1mm; font-size: 14pt; }
       .eyebrow, .report-date span { font-size: 6pt; }
@@ -470,7 +492,7 @@
       .range-track span { top: -2px; height: 6px; }
       .chart-wrap { margin-top: .6mm; }
       .chart-title { margin-bottom: .2mm; font-size: 4.2pt; }
-      canvas.history-chart { height: 16mm !important; }
+      .chart-canvas { height: 16mm !important; }
       .comparison-row { display: none; }
       .table-heading { margin: .5mm 0 .2mm; padding-bottom: .2mm; }
       .table-heading h3 { font-size: 5.8pt; }
@@ -541,7 +563,7 @@
     .date-badge { border-color: #33475b; background: #172a3f; color: #dce4eb; }
     .date-badge.demo-badge { border-color: #594732; background: #292719; color: #e6bd84; }
     .kpi { border-color: #273a4e; background: #172a3e; }
-    .kpi.emphasis { border-color: #755838; border-left-color: var(--accent); background: #202c38; }
+    .kpi.emphasis { border-color: var(--accent); border-left-color: var(--accent); background: #202c38; }
     .kpi-label { color: #94a5b5; }
     .kpi-value { color: #e9eef3; }
     .kpi-value.positive, .comparison-row .positive { color: #a8c69b; }
@@ -551,7 +573,7 @@
     .kpi.emphasis .kpi-value.negative { color: #e6a093; }
     .range-labels, .comparison-row { color: #98a8b7; }
     .range-track { background: #2a3d50; }
-    .range-track span { background: #e0a34d; }
+    .range-track span { background: var(--accent); }
     .range-position output { color: #bdc7d0; }
     .chart-title { color: #b7c2cc; }
     .table-heading { border-bottom-color: #2a3c50; }
@@ -563,7 +585,7 @@
     .contract-table th:first-child { width: 34%; }
     .contract-table th:nth-child(2), .contract-table th:nth-child(3) { width: 22%; }
     .contract-table th:nth-child(4) { width: 22%; }
-    .contract-table th { white-space: normal; vertical-align: bottom; }
+    .contract-table th { white-space: normal; }
     .th-label, .th-unit { display: block; }
     .th-unit { margin-top: 1px; color: #8fa0af; font-size: .88em; font-weight: 500; letter-spacing: 0; text-transform: none; }
     table { color: #dbe3ea; }
@@ -574,7 +596,7 @@
     .empty { color: #9babb9; }
     .demo-badge { color: #e6bd84; }
     footer { border-top-color: #26394d; color: #8496a7; }
-    @media print {
+    @media print, screen {
       body { background: #091522; color: #e7edf3; }
       .market-card { border-color: #26394d; border-top-color: var(--accent); background: #112135; box-shadow: none; }
       .kpi, .date-badge { background: #172a3e; }
@@ -585,32 +607,378 @@
       .contract-table th { font-size: 4.1pt; }
       .contract-table td { white-space: nowrap; }
     }
+    th, td, th.numeric, td.numeric { text-align: center; }
+    th { vertical-align: middle; white-space: normal; }
+    .power-indices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1mm; }
+    .power-index { min-width: 0; padding: 1mm .6mm; border: 1px solid #2a3c50; border-radius: 3px; background: #172a3e; text-align: center; }
+    .power-index-name, .power-index-price, .power-index-unit, .power-index-change { display: block; }
+    .power-index-name { color: #b7c2cc; font-size: 5pt; font-weight: 600; }
+    .power-index-price { margin-top: .5mm; color: #e9eef3; font-size: 8pt; line-height: 1.1; font-variant-numeric: tabular-nums; }
+    .power-index-unit { margin-top: .2mm; color: #94a5b5; font-size: 4.2pt; }
+    .power-index-change { margin-top: .6mm; color: #94a5b5; font-size: 4pt; line-height: 1.3; font-variant-numeric: tabular-nums; }
+    .power-index-change.positive { color: #a8c69b; }
+    .power-index-change.negative { color: #e89588; }
+    .market-grid { grid-template-rows: minmax(0, 1.8fr) minmax(0, 1fr); }
+    .market-card.gas .chart-canvas,
+    .market-card.power .chart-canvas,
+    .market-card.coal .chart-canvas { height: 29.5mm !important; }
+    .eua-layout { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr); gap: 2mm; }
+    .eua-summary, .eua-history { min-width: 0; }
+    .eua-summary .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .eua-summary .kpi.emphasis { grid-column: span 1; }
+    .eua-summary .chart-canvas { height: 18mm !important; }
+    .eua-history .table-heading { margin-top: 0; }
+    .kpis, .eua-summary .kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); height: 10mm; gap: .8mm; }
+    .kpis > .kpi, .eua-summary .kpi.emphasis { grid-column: span 1; min-width: 0; padding: .6mm 1mm; display: grid; grid-template-rows: 2.6mm minmax(0, 1fr) 1.6mm; align-items: center; }
+    .kpis .kpi-label { margin: 0; font-size: 4.3pt; line-height: 1.2; }
+    .kpis .kpi-value { margin: 0; font-size: 7.5pt; line-height: 1.1; white-space: nowrap; overflow-wrap: normal; }
+    .kpis .kpi-unit { color: #94a5b5; font-size: 4.5pt; line-height: 1; }
+    .kpis .kpi.emphasis .kpi-value { font-size: 8pt; }
+    .kpis > .kpi:nth-child(n+4) { grid-column: span 1; }
+    .range-position { margin: 2mm 0 1.5mm; padding: 1.2mm 1mm; border: 1px solid #2a3c50; border-radius: 3px; background: #0e1c2b; }
+    .range-labels { align-items: flex-start; margin-bottom: 2mm; gap: 2mm; }
+    .range-endpoint:last-child { text-align: right; }
+    .range-endpoint-label, .range-endpoint-value { display: block; }
+    .range-endpoint-label { color: #94a5b5; font-size: 4.5pt; letter-spacing: .06em; }
+    .range-endpoint-value { margin-top: .6mm; color: #e7edf3; font-size: 6.5pt; line-height: 1.15; font-variant-numeric: tabular-nums; }
+    .range-track { height: 4px; border-radius: 2px; }
+    .range-track span { width: 3px; height: 10px; top: -3px; transform: translateX(-50%); border-radius: 2px; }
+    .range-position output { margin-top: 1.5mm; font-size: 4.5pt; }
+    .eua-summary .range-position { margin: 1.2mm 0 1mm; padding: 1mm; }
+    .eua-summary .range-endpoint-value { font-size: 5.5pt; }
+    /* Three markets in the first row; two equally sized markets below. */
+    .market-grid > .market-card.gas,
+    .market-grid > .market-card.power,
+    .market-grid > .market-card.coal { grid-column: span 4; }
+    .market-grid > .market-card.eua,
+    .market-grid > .market-card.biomass { grid-column: span 6; }
+    /* Five header directions for comparison; retained report data stays unchanged. */
+    .market-card > .section-heading {
+      height: 12mm; margin: 0 0 1.2mm; padding: 1.2mm;
+      display: grid; grid-template-columns: 9mm minmax(0,1fr) auto;
+      align-items: center; gap: 1.4mm; border: 0;
+    }
+    .market-heading-copy { min-width: 0; }
+    .market-card h2 { font-family: Arial, sans-serif; font-size: 8.2pt; line-height: 1.15; letter-spacing: -.02em; }
+    .market-card h2::before { content: none; }
+    .market-card .subheading { margin-top: 1mm; font-size: 5.6pt; line-height: 1.25; color: #c5d3df; }
+    .market-card .date-badge { font-size: 4.6pt; padding: .7mm; white-space: nowrap; }
+    .market-icon { display: flex; align-items: center; justify-content: center; color: var(--accent); }
+    .market-icon svg { width: 7mm; height: 7mm; }
+    /* Shared dark framed header, based on the preserved gas variant. */
+    .market-card > .section-heading { background: #1e2832; border: 0; border-left: 3px solid var(--accent); }
+    .market-card .market-icon { color: var(--accent); border: 0; height: 9mm; }
+    .market-card h2 { font-family: Arial, sans-serif; color: var(--accent); letter-spacing: .04em; text-transform: uppercase; font-size: 8pt; font-weight: 650; }
+    .market-card .subheading { color: #c5d3df; }
+    .market-card .date-badge { background: #172a3f; border: 1px solid #33475b; color: #dce4eb; }
+    /* Preserved alternatives: add header-variant-gas and/or header-variant-eua
+       to <main> to restore the earlier design for that section. */
+    .header-variant-gas .gas > .section-heading { background: #1e2832; border-left: 3px solid #e0a34d; }
+    .header-variant-gas .gas .market-icon { border: 1px solid #795d36; border-radius: 3px; height: 8mm; }
+    .header-variant-gas .gas h2 { color: #f0c17f; letter-spacing: .04em; text-transform: uppercase; font-size: 8pt; }
+    .header-variant-eua .eua > .section-heading { padding: .5mm 1mm; grid-template-columns: 9mm minmax(0,1fr) auto; border-bottom: 1px solid #435c48; }
+    .header-variant-eua .eua .market-icon { height: 9mm; border-radius: 50%; background: #263c32; color: #bed5ae; }
+    .header-variant-eua .eua h2 { color: #d3e3c8; font-size: 11pt; font-weight: 400; }
+    .header-variant-eua .eua .subheading { display: inline-block; padding: .5mm 1.5mm; margin-top: .7mm; border-radius: 8px; background: #263c32; color: #c3d4b7; }
+    .masthead .report-date {
+      align-self: stretch;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    footer { justify-content: flex-end; }
+    /* Shared course tile: variant A, with each market's accent. */
+    .market-card .kpi.emphasis {
+      background: var(--accent);
+      border: 1px solid var(--accent);
+      border-left-width: 3px;
+      border-radius: 3px;
+      box-shadow: inset 0 1px 0 #ffffff35;
+    }
+    .market-card .kpi.emphasis .kpi-label,
+    .market-card .kpi.emphasis .kpi-unit { color: #35404a; }
+    .market-card .kpi.emphasis .kpi-value { color: #102338; font-weight: 800; }
+    /* Screen preview uses the same report layout and margins as A4 printing. */
+    @media screen {
+      body { background: #07111c; }
+      .toolbar { display: flex; font-size: 13px; line-height: 1.4; }
+      .paper-preview { margin: 22px auto 38px; }
+      main {
+        width: 297mm;
+        height: 210mm;
+        padding: 5mm 5mm 6mm;
+        transform: scale(var(--preview-scale, 1));
+        transform-origin: top left;
+        background: #091522;
+        box-shadow: 0 12px 40px #0005;
+      }
+    }
+    @media screen and (max-width: 720px) {
+      .toolbar { position: static; flex-wrap: wrap; padding: 10px 14px; }
+      .toolbar-controls { width: 100%; }
+      .toolbar-controls input { flex: 1; min-width: 0; }
+    }
+    @media print {
+      .paper-preview { display: contents; }
+      main { transform: none; padding: 0; box-shadow: none; }
+    }
+
+    /* Complete light theme; geometry and data match the preserved original. */
+    :root { color-scheme: light; --ink:#354334; --muted:#756b58; --paper:#fffdf7; --line:#dbd1be; }
+    body { background:#e7dfce; color:#354334; }
+    main { background:#f8f4eb; }
+    .market-card.gas { --accent:#96516b; }
+    .market-card.power { --accent:#3d7198; }
+    .market-card.coal { --accent:#67737d; }
+    .market-card.eua { --accent:#668068; }
+    .market-card.biomass { --accent:#b57927; }
+    .market-card, .market-card.wide { background:#fffdf7; color:#354334; border-color:#dbd1be; border-top-color:var(--accent); }
+    .masthead { background:#dfd2b8; color:#354334; border-color:#dbd1be; border-top-color:#b57927; }
+    .masthead h1 { color:#354334; }
+    .masthead p, .eyebrow, .report-date span { color:#756b58; }
+    .masthead .report-date { border-color:#dbd1be; }
+    .report-date strong { color:#354334; }
+    .market-card > .section-heading { background:#dfd2b8; border:0; border-top:2px solid var(--accent); border-bottom:1px solid #dbd1be; border-radius:0; }
+    .market-card .market-heading-copy { text-align:center; }
+    .market-card h2 { color:#354334; font:400 10pt/1.15 Georgia,serif; text-transform:none; letter-spacing:0; }
+    .market-card .market-icon { color:#756b58; background:transparent; border:0; border-radius:0; }
+    .market-card .subheading { color:#756b58; background:transparent; padding:0; border-radius:0; }
+    .market-card .date-badge { color:#756b58; background:transparent; border:0; }
+    .kpi, .power-index { background:#f2ecdf; border-color:#dbd1be; }
+    .kpis .kpi-label, .kpis .kpi-unit, .power-index-name, .power-index-unit, .power-index-change { color:#756b58; }
+    .kpis .kpi-value, .power-index-price { color:#354334; }
+    .market-card .kpi.emphasis { background:var(--accent); border-color:var(--accent); box-shadow:none; }
+    .market-card .kpi.emphasis .kpi-label, .market-card .kpi.emphasis .kpi-unit { color:#fff; }
+    .market-card .kpi.emphasis .kpi-value { color:#fff; }
+    .kpis .kpi-value.positive, .power-index-change.positive { color:#387044; }
+    .kpis .kpi-value.negative, .power-index-change.negative { color:#b04439; }
+    .range-position { background:#f2ecdf; border-color:#dbd1be; }
+    .range-endpoint-label, .range-position output, .chart-title { color:#756b58; }
+    .range-endpoint-value { color:#354334; }
+    .range-track { background:#dbd1be; }
+    .range-track span { background:var(--accent); }
+    .table-heading, footer { border-color:#dbd1be; }
+    .table-heading h3, table { color:#354334; }
+    .table-heading span, footer, .empty { color:#756b58; }
+    th { background:#f2ecdf; color:#756b58; border-color:#dbd1be; }
+    td { border-color:#dbd1be; }
+    tbody tr:nth-child(even) { background:#f8f4eb; }
+    tbody tr:hover { background:#f2ecdf; }
+    .toolbar { background:#dfd2b8; border-color:#dbd1be; color:#354334; }
+    .toolbar label, #date-range { color:#756b58; }
+    .toolbar input { color:#354334; background:#fffdf7; border-color:#dbd1be; color-scheme:light; }
+    .button { color:#fff; background:#8c6835; border-color:#8c6835; }
+    @media screen { body { background:#e7dfce; } main { background:#f8f4eb; } }
+    @media print { body, main { background:#f8f4eb; } }
+
+    /* Selected sand-theme course tile: variant D. */
+    .market-card .kpi.emphasis {
+      background: color-mix(in srgb, var(--accent) 13%, #fffdf7);
+      border: 1px solid color-mix(in srgb, var(--accent) 35%, #fffdf7);
+      border-left: 3px solid var(--accent);
+      border-radius: 3px;
+      box-shadow: none;
+    }
+    .market-card .kpi.emphasis .kpi-label,
+    .market-card .kpi.emphasis .kpi-unit { color: #626a55; }
+    .market-card .kpi.emphasis .kpi-value { color: #354334; font-weight: 800; }
+    /* Companion tiles keep their original uniform fill; only corners match variant D. */
+    .market-card .kpi:not(.emphasis), .market-card .power-index {
+      background: #f2ecdf;
+      border: 1px solid #dbd1be;
+      border-radius: 3px;
+      box-shadow: none;
+    }
+
+    /* Selected range design: light card, formerly the EUA variant. */
+    .market-card .range-position {
+      background: #fffdf7;
+      border: 0;
+      border-radius: 4px;
+      padding: 1.2mm;
+      margin: 1.5mm 0;
+    }
+    .range-endpoint-unit { display:block; margin-top:.4mm; color:#756b58; font-size:4.5pt; line-height:1.15; }
+    .range-labels { margin-bottom:2mm; }
+    .range-track { position:relative; overflow:visible; height:3px; background:#ddd3bf; }
+    .range-tick { position:absolute; top:-2px; width:1px; height:8px; background:#9c937f; transform:translateX(-50%); }
+    .range-track span { z-index:1; }
+    .range-position output { margin-top:1.5mm; }
+    .chart-canvas { position:relative; }
+    canvas.history-chart { display:block; width:100% !important; height:100% !important; }
+
+    /* Interlocking report: the lower markets rise alongside the energy indices. */
+    .market-grid {
+      --market-gap: 1.5mm;
+      --shoulder-height: 11mm;
+      grid-template-rows: minmax(0,1.75fr) var(--shoulder-height) minmax(0,1fr);
+      gap: var(--market-gap);
+    }
+    .market-grid > .market-card.gas { grid-column:1 / 5; grid-row:1; }
+    .market-grid > .market-card.power { grid-column:5 / 9; grid-row:1 / 3; }
+    .market-grid > .market-card.coal { grid-column:9 / 13; grid-row:1; }
+    .market-grid > .market-card.eua,
+    .market-grid > .market-card.biomass {
+      grid-row:2 / 4;
+      display:grid;
+      grid-template-rows:var(--shoulder-height) minmax(0,1fr);
+      row-gap:var(--market-gap);
+      position:relative;
+      border-top:0;
+    }
+    .market-grid > .market-card.eua {
+      grid-column:1 / 7;
+      --notch-x:calc((200% - var(--market-gap)) / 3);
+      clip-path:polygon(0 0,var(--notch-x) 0,var(--notch-x) calc(var(--shoulder-height) + var(--market-gap)),100% calc(var(--shoulder-height) + var(--market-gap)),100% 100%,0 100%);
+    }
+    .market-grid > .market-card.biomass {
+      grid-column:7 / 13;
+      --notch-x:calc((100% + var(--market-gap)) / 3);
+      clip-path:polygon(var(--notch-x) 0,100% 0,100% 100%,0 100%,0 calc(var(--shoulder-height) + var(--market-gap)),var(--notch-x) calc(var(--shoulder-height) + var(--market-gap)));
+    }
+    .market-card.eua > .section-heading,
+    .market-card.biomass > .section-heading {
+      width:calc((200% - var(--market-gap)) / 3 - 1mm);
+      height:100%;
+      max-height:var(--shoulder-height);
+      margin:0;
+      grid-template-columns:9mm minmax(0,1fr) auto;
+      align-self:start;
+    }
+    .market-card.biomass > .section-heading { justify-self:end; }
+    .market-card.eua > .eua-layout,
+    .market-card.biomass > .biomass-content { grid-row:2; min-height:0; }
+    .market-card.eua::before,
+    .market-card.biomass::before {
+      content:""; position:absolute; pointer-events:none;
+      top:calc(var(--shoulder-height) + var(--market-gap) - 2px);
+      height:2px;
+      background:var(--accent);
+      border:0;
+    }
+    .market-card.eua::before { left:var(--notch-x); right:0; border-left:1px solid #dbd1be; }
+    .market-card.biomass::before { left:0; right:calc(100% - var(--notch-x)); border-right:1px solid #dbd1be; }
+    .market-card.power .power-indices-heading { margin-top: 3mm; }
+    .market-grid > .market-card.power { position: relative; padding-bottom: 1mm; }
+    .market-card.power .power-indices { position: absolute; left: 1mm; right: 1mm; bottom: 1mm; margin-bottom: 0; }
+    .market-grid > .market-card.eua,
+    .market-grid > .market-card.biomass { border-top: 2px solid var(--accent); }
+    .market-card.power .power-indices-heading { transform: translateY(-1mm); }
+    /* EUA: table aligned to the narrow arm; chart spans the full lower area. */
+    .eua-layout {
+      grid-template-columns:minmax(0,2fr) minmax(0,1fr);
+      grid-template-rows:auto minmax(0,1fr);
+      column-gap:var(--market-gap);
+      row-gap:1mm;
+      height:100%;
+      min-height:0;
+    }
+    .eua-layout > .chart-wrap {
+      grid-column:1 / -1;
+      min-height:0;
+      margin:0;
+      display:flex;
+      flex-direction:column;
+    }
+    .eua-layout > .chart-wrap .chart-title { flex:none; }
+    .eua-layout > .chart-wrap .chart-canvas { flex:1; min-height:0; height:auto !important; }
+    .eua-history table { table-layout:fixed; }
+    .eua-history th:first-child { width:25%; }
+    .eua-history th:nth-child(2), .eua-history th:nth-child(3) { width:22%; }
+    .eua-history th:nth-child(4) { width:31%; }
+    .eua-layout > .eua-summary { margin-right: .5mm; }
+    /* Transactions alternate above and below a shared chronological axis. */
+    .biomass-content { display:flex; flex-direction:column; }
+    .biomass-timeline {
+      position:relative; display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      flex:1; min-height:0; gap:1.4mm;
+      list-style:none; margin:0; padding:1mm 1mm 2mm;
+    }
+    .biomass-timeline::before {
+      content:""; position:absolute; left:1mm; right:1mm;
+      top:calc(50% - .5mm); height:1px; background:#bfa678;
+    }
+    .timeline-event { position:relative; display:grid; grid-template-rows:minmax(0,1fr) 5mm minmax(0,1fr); min-width:0; }
+    .transaction-card {
+      grid-row:1; align-self:end; position:relative; padding:1mm;
+      background:#f2ecdf; border:1px solid #d8c8aa;
+      border-top:2px solid var(--accent); border-radius:4px;
+    }
+    .timeline-event:nth-child(even) .transaction-card { grid-row:3; align-self:start; }
+    .transaction-card::after {
+      content:""; position:absolute; left:50%; top:100%; height:2.5mm;
+      border-left:1px solid #bfa678;
+    }
+    .timeline-event:nth-child(even) .transaction-card::after { top:auto; bottom:100%; }
+    .transaction-marker {
+      position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+      width:2mm; height:2mm; border:1px solid #fffdf7;
+      border-radius:50%; background:var(--accent); z-index:1;
+    }
+    .transaction-date { display:block; color:#756b58; font-size:5.5pt; line-height:1.2; }
+    .transaction-price { display:block; margin:.8mm 0 1mm; color:#705025; font-size:8pt; line-height:1.1; font-variant-numeric:tabular-nums; }
+    .transaction-fields { display:grid; grid-template-columns:auto minmax(0,1fr); column-gap:1mm; row-gap:.6mm; margin:0; }
+    .transaction-fields dt { color:#756b58; font-size:3.8pt; line-height:1.2; text-transform:uppercase; letter-spacing:0; }
+    .transaction-fields dd { margin:0; color:#354334; font-size:4.8pt; line-height:1.15; overflow-wrap:anywhere; }
+    /* Adaptive count; alternating cards share a two-column-wide lane. */
+    .biomass-timeline { grid-template-columns:repeat(var(--event-count,6),minmax(0,1fr)); }
+    .transaction-card { width:calc(200% + 1.4mm); }
+    .timeline-event:nth-child(even) .transaction-card { transform:translateX(calc(-50% - .7mm)); }
+    .transaction-card::after { left:25%; }
+    .timeline-event:nth-child(even) .transaction-card::after { left:75%; }
+    .biomass-timeline:has(.timeline-event:only-child) .transaction-card { width:100%; }
+    /* Proposed default: typography replaces visible field labels. */
+    .transaction-fields { display:flex; flex-direction:column; gap:.7mm; }
+    .transaction-fields dt { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+    .transaction-fields dd { font-size:5pt; }
+    .transaction-field-kind { font-weight:700; }
+    .transaction-field-buyer { color:#756b58 !important; }
+    .transaction-field-source { font-size:3.8pt !important; color:#756b58 !important; }
+    .biomass-content > .table-scroll { flex:1; min-height:0; }
+    .biomass-transactions { table-layout:fixed; }
+    .biomass-transactions th { padding:1mm .7mm; }
+    .biomass-transactions td { height:5.5mm; padding:1.2mm .7mm; vertical-align:middle; font-size:5.3pt; line-height:1.2; overflow-wrap:anywhere; }
+    .biomass-transactions th:nth-child(1) { width:13%; }
+    .biomass-transactions th:nth-child(2) { width:21%; }
+    .biomass-transactions th:nth-child(3) { width:20%; }
+    .biomass-transactions th:nth-child(4) { width:10%; }
+    .biomass-transactions th:nth-child(5) { width:14%; }
+    .biomass-transactions th:nth-child(6) { width:22%; }
+    .market-card.gas .contract-table td,
+    .market-card.power .contract-table td { padding-top:.6mm; padding-bottom:.6mm; }
+    .market-card.coal .history-table td { padding-top:.65mm; padding-bottom:.65mm; }
+    .contract-table th:first-child, .contract-table td:first-child { text-align:left; padding-left:1.5mm; }
+    table .th-unit { color: #5d533f; font-weight: 600; }
+    .market-card.coal .history-table td { padding-top:.6mm; padding-bottom:.6mm; }
+    .market-card .range-position output { font-size:5.5pt; }
+    .market-card.biomass > .biomass-content { justify-content:center; }
+    .biomass-content > .table-scroll { flex:0 0 auto; }
+    .eua-history .history-table td { padding-top:.6mm; padding-bottom:.6mm; }
   </style>
 </head>
 <body>
   <div class="toolbar">
-    <div><label for="report-date">Data raportu</label><br><span id="date-range"></span></div>
+    <div><label for="report-date">Dane na dzień</label><br><span id="date-range"></span></div>
     <div class="toolbar-controls">
-      <input id="report-date" type="date" aria-label="Wybierz datę raportu">
+      <input id="report-date" type="date" aria-label="Wybierz dzień danych">
       <button class="button" id="print-button" type="button">Drukuj / Zapisz PDF</button>
     </div>
   </div>
+  <div class="paper-preview">
   <main>
     <header class="masthead">
       <div>
-        <div class="eyebrow">Premium energy intelligence · raport dzienny</div>
-        <h1>ENERGY &amp; COMMODITIES MARKET REPORT</h1>
-        <p>Gaz · energia elektryczna · węgiel · EUA · zrębka</p>
+        <div class="eyebrow">Notowania i trendy</div>
+        <h1>Raport rynków energetycznych</h1>
+        <p>Gaz · Energia elektryczna · Węgiel · EUA · Zrębki drzewne</p>
       </div>
-      <div class="report-date"><span>DATA RAPORTU</span><strong id="report-date-label">—</strong></div>
+      <div class="report-date"><span>DANE NA DZIEŃ</span><strong id="report-date-label">—</strong></div>
     </header>
-    <div class="notice">
-      <span>Dane z DataMaster.xlsx · najnowsze notowanie nie późniejsze niż data raportu · historia do 30 dni</span>
-      <span id="last-updated"></span>
-    </div>
     <div id="dashboard" class="market-grid" aria-live="polite"></div>
-    <footer><span>Źródło: DataMaster.xlsx</span><span id="generated-at"></span></footer>
+    <footer><span id="generated-at"></span></footer>
   </main>
+  </div>
   <script>/*!
  * Chart.js v4.5.1
  * https://www.chartjs.org
@@ -636,9 +1004,31 @@
       const dateLabel = document.getElementById("report-date-label");
       const dashboard = document.getElementById("dashboard");
       const chartInstances = [];
+      // Round every vertex of the L outline, including the concave shoulder.
+      const roundMarketCorners = () => {
+        dashboard.querySelectorAll(".market-card.eua,.market-card.biomass").forEach(section=>{
+          const style=getComputedStyle(section);
+          const w=section.offsetWidth,h=section.offsetHeight;
+          const gap=parseFloat(style.rowGap);
+          const y=parseFloat(style.gridTemplateRows)+gap;
+          const left=section.classList.contains("eua");
+          const x=left?(2*w-gap)/3:(w+gap)/3;
+          const points=left?[[0,0],[x,0],[x,y],[w,y],[w,h],[0,h]]:[[x,0],[w,0],[w,h],[0,h],[0,y],[x,y]];
+          const corners=points.map((point,index)=>{
+            const previous=points[(index+points.length-1)%points.length],next=points[(index+1)%points.length];
+            const before=Math.hypot(previous[0]-point[0],previous[1]-point[1]);
+            const after=Math.hypot(next[0]-point[0],next[1]-point[1]);
+            const radius=Math.min(3,before/2,after/2);
+            const along=(target,length)=>point.map((value,axis)=>value+(target[axis]-value)*radius/length);
+            return {point,start:along(previous,before),end:along(next,after)};
+          });
+          const path=`M ${corners[0].start.join(" ")} `+corners.map(c=>`L ${c.start.join(" ")} Q ${c.point.join(" ")} ${c.end.join(" ")}`).join(" ")+" Z";
+          section.style.clipPath=`path('${path}')`;
+        });
+      };
       const locale = "pl-PL";
       const chartColors = {
-        gas: {line:"#b87924",fill:"rgba(184,121,36,.12)"},
+        gas: {line:"#96516b",fill:"rgba(150,81,107,.12)"},
         power: {line:"#3d7198",fill:"rgba(61,113,152,.12)"},
         coal: {line:"#535b60",fill:"rgba(83,91,96,.12)"},
         eua: {line:"#647d61",fill:"rgba(100,125,97,.12)"},
@@ -685,9 +1075,19 @@
       const card = (title, subtitle, date, marketClass, wide=false) => {
         const section = el("section", `market-card ${marketClass}${wide ? " wide" : ""}`);
         const heading = el("div", "section-heading");
-        const left = document.createElement("div");
+        const icons={
+          gas:'<path d="M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4"/>',
+          power:'<path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z"/>',
+          coal:'<path d="M11.264 2.205A4 4 0 0 0 6.42 4.211l-4 8a4 4 0 0 0 1.359 5.117l6 4a4 4 0 0 0 4.438 0l6-4a4 4 0 0 0 1.576-4.592l-2-6a4 4 0 0 0-2.53-2.53z"/><path d="M11.99 22 14 12l7.822 3.184"/><path d="M14 12 8.47 2.302"/>',
+          eua:'<path d="M11 20a10 10 0 0010-10 25.9 25.9 0 00-1.04-7.281 1 1 0 00-1.755-.325C15.833 5.5 13 5.5 9.8 6.1A7 7 0 0011 20"/><path d="M2 21a5 5 0 012.911-4.544C7.613 15.212 8.351 15.24 11 13"/>',
+          biomass:'<path d="M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z"/><path d="M7 16v6"/><path d="M13 19v3"/><path d="M12 19h8.3a1 1 0 0 0 .7-1.7L18 14h.3a1 1 0 0 0 .7-1.7L16 9h.2a1 1 0 0 0 .8-1.7L13 3l-1.4 1.5"/>',
+        };
+        const icon=el("span","market-icon");
+        icon.setAttribute("aria-hidden","true");
+        icon.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icons[marketClass]||""}</svg>`;
+        const left = el("div","market-heading-copy");
         left.append(el("h2", "", title), el("div", "subheading", subtitle));
-        heading.append(left, el("span", "date-badge", date ? formatDate(date) : "Brak notowań"));
+        heading.append(icon,left, el("span", "date-badge", date ? formatDate(date) : "Brak notowań"));
         section.append(heading);
         return section;
       };
@@ -721,6 +1121,20 @@
         }
         t.append(thead,body); wrap.append(t); return wrap;
       };
+      const reserveTableRows = (table, count) => {
+        const body=table.tBodies[0];
+        if(body.querySelector(".empty")){
+          body.replaceChildren();
+          table.setAttribute("aria-label","Brak danych dla wybranego dnia");
+        }
+        const columns=table.tHead.rows[0].cells.length;
+        while(body.rows.length<count){
+          const row=el("tr","placeholder-row");
+          row.setAttribute("aria-hidden","true");
+          for(let index=0;index<columns;index++) row.append(el("td","","\u00a0"));
+          body.append(row);
+        }
+      };
       const addTable = (section, title, caption, headers, rows, numericColumns=[]) => {
         const titleRow = el("div","table-heading");
         titleRow.append(el("h3","",title),el("span","",caption));
@@ -743,6 +1157,7 @@
         halves.forEach(items=>{
           const wrapper=table(headers,items,[1,2,3]);
           wrapper.querySelector("table").classList.add("contract-table");
+          reserveTableRows(wrapper.querySelector("table"),5);
           pair.append(wrapper);
         });
         section.append(titleRow,pair);
@@ -751,14 +1166,19 @@
         const grid = el("div","kpis");
         items.forEach((item,index) => {
           const box = el("div",`kpi${item.emphasis ? " emphasis" : ""}`);
-          box.append(el("span","kpi-label",item.label),el("span",`kpi-value${item.tone ? " "+item.tone : ""}`,item.value));
+          box.append(
+            el("span","kpi-label",item.label),
+            el("span",`kpi-value${item.tone ? " "+item.tone : ""}`,item.value),
+            el("span","kpi-unit",item.unit||"\u00a0"),
+          );
           grid.append(box);
         });
         section.append(grid);
       };
       const createChart = (rows, cfg) => {
         const wrap = el("div","chart-wrap");
-        wrap.append(el("div","chart-title","Cena historyczna · do 30 dni"));
+        const chartInstruments={gas:"TGEgasDA",power:"TGeBase",coal:"Węgiel Rotterdam",eua:"EUA · kontrakt roczny"};
+        wrap.append(el("div","chart-title",`Cena historyczna · do 30 dni · ${chartInstruments[cfg.marketClass]||cfg.title}`));
         if (!rows.length) {
           wrap.append(el("div","empty","Brak danych do wykresu."));
           return wrap;
@@ -773,6 +1193,9 @@
         const canvas=el("canvas","history-chart");
         canvas.setAttribute("role","img");
         canvas.setAttribute("aria-label",`Wykres historycznej ceny: ${cfg.title}`);
+        const plot=el("div","chart-canvas");
+        plot.append(canvas);
+        wrap.append(plot);
         const chart=new Chart(canvas,{
           type:"line",
           data:{
@@ -794,6 +1217,7 @@
           },
           options:{
             responsive:true,
+            devicePixelRatio:Math.max(2,window.devicePixelRatio||1),
             maintainAspectRatio:false,
             animation:false,
             interaction:{intersect:false,mode:"index"},
@@ -812,15 +1236,28 @@
             },
             scales:{
               x:{
+                alignToPixels:true,
+                afterBuildTicks:axis=>{
+                  const count=Math.min(4,rows.length);
+                  const positions=Array.from({length:count},(_,index)=>count===1?0:Math.round(index*(rows.length-1)/(count-1)));
+                  axis.ticks=positions.map(value=>({value}));
+                },
                 border:{display:false},
                 grid:{display:false},
-                ticks:{color:"#9aabba",maxTicksLimit:2,maxRotation:0,font:{size:9}},
+                ticks:{
+                  color:"#756b58",maxTicksLimit:4,autoSkip:false,maxRotation:0,font:{size:9},
+                  callback:function(value) {
+                    const row=rows[value];
+                    return row ? parseDate(row.trading_date).toLocaleDateString(locale,{day:"2-digit",month:"2-digit",timeZone:"UTC"}) : "";
+                  },
+                },
               },
               y:{
+                alignToPixels:true,
                 border:{display:false},
-                grid:{color:"#2a3c50"},
+                grid:{color:"#dbd1be"},
                 ticks:{
-                  color:"#9aabba",
+                  color:"#756b58",
                   maxTicksLimit:3,
                   font:{size:9},
                   callback:value=>new Intl.NumberFormat(locale,{maximumFractionDigits:0}).format(value),
@@ -830,7 +1267,6 @@
           },
         });
         chartInstances.push(chart);
-        wrap.append(canvas);
         return wrap;
       };
       const windowRows = (rows, asOf) => {
@@ -864,14 +1300,28 @@
         const position=max===min?50:Math.max(0,Math.min(100,(value-min)/(max-min)*100));
         const range=el("div","range-position");
         const labels=el("div","range-labels");
-        labels.append(el("span","",`Min ${fmtMoney(min,unit)}`),el("span","",`Max ${fmtMoney(max,unit)}`));
+        [["MIN · 30 DNI",min],["MAX · 30 DNI",max]].forEach(([label,value])=>{
+          const endpoint=el("div","range-endpoint");
+          endpoint.append(
+            el("span","range-endpoint-label",label),
+            el("strong","range-endpoint-value",formatNumber(value)),
+            el("span","range-endpoint-unit",unit.trim()),
+          );
+          labels.append(endpoint);
+        });
         const track=el("div","range-track");
         const marker=document.createElement("span");
         marker.style.left=`${position}%`;
         marker.setAttribute("aria-hidden","true");
+        [25,50,75].forEach(position=>{
+          const tick=el("i","range-tick");
+          tick.style.left=`${position}%`;
+          tick.setAttribute("aria-hidden","true");
+          track.append(tick);
+        });
         track.append(marker);
-        const output=el("output","",`Pozycja ceny: ${formatNumber(position)}%`);
-        range.setAttribute("aria-label",`Pozycja ceny w przedziale 30 dni: ${formatNumber(position)}%`);
+        const output=el("output","",`Pozycja ceny: ${Math.round(position)}%`);
+        range.setAttribute("aria-label",`Pozycja ceny w przedziale 30 dni: ${Math.round(position)}%`);
         range.append(labels,track,output);
         section.append(range);
       };
@@ -895,7 +1345,7 @@
         if (a===null || b===null) return "—";
         const diff=a-b;
         const pct=b===0 ? null : diff/b*100;
-        return `${diff>0?"+":""}${formatNumber(diff)}${pct===null?"":` (${pct>0?"+":""}${formatNumber(pct)}%)`}`;
+        return pct===null ? "—" : `${signed(pct)}%`;
       };
       const changeTone = value => {
         const number=numeric(value);
@@ -906,13 +1356,10 @@
         const delta=priceDelta(row,metrics.previous,cfg.priceField);
         const percent=delta?.percent===null||!delta?"—":`${delta.percent>0?"↑ ":delta.percent<0?"↓ ":""}${signed(delta.percent)}%`;
         addKpis(section,[
-          {label:"Kurs",value:fmtMoney(row?.[cfg.priceField],cfg.priceUnit),emphasis:true},
-          {label:"Zmiana ceny",value:delta?`${displayDelta(delta)}${cfg.priceUnit}`:"—",tone:changeTone(delta?.change)},
-          {label:"Zmiana %",value:percent,tone:changeTone(delta?.percent)},
-          {label:"Wolumen",value:cfg.volumeField==="volume_mwh"?fmtVolume(row?.[cfg.volumeField]):(row?.[cfg.volumeField]??"—")},
-          {label:"Zmiana wolumenu",value:volumeChange(row,metrics.previous)},
-          {label:"Minimum · 30 dni",value:prices.length?fmtMoney(Math.min(...prices),cfg.priceUnit):"—"},
-          {label:"Maksimum · 30 dni",value:prices.length?fmtMoney(Math.max(...prices),cfg.priceUnit):"—"},
+          {label:"Kurs",value:formatNumber(row?.[cfg.priceField]),unit:cfg.priceUnit.trim(),emphasis:true},
+          {label:"Zmiana ceny",value:percent,tone:changeTone(delta?.percent)},
+          {label:"Wolumen",value:formatNumber(row?.[cfg.volumeField]),unit:cfg.volumeField==="volume_mwh"?"MWh":""},
+          {label:"Zmiana wolumenu",value:volumeChange(row,metrics.previous),tone:changeTone(volumeChange(row,metrics.previous))},
         ]);
         addRangePosition(section,row,prices,cfg.priceField,cfg.priceUnit);
         addComparisons(section,metrics.allRows,metrics.asOf,cfg.priceField,cfg.priceUnit);
@@ -950,15 +1397,26 @@
       };
       const addPowerIndices = (section, records, asOf) => {
         const available=through(records,asOf);
-        const ids=[...new Set(available.map(row=>row.data_id).filter(id=>id&&id!=="tge_power_da_base"))].sort();
-        const rows=ids.map(id=>{
-          const series=available.filter(row=>row.data_id===id), current=latest(series);
-          const previous=series.length>1?series[series.length-2]:null;
-          const delta=priceDelta(current,previous,"price_pln_mwh");
-          const change=delta?`${displayDelta(delta)} zł/MWh${delta.percent===null?"":` · ${signed(delta.percent)}%`}`:"—";
-          return [current?.instrument||id,current?formatDate(current.trading_date):"—",fmtMoney(current?.price_pln_mwh," zł/MWh"),change];
+        const indexOrder=["tge_power_da_peak","tge_power_da_offpeak","tge_power_da_24"];
+        const ids=[...new Set(available.map(row=>row.data_id).filter(id=>id&&id!=="tge_power_da_base"))].sort((a,b)=>{
+          const rank=id=>indexOrder.includes(id)?indexOrder.indexOf(id):indexOrder.length;
+          return rank(a)-rank(b)||a.localeCompare(b);
         });
-        addTable(section,"Pozostałe indeksy energii","Ostatnie notowanie ≤ data raportu",["Indeks","Data","Kurs","Zmiana"],rows,[2,3]);
+        const heading=el("div","table-heading power-indices-heading");
+        heading.append(el("h3","","Pozostałe indeksy energii"));
+        const tiles=el("div","power-indices");
+        ids.forEach(id=>{
+          const series=available.filter(row=>row.data_id===id), current=latest(series);
+          const tile=el("div","power-index");
+          tile.append(
+            el("span","power-index-name",current?.instrument||id),
+            el("strong","power-index-price",formatNumber(current?.price_pln_mwh)),
+            el("span","power-index-unit","zł/MWh"),
+          );
+          tiles.append(tile);
+        });
+        if (!ids.length) tiles.append(el("div","empty","Brak danych dla wybranej daty."));
+        section.append(heading,tiles);
       };
       const addHistoryMarket = (target, key, title, subtitle, cfg, asOf) => {
         const rows=through(DATA[key]||[],asOf);
@@ -966,20 +1424,62 @@
         metrics.allRows=DATA[key]||[];
         metrics.asOf=asOf;
         const section=card(title,subtitle,latest(rows)?.trading_date,cfg.marketClass);
-        const current=metrics.current;
+        if (key==="eua") {
+          const layout=el("div","eua-layout");
+          const summary=el("div","eua-summary");
+          const history=el("div","eua-history");
+          addPriceMetrics(summary,metrics,cfg);
+          const recent=rows.slice(-7).reverse().map(r=>[
+            formatDate(r.trading_date),formatNumber(r.price),formatNumber(r.high),formatNumber(r.volume),
+          ]);
+          const priceUnit=`(${cfg.priceUnit.trim()})`;
+          const historyTable=addTable(history,"Ostatnie notowania","",[
+            "Data",{label:"Kurs",unit:priceUnit},{label:"Maks.",unit:priceUnit},"Wolumen",
+          ],recent,[1,2,3]);
+          historyTable.querySelector("table").classList.add("history-table");
+          reserveTableRows(historyTable.querySelector("table"),key==="eua"?7:5);
+          const chart=summary.querySelector(".chart-wrap");
+          layout.append(summary,history,chart);
+          section.append(layout);
+          target.append(section);
+          return;
+        }
         addPriceMetrics(section,metrics,cfg);
-        const recent=rows.slice(-10).reverse().map(r=>[formatDate(r.trading_date),fmtMoney(r.price,cfg.priceUnit),fmtMoney(r.open,cfg.priceUnit),fmtMoney(r.high,cfg.priceUnit),fmtMoney(r.low,cfg.priceUnit),r.volume??"—",r.change_pct??"—"]);
-        const historyTable=addTable(section,"Ostatnie notowania","Do 10 sesji",["Data","Kurs","Otwarcie","Maks.","Min.","Wolumen","Zmiana"],recent,[1,2,3,4,5,6]);
+        const recent=rows.slice(-5).reverse().map(r=>[formatDate(r.trading_date),formatNumber(r.price),formatNumber(r.high),formatNumber(r.volume)]);
+        const priceUnit=`(${cfg.priceUnit.trim()})`;
+        const historyTable=addTable(section,"Ostatnie notowania","",[
+          "Data",
+          {label:"Kurs",unit:priceUnit},
+          {label:"Maks.",unit:priceUnit},
+          "Wolumen",
+        ],recent,[1,2,3]);
         historyTable.querySelector("table").classList.add("history-table");
+          reserveTableRows(historyTable.querySelector("table"),key==="eua"?7:5);
         target.append(section);
       };
+      // Table view: show up to nine latest available transactions.
+      const BIOMASS_MAX_RECORDS=9;
+      const BIOMASS_EXTRA_SAMPLES=[
+        {date:"2026-10-26",buyer:"Przykładowy odbiorca H",kind:"Zrębka leśna",volume:225,price:145,source:"Dane demonstracyjne"},
+        {date:"2026-11-01",buyer:"Przykładowy odbiorca D",kind:"Zrębka leśna",volume:310,price:151,source:"Dane demonstracyjne"},
+        {date:"2026-10-31",buyer:"Przykładowy odbiorca E",kind:"Zrębka tartaczna",volume:180,price:143,source:"Dane demonstracyjne"},
+        {date:"2026-10-28",buyer:"Przykładowy odbiorca F",kind:"Zrębka energetyczna",volume:260,price:149,source:"Dane demonstracyjne"},
+        {date:"2026-10-27",buyer:"Przykładowy odbiorca G",kind:"Zrębka przemysłowa",volume:195,price:141,source:"Dane demonstracyjne"},
+      ];
       const addBiomass = (target, asOf) => {
-        const samples=(DATA.sample_biomass||[]).filter(row=>row.date<=asOf).sort((a,b)=>b.date.localeCompare(a.date));
-        const section=card("Zrębka","Przykładowe dane demonstracyjne",samples[0]?.date,"biomass");
-        section.querySelector(".date-badge").textContent=samples.length?`DEMO · ${formatDate(samples[0].date)}`:"DEMO";
-        section.querySelector(".date-badge").classList.add("demo-badge");
-        const rows=samples.map(row=>[formatDate(row.date),row.buyer,row.kind,formatNumber(row.volume),fmtMoney(row.price," zł/t"),row.source]);
-        addTable(section,"Notowania zrębki","Dane demonstracyjne",["Data","Nabywca","Rodzaj","Wolumen","Cena","Źródło"],rows,[3,4]);
+        const samples=[...(DATA.sample_biomass||[]),...BIOMASS_EXTRA_SAMPLES].filter(row=>row.date<=asOf).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,BIOMASS_MAX_RECORDS);
+        const section=card("Rynek zrębków drzewnych","Notowania cen · Transakcje w Polsce",samples[0]?.date,"biomass");
+        section.querySelector(".date-badge").textContent=samples.length?formatDate(samples[0].date):"Brak notowań";
+
+        const content=el("div","biomass-content");
+        const rows=samples.map(row=>[
+          formatDate(row.date),row.buyer,row.kind,formatNumber(row.volume),fmtMoney(row.price," zł/t"),row.source,
+        ]);
+        const wrapper=table(["Data","Nabywca","Rodzaj","Wolumen","Cena","Źródło"],rows,[3,4]);
+        wrapper.querySelector("table").classList.add("biomass-transactions");
+        reserveTableRows(wrapper.querySelector("table"),BIOMASS_MAX_RECORDS);
+        content.append(wrapper);
+        section.append(content);
         target.append(section);
       };
       const render = () => {
@@ -989,22 +1489,41 @@
         chartInstances.forEach(chart=>chart.destroy());
         chartInstances.length=0;
         dashboard.replaceChildren();
-        addPriceMarket(dashboard,{key:"gas_rdn",title:"Gaz",subtitle:"Rynek dnia następnego · TGEgasDA",priceField:"price_pln_mwh",volumeField:"volume_mwh",priceUnit:" zł/MWh",marketClass:"gas",wide:true,otfKey:"gas_otf",otfPrefix:"gas_base",contractPrefix:"GAS_BASE_"},asOf);
-        addPriceMarket(dashboard,{key:"power_rdn",title:"Energia elektryczna",subtitle:"TGeBase · rynek dnia następnego",instrumentId:"tge_power_da_base",priceField:"price_pln_mwh",volumeField:"volume_mwh",priceUnit:" zł/MWh",marketClass:"power",wide:true,otfKey:"power_otf",otfPrefix:"power_base",contractPrefix:"BASE_"},asOf);
-        addHistoryMarket(dashboard,"coal","Węgiel","Rotterdam Coal Futures",{priceField:"price",volumeField:"volume",priceUnit:" USD/t",marketClass:"coal"},asOf);
-        addHistoryMarket(dashboard,"eua","EUA","European Union Allowance · Year Futures",{priceField:"price",volumeField:"volume",priceUnit:" EUR/t",marketClass:"eua"},asOf);
+        addPriceMarket(dashboard,{key:"gas_rdn",title:"Rynek gazu",subtitle:"Rynek dnia następnego · TGEgasDA",priceField:"price_pln_mwh",volumeField:"volume_mwh",priceUnit:" zł/MWh",marketClass:"gas",wide:true,otfKey:"gas_otf",otfPrefix:"gas_base",contractPrefix:"GAS_BASE_"},asOf);
+        addPriceMarket(dashboard,{key:"power_rdn",title:"Rynek energii elektrycznej",subtitle:"Rynek dnia następnego · TGeBase",instrumentId:"tge_power_da_base",priceField:"price_pln_mwh",volumeField:"volume_mwh",priceUnit:" zł/MWh",marketClass:"power",wide:true,otfKey:"power_otf",otfPrefix:"power_base",contractPrefix:"BASE_"},asOf);
+        addHistoryMarket(dashboard,"coal","Rynek węgla","Kontrakty terminowe · Węgiel Rotterdam",{priceField:"price",volumeField:"volume",priceUnit:" PLN/t",marketClass:"coal"},asOf);
+        addHistoryMarket(dashboard,"eua","Rynek EUA","Kontrakty roczne · Uprawnienia do emisji CO₂",{priceField:"price",volumeField:"volume",priceUnit:" PLN/t",marketClass:"eua"},asOf);
         addBiomass(dashboard,asOf);
+        requestAnimationFrame(()=>{
+          roundMarketCorners();
+          chartInstances.forEach(chart=>{
+            const plot=chart.canvas.parentElement;
+            chart.resize(plot.clientWidth,plot.clientHeight);
+          });
+        });
       };
       dateInput.min=DATA.min_date;
       dateInput.max=DATA.max_date;
       dateInput.value=DATA.max_date;
       dateInput.addEventListener("change",render);
       document.getElementById("print-button").addEventListener("click",()=>window.print());
-      window.addEventListener("beforeprint",()=>chartInstances.forEach(chart=>chart.resize()));
+      window.addEventListener("beforeprint",()=>{roundMarketCorners();chartInstances.forEach(chart=>chart.resize());});
       document.getElementById("generated-at").textContent=`Wygenerowano ${new Date().toLocaleString(locale)}`;
-      document.getElementById("last-updated").textContent=DATA.updated_at
-        ?`Aktualizacja danych: ${new Date(DATA.updated_at).toLocaleString(locale)}`
-        :"";
+      const preview = document.querySelector(".paper-preview");
+      const report = preview.querySelector("main");
+      const fitReport = () => {
+        const scale = Math.min(1, Math.max(0, document.documentElement.clientWidth - 24) / report.offsetWidth);
+        roundMarketCorners();
+        preview.style.setProperty("--preview-scale", scale);
+        preview.style.width = `${report.offsetWidth * scale}px`;
+        preview.style.height = `${report.offsetHeight * scale}px`;
+      };
+      window.addEventListener("resize", fitReport);
+      window.addEventListener("afterprint", () => {
+        fitReport();
+        chartInstances.forEach(chart => chart.resize());
+      });
+      fitReport();
       render();
     })();
   </script>
