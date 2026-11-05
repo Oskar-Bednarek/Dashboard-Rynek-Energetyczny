@@ -344,7 +344,7 @@ def confirm_dates(
     otf_session_date = validate_otf_session_choice(
         otf_session_candidates, selected_otf_date
     )
-    for key in ("validation_report", "response", "parsed_response", "validated_payload", "validated_sections", "biomass_response", "biomass_added", "biomass_checked", "biomass_warnings"):
+    for key in ("validation_report", "response", "parsed_response", "validated_payload", "validated_sections", "biomass_response", "biomass_added", "biomass_checked", "biomass_warnings", "biomass_tenders_updated"):
         st.session_state.pop(key, None)
     st.session_state["data_saved"] = False
     st.session_state["otf_session_candidates"] = [otf_session_date]

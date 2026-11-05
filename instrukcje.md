@@ -108,9 +108,9 @@ datę zapisu do daty raportu włącznie. Rekordy z dnia początkowego są zawart
 w prompcie jako lista wykluczeń; aplikacja dodatkowo deduplikuje zapis. Przy pierwszym
 wyszukiwaniu zakres obejmuje ostatnie 30 dni. Dane demonstracyjne nie są historią.
 
-Schemat `biomass-data-1.0` zawiera `status`, `retrieved_at`,
-`data.biomass.transactions` oraz `errors`. Obsługiwane są rzeczywiste transakcje
-i rozstrzygnięte przetargi; nie oferty i zapowiedzi. Cena to PLN/t, z osobnym statusem
+Schemat `biomass-data-2.0` zawiera `status`, `retrieved_at`,
+`data.biomass.transactions`, `data.biomass.tenders` oraz `errors`. Obsługiwane są rzeczywiste transakcje,
+wyniki przetargów i opublikowane otwarte przetargi; nie zwykłe oferty sprzedaży. Cena to PLN/t, z osobnym statusem
 VAT i transportu. Brak nabywcy/wolumenu zapisuje się jako null. Zachowane są link,
 nazwa źródła, dowód oraz typ daty (transakcja/publikacja wyniku). Walidacja sprawdza
 strukturę i poprawność wartości, ale nie zastępuje oceny prawdziwości źródła.
@@ -118,3 +118,29 @@ strukturę i poprawność wartości, ale nie zastępuje oceny prawdziwości źr�
 Raport pokazuje do 9 najnowszych rzeczywistych rekordów do wybranej daty i puste
 wiersze dla brakujących pozycji. Ceny netto/brutto są oznaczone; gwiazdka oznacza
 nieznaną podstawę VAT. Puste źródło danych nie jest zastępowane przykładami.
+
+## Monitorowanie otwartych przetargów zrębków
+
+Prompt otrzymuje także wcześniej zapisane otwarte przetargi i polecenie ponownego
+sprawdzenia każdego z nich, niezależnie od zakresu nowych transakcji. Aktualizacje
+zwracają zachowane `tender_id`. Nowe przetargi mają null; ID nadaje aplikacja.
+Źródła przykładowe są inspiracją; konkretne przykładowe postępowania są wykluczone
+z importu, a ogólne listy postępowań mogą prowadzić do nowych wyników.
+
+Arkusz `ZREBKI_PRZETARGI` przechowuje statusy open/awarded/cancelled/closed_without_result,
+termin ofert, datę publikacji, datę potwierdzonego statusu, dzień raportu, dowód
+oraz źródło. Kolejne dni sprawdzenia tworzą historię, zamiast nadpisywać stare statusy.
+Sam upływ terminu nie jest dowodem zakończenia; nadal otwarty przetarg pozostaje do
+sprawdzenia. Nowy termin i brak dostępu do źródła nie mogą skutkować wymyśleniem wyniku.
+
+Transakcje i statusy zapisują się atomowo w jednym skoroszycie. Otwarte postępowanie
+nie musi mieć ceny. Potwierdzony wynik z ceną trafia do `ZREBKI` z powiązaniem
+`tender_id`; wynik bez znanej ceny pozostaje statusem przetargu. Starsze arkusze
+transakcji bez kolumny tender_id są odczytywane i uzupełniane przy zapisie.
+Aplikacja przyjmuje także dotychczasowy schemat 1.0 z samymi transakcjami.
+
+Ostatni ekran pokazuje monitorowane przetargi osobno od cen. Dashboard wyświetla
+otwarte/zakończone postępowania z opisem statusu i bez ceny, a wynik powiązany
+z transakcją nie jest liczony drugi raz. Zachowany limit wynosi 9 najnowszych pozycji.
+Przycisk braku wyników dotyczy braku nowych danych ORAZ braku zmian statusów;
+aktualizacje należy wkleić nawet wtedy, gdy nie znaleziono nowych transakcji.

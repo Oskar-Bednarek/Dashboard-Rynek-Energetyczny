@@ -957,6 +957,7 @@ SOFTWARE.
     .eua-history .history-table td { padding-top:.6mm; padding-bottom:.6mm; }
     .biomass-price-note { margin-top:.5mm; font-size:4pt; line-height:1.2; color:#756b58; }
     .biomass-transactions a { color:inherit; text-decoration:underline; text-decoration-color:#b8a98c; }
+    .biomass-transactions td:nth-child(3) { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   </style>
 </head>
 <body>
@@ -1451,18 +1452,30 @@ SOFTWARE.
       // Table view: show up to nine latest available transactions.
       const BIOMASS_MAX_RECORDS=9;
       const addBiomass = (target, asOf) => {
-        const samples=[...(DATA.biomass_transactions||[])].filter(row=>row.date<=asOf).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,BIOMASS_MAX_RECORDS);
-        const section=card("Rynek zrębków drzewnych","Notowania cen · Transakcje w Polsce",samples[0]?.date,"biomass");
+        const transactions=(DATA.biomass_transactions||[]).filter(row=>row.date<=asOf);
+        const linked=new Set(transactions.map(row=>row.tender_id).filter(Boolean));
+        const tenderLabels={open:"Otwarty",awarded:"Rozstrzygnięty",cancelled:"Unieważniony",closed_without_result:"Bez wyniku"};
+        const latestTenders=new Map();
+        (DATA.biomass_tenders||[]).filter(row=>row.status_date<=asOf && row.checked_as_of<=asOf).forEach(row=>{
+          const old=latestTenders.get(row.tender_id);
+          if(!old || row.checked_as_of>old.checked_as_of || (row.checked_as_of===old.checked_as_of && row.retrieved_at>old.retrieved_at)) latestTenders.set(row.tender_id,row);
+        });
+        const notices=[...latestTenders.values()].filter(row=>!linked.has(row.tender_id)).map(row=>({
+          ...row,date:row.status_date,record_type:"tender_notice",kind:`${tenderLabels[row.status]} · ${row.kind}`,
+          date_basis:"tender_status",price_pln_t:null,price_basis:"unknown",transport:"unknown",
+        }));
+        const samples=[...transactions,...notices].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,BIOMASS_MAX_RECORDS);
+        const section=card("Rynek zrębków drzewnych","Transakcje i przetargi · Polska",samples[0]?.date,"biomass");
         section.querySelector(".date-badge").textContent=samples.length?formatDate(samples[0].date):"Brak notowań";
 
         const content=el("div","biomass-content");
         const rows=samples.map(row=>[
           formatDate(row.date),row.buyer??"—",row.kind,
           formatNumber(row.volume_t),
-          `${fmtMoney(row.price_pln_t," zł/t")} ${row.price_basis==="net"?"netto":row.price_basis==="gross"?"brutto":"*"}`,
-          `${row.source_name} · ${row.record_type==="tender_award"?"wynik przetargu":"transakcja"}`,
+          row.price_pln_t==null?"—":`${fmtMoney(row.price_pln_t," zł/t")} ${row.price_basis==="net"?"netto":row.price_basis==="gross"?"brutto":"*"}`,
+          `${row.source_name} · ${row.record_type==="tender_notice"?tenderLabels[row.status]:row.record_type==="tender_award"?"wynik przetargu":"transakcja"}`,
         ]);
-        const wrapper=table(["Data","Nabywca","Rodzaj","Wolumen","Cena","Źródło"],rows,[3,4]);
+        const wrapper=table(["Data","Podmiot","Rodzaj","Wolumen","Cena","Źródło"],rows,[3,4]);
         wrapper.querySelector("table").classList.add("biomass-transactions");
         wrapper.querySelectorAll("tbody tr").forEach((tr,index)=>{
           const record=samples[index];
@@ -1473,14 +1486,15 @@ SOFTWARE.
           source.href=record.source_url;
           source.target="_blank";
           source.rel="noopener noreferrer";
-          source.title=`${record.source_url}\n${record.evidence}`;
+          source.title=`${record.source_url}\n${record.evidence}${record.deadline?`\nTermin ofert: ${record.deadline}`:""}`;
           tr.cells[5].replaceChildren(source);
-          tr.cells[0].title=record.date_basis==="award_publication"?"Data publikacji wyniku przetargu":"Data transakcji";
+          tr.cells[2].title=record.kind;
+          tr.cells[0].title=record.date_basis==="tender_status"?"Data statusu przetargu":record.date_basis==="award_publication"?"Data publikacji wyniku przetargu":"Data transakcji";
           tr.cells[4].title=`Transport: ${record.transport==="included"?"wliczony":record.transport==="excluded"?"niewliczony":"nie podano"}`;
         });
         reserveTableRows(wrapper.querySelector("table"),BIOMASS_MAX_RECORDS);
         content.append(wrapper);
-        if (samples.length) content.append(el("div","biomass-price-note","* Nie podano podstawy VAT. Zakres transportu może się różnić."));
+        if (samples.some(row=>row.price_pln_t!=null)) content.append(el("div","biomass-price-note","* Nie podano podstawy VAT. Zakres transportu może się różnić."));
         section.append(content);
         target.append(section);
       };

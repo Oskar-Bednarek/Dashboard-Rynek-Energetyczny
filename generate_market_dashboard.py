@@ -9,7 +9,7 @@ from typing import Any
 from openpyxl import load_workbook
 
 from exchange_rates import ensure_exchange_rates, convert_record_to_pln
-from biomass_data import read_transactions
+from biomass_data import read_transactions, read_tenders
 
 
 ROOT = Path(__file__).resolve().parent
@@ -100,6 +100,7 @@ def render_dashboard(
     data = load_dashboard_data(workbook_path)
     if report_date is not None:
         data["report_date"] = report_date.isoformat()
+    data["biomass_tenders"] = read_tenders(workbook_path, report_date or date.fromisoformat(data["max_date"]), history=True)
     template = template_path.read_text(encoding="utf-8")
     chartjs = CHARTJS_SCRIPT.read_text(encoding="utf-8")
     serialized = json.dumps(data, ensure_ascii=False, separators=(",", ":"), allow_nan=False)

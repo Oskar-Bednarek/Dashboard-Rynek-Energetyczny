@@ -1,55 +1,50 @@
-ZADANIE — POTWIERDZONE TRANSAKCJE ZRĘBKÓW ENERGETYCZNYCH W POLSCE
+ZADANIE — TRANSAKCJE I MONITOROWANIE PRZETARGÓW NA ZRĘBKI ENERGETYCZNE W POLSCE
 
-Znajdź nowe, udokumentowane transakcje lub opublikowane wyniki rozstrzygniętych przetargów na zrębki drzewne do celów energetycznych w Polsce.
-Zakres dat: {{start_date}}–{{end_date}}, obie daty włącznie. Nie ograniczaj się do przykładowych źródeł. Samodzielnie wyszukuj inne wiarygodne źródła, dokumenty i ogłoszenia o wynikach.
+Wykonaj dwa niezależne zadania:
+1. Znajdź nowe rzeczywiste transakcje, wyniki przetargów oraz otwarte przetargi na zrębki drzewne do celów energetycznych. Zakres nowych danych: {{start_date}}–{{end_date}}, włącznie. Możesz również zgłosić starszy przetarg, jeśli jest nadal otwarty w dniu {{end_date}}.
+2. Sprawdź KAŻDY wcześniej zapisany otwarty przetarg z listy poniżej: czy nadal trwa, zmienił termin, został rozstrzygnięty, unieważniony albo zakończony bez wyniku. Sprawdzaj stan nie późniejszy niż {{end_date}}. To zadanie jest niezależne od zakresu dat nowych transakcji.
 
-PRZYKŁADOWE ŹRÓDŁA (lista otwarta)
+PRZYKŁADOWE PRZETARGI I PORTALE — WYŁĄCZNIE INSPIRACJA
 {{example_sources}}
+Konkretne przykładowe postępowania służą wyłącznie poznaniu tematu, słownictwa i struktury dokumentów. NIE zwracaj danych dotyczących tych postępowań, także znalezionych pod innym adresem. Możesz na tych samych portalach wyszukać INNE postępowania. Link do ogólnej listy postępowań jest punktem wyjścia do wyszukiwania nowych ogłoszeń. Nie ograniczaj się do tych portali; samodzielnie szukaj innych wiarygodnych źródeł.
 
-REKORDY JUŻ ZAPISANE Z DNIA POCZĄTKOWEGO — NIE ZWRACAJ ICH PONOWNIE
+WCZEŚNIEJ ZAPISANE OTWARTE PRZETARGI — SPRAWDŹ I ZWRÓĆ AKTUALIZACJE
+{{open_tenders}}
+Dla każdego dostępnego źródła zwróć aktualny rekord w tenders z NIEZMIENIONYM tender_id z listy. Możesz aktualizować link, termin i status, ale zachowaj reference. Jeśli brak dostępu, nie wymyślaj statusu: dodaj wpis do errors i pomiń aktualizację. Jeżeli nadal trwa, zwróć status open. Sam upływ terminu ofert NIE oznacza rozstrzygnięcia ani zakończenia. Wymagaj dowodu statusu. Aktualizuj także przetargi starsze od początku zakresu.
+
+REKORDY TRANSAKCJI JUŻ ZAPISANE Z DNIA POCZĄTKOWEGO — NIE POWTARZAJ
 {{existing_records}}
-Nie zwracaj też tych samych transakcji opisanych przez inne źródło. Wyszukuj od dnia początkowego włącznie, aby znaleźć inne transakcje z tego samego dnia.
+Nie zwracaj tych samych transakcji opisywanych w innym źródle. Szukaj od daty początkowej włącznie, by znaleźć inne transakcje z tego dnia.
 
-ZASADY
-- Tylko rzeczywiste transakcje i potwierdzone wyniki przetargów. Bez ofert sprzedaży, ogłoszeń planowanych przetargów, cen orientacyjnych i artykułów bez dowodu transakcji.
-- Wymagany bezpośredni link i krótki fragment/opis dowodu potwierdzającego cenę oraz zawarcie transakcji lub wybór oferty. Nie twórz brakujących informacji.
-- date to faktyczna data transakcji (date_basis=transaction). Jeśli przy wyniku przetargu jej nie podano, użyj daty publikacji wyniku (date_basis=award_publication); nigdy nie zgaduj daty.
-- price_pln_t to jednostkowa cena w PLN za tonę, NIE całkowita wartość zamówienia. Nie przeliczaj ceny za m³ na tonę na podstawie założonej gęstości ani wilgotności. Nie mieszaj zrębków z pelletem, drewnem opałowym ani trocinami.
-- Możesz obliczyć PLN/t z całkowitej wartości i ilości wyłącznie gdy źródło jednoznacznie potwierdza ten sam zakres dostawy, tonaż i podstawę VAT. Opisz obliczenie w evidence. Nie wyceniaj kontraktu ramowego jako dokonanych dostaw.
-- price_basis: net, gross albo unknown. transport: included, excluded albo unknown. Nie zakładaj VAT ani kosztów transportu.
-- buyer oraz volume_t mogą być null. kind, price_pln_t, source_name, source_url i evidence są wymagane. reference to identyfikator transakcji/przetargu lub null.
-- Podawaj liczby JSON bez jednostek i spacji tysięcznych. Daty RRRR-MM-DD. retrieved_at jako czas rzeczywistego wyszukiwania ISO 8601 ze strefą czasową.
-- Jeśli źródło jest niedostępne, opisz problem w errors. Brak nowych wyników nie jest błędem i może dać status success z pustą listą transactions.
+ZASADY DANYCH
+- Rozróżniaj OTWARTE OGŁOSZENIE (lista tenders) od POTWIERDZONEJ TRANSAKCJI/WYNIKU Z CENĄ (lista transactions). Nie traktuj ceny szacunkowej lub budżetu jako ceny zawartej transakcji. Nie importuj zwykłych ofert sprzedaży ani planów zamówień.
+- Nie wymyślaj danych. Dla otwartego przetargu cena nie jest wymagana i nie należy jej dodawać do transactions. Wymagane: publikacja, rodzaj, status, dowód i źródło. Zamawiający, numer sprawy, termin i wolumen mogą być null.
+- Statusy przetargu: open, awarded (potwierdzony wybór oferty), cancelled (unieważniony), closed_without_result (potwierdzone zakończenie bez wyniku). Brak znalezionego wyniku nie jest dowodem zakończenia.
+- status_date to data potwierdzonego statusu (dla open bez zmiany: data publikacji); published_date to publikacja ogłoszenia; deadline to termin ofert i może przypadać po dacie raportu. published_date <= status_date <= {{end_date}}. Nie zwracaj przyszłych rozstrzygnięć.
+- Dla nowego przetargu tender_id=null. Aplikacja nada ID. Dla aktualizacji używaj dokładnie tender_id podanego na liście, także gdy zmienia się adres wyniku.
+- Jeśli otwarty przetarg został rozstrzygnięty, zwróć jego status awarded w tenders. Gdy źródło potwierdza jednostkową cenę PLN/t, dodaj też rekord tender_award w transactions, z tym samym tender_id. Dla NOWEGO przetargu użyj tender_id=null i identycznych buyer oraz reference w obu listach; aplikacja je powiąże. Znany wcześniej przetarg może mieć wynik starszy od {{start_date}}, ale nie późniejszy niż {{end_date}}.
+- date w transactions: data transakcji (date_basis=transaction), albo data publikacji wyniku (award_publication) jeśli data transakcji nie jest podana. Dla powiązanego wyniku date musi być zgodne ze status_date.
+- Cena: wyłącznie jednostkowa PLN/t, NIE łączna wartość zamówienia. Obliczenie z wartości zamówienia i tonażu dopuszczalne tylko dla dokładnie tego samego zakresu i tej samej podstawy VAT; opisz je w evidence. Nie przeliczaj m³ na t z założonej gęstości. Nie mieszaj zrębków z pelletem ani trocinami.
+- price_basis: net/gross/unknown, transport: included/excluded/unknown. buyer i volume_t mogą być null; price_pln_t, kind, źródło i evidence są wymagane dla transactions. Nie zakładaj VAT, transportu ani dokonanych dostaw z kontraktu ramowego.
+- Liczby JSON bez jednostek. Daty RRRR-MM-DD. retrieved_at: czas rzeczywistego wyszukiwania ISO 8601 ze strefą. source_url: bezpośredni link do dowodu (w tym wyniku), source_name: nazwa źródła, evidence: krótki fragment/opis dowodu statusu i/lub ceny.
+- W odpowiedzi mogą być tylko otwarte przetargi lub aktualizacje, bez nowych cen. Puste listy przy udanym wyszukiwaniu są poprawne. Problemy ze źródłami zapisz w errors. Nie dopisuj przykładowych rekordów jako wyników.
 
-ODPOWIEDŹ — WYŁĄCZNIE JEDEN OBIEKT JSON, BEZ KOMENTARZY
-Struktura analogiczna do osobnej odpowiedzi danych energetycznych. Nie łącz tych odpowiedzi.
+ODPOWIEDŹ — WYŁĄCZNIE JEDEN OBIEKT JSON
 {
-  "schema_version": "biomass-data-1.0",
+  "schema_version": "biomass-data-2.0",
   "status": "success",
   "retrieved_at": "RRRR-MM-DDTHH:MM:SS+01:00",
   "data": {
     "biomass": {
-      "transactions": [
-        {
-          "date": "RRRR-MM-DD",
-          "date_basis": "transaction",
-          "record_type": "transaction",
-          "buyer": null,
-          "kind": "Rodzaj zrębków zgodny ze źródłem",
-          "price_pln_t": 150.0,
-          "price_basis": "unknown",
-          "transport": "unknown",
-          "volume_t": null,
-          "source_name": "Nazwa źródła",
-          "source_url": "https://adres-bezposredniego-dowodu",
-          "reference": null,
-          "evidence": "Fragment lub opis dowodu ceny i transakcji"
-        }
-      ]
+      "transactions": [],
+      "tenders": []
     }
   },
   "errors": []
 }
-Powyższy rekord jest tylko przykładem schematu, nie wolno go zwracać jako znalezionej transakcji.
-record_type dla wyniku przetargu: tender_award. status: success (wyszukiwanie zakończone), partial (znaleziono rekordy, ale część źródeł niedostępna), error (wyszukiwanie się nie powiodło).
-Wpis errors: {"section":"biomass.transactions","source_url":"https://... lub null","message":"Opis problemu"}.
+Rekord transactions:
+{"date":"RRRR-MM-DD","date_basis":"transaction","record_type":"transaction","buyer":null,"kind":"Rodzaj zrębków","price_pln_t":150.0,"price_basis":"unknown","transport":"unknown","volume_t":null,"source_name":"Źródło","source_url":"https://...","reference":null,"evidence":"Dowód transakcji i ceny","tender_id":null}
+Rekord tenders:
+{"tender_id":null,"published_date":"RRRR-MM-DD","buyer":null,"kind":"Zrębka energetyczna","reference":null,"source_name":"Źródło","source_url":"https://...","status":"open","status_date":"RRRR-MM-DD","deadline":null,"volume_t":null,"evidence":"Dowód aktualnego statusu"}
+To przykłady SCHEMATU, nie rzeczywiste rekordy. status odpowiedzi: success, partial (część źródeł niedostępna), error (wyszukiwanie nie powiodło się).
+Wpis errors: {"section":"biomass.tenders lub biomass.transactions","source_url":"https://... lub null","message":"Opis problemu"}.

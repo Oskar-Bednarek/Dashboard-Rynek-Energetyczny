@@ -7,7 +7,7 @@ from review_stage import build_dashboard_preview
 from preview_tables import show_market_tables
 from workbook_access import show_workbook_access_error
 from report_pdf import generate_report_pdf, PdfGenerationError
-from biomass_data import read_transactions, as_date
+from biomass_data import read_transactions, as_date, read_tenders
 
 
 _COVERAGE_LABELS = {
@@ -61,7 +61,7 @@ def show_ready_page(workbook_path: Path) -> None:
 
 
     if st.session_state.get("biomass_checked"):
-        st.caption(f"Zrębki: zapisano {st.session_state.get('biomass_added', 0)} nowych rekordów.")
+        st.caption(f"Zrębki: nowe transakcje — {st.session_state.get('biomass_added', 0)}, zapisane aktualizacje przetargów — {st.session_state.get('biomass_tenders_updated', 0)}.")
     for message in st.session_state.get("biomass_warnings", []):
         st.warning(f"Wyszukiwanie zrębków — uwaga ze źródła: {message}")
     coverage = st.session_state.get("coverage_result")
@@ -102,6 +102,20 @@ def show_ready_page(workbook_path: Path) -> None:
         ], hide_index=True, width="stretch", column_config={"Źródło":st.column_config.LinkColumn("Źródło")})
     else:
         st.caption("Brak zapisanych transakcji zrębków do wybranej daty.")
+
+    st.subheader("Zrębki drzewne — monitorowane przetargi")
+    tenders = read_tenders(workbook_path, st.session_state["report_date"])
+    if tenders:
+        labels = {"open":"Otwarty", "awarded":"Rozstrzygnięty", "cancelled":"Unieważniony", "closed_without_result":"Zakończony bez wyniku"}
+        st.dataframe([
+            {"Zamawiający": r["buyer"] or "—", "Postępowanie": r["reference"] or "—",
+             "Rodzaj": r["kind"], "Status": labels[r["status"]],
+             "Termin ofert": r["deadline"] or "—", "Data statusu": r["status_date"],
+             "Sprawdzono dla dnia": r["checked_as_of"], "Źródło": r["source_url"]}
+            for r in tenders
+        ], hide_index=True, width="stretch", column_config={"Źródło":st.column_config.LinkColumn("Źródło")})
+    else:
+        st.caption("Brak zapisanych przetargów do monitorowania.")
 
     if st.button("Wróć do wyboru dat"):
         st.session_state["page"] = "dates"
