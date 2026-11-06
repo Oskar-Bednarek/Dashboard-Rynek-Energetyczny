@@ -1,3 +1,4 @@
+from biomass_identity import deduplicate_transactions, same_transaction, same_tender, merge_transaction, product, lot
 """Real wood-chip transactions, kept separate from demo and energy data."""
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
@@ -50,7 +51,7 @@ def read_transactions(path: Path) -> list[dict]:
             row = dict(zip(headers, values))
             row["date"] = as_date(row["date"]).isoformat()
             records.append(row)
-        return records
+        return deduplicate_transactions(records)
     finally:
         workbook.close()
 
@@ -103,9 +104,9 @@ def record_key(row):
         normalized = lambda value: re.sub(r'\s+', ' ', str(value or '').strip().casefold())
         reference = normalized(row.get("reference"))
         identity = [row["date"], normalized(row.get("buyer") or row.get("seller")), reference,
-                    None if reference else normalized(row.get("kind")),
+                    product(row),
                     str(Decimal(str(row["unit_price"])).normalize()), row["price_unit"], row["price_basis"],
-                    None if reference or row.get("quantity", row.get("volume_t")) is None else str(Decimal(str(row.get("quantity", row.get("volume_t")))).normalize())]
+                    None if row.get("quantity", row.get("volume_t")) is None else str(Decimal(str(row.get("quantity", row.get("volume_t")))).normalize())]
         return sha256(json.dumps(identity, ensure_ascii=False).encode()).hexdigest()
     normalized = lambda value: re.sub(r'\s+', ' ', str(value or '').strip().casefold())
     # Do not count the same named transaction again just because another site cites it.
@@ -234,6 +235,9 @@ def read_tenders(path: Path, as_of: date | None = None, *, open_only: bool = Fal
             row = dict(zip(tuple(c.value for c in sheet[1]), values))
             if as_of and (as_date(row["checked_as_of"]) > as_of or as_date(row["status_date"]) > as_of):
                 continue
+            similar = next((old for old in snapshots if same_tender(old, row)), None)
+            if similar:
+                row["tender_id"] = similar["tender_id"]
             snapshots.append(row)
             key = row["tender_id"]
             if key not in latest or (row["checked_as_of"], row["retrieved_at"]) > (latest[key]["checked_as_of"], latest[key]["retrieved_at"]):
@@ -248,6 +252,7 @@ def tender_key(row):
         identity = [str(row[k]).strip().casefold() for k in ("buyer", "reference")]
     else:
         identity = [_url(row["source_url"])]
+    identity += [product(row), lot(row)]
     return sha256(json.dumps(identity, ensure_ascii=False).encode()).hexdigest()
 
 
@@ -312,6 +317,11 @@ def save_biomass_data(path: Path, records: list[dict], tenders: list[dict]) -> t
             for row in records:
                 key = record_key(row)
                 semantic_key = canonical_record_key(row)
+                if key not in existing and semantic_key not in semantic:
+                    similar = next((index for index, values in enumerate(sheet.iter_rows(min_row=2, values_only=True), 2)
+                                    if values[0] and same_transaction(dict(zip(FIELDS, values)), row)), None)
+                    if similar is not None:
+                        existing[key] = similar
                 if key not in existing and semantic_key in semantic:
                     existing[key] = semantic[semantic_key]
                 if key in existing:
@@ -319,6 +329,15 @@ def save_biomass_data(path: Path, records: list[dict], tenders: list[dict]) -> t
                         sheet.cell(existing[key], FIELDS.index("tender_id")+1, row["tender_id"])
                         changed = True
                     index = existing[key]
+                    previous = dict(zip(FIELDS, (cell.value for cell in sheet[index])))
+                    merged_row = merge_transaction(previous, row)
+                    for field in FIELDS:
+                        if field in {"record_id", "retrieved_at"}:
+                            continue
+                        column = FIELDS.index(field)+1
+                        if sheet.cell(index,column).value != merged_row.get(field):
+                            sheet.cell(index,column).value = merged_row.get(field)
+                            changed = True
                     if row.get("source_urls"):
                         column = FIELDS.index("source_urls") + 1
                         old_urls = json.loads(sheet.cell(index,column).value or '[]')
@@ -350,6 +369,9 @@ def save_biomass_data(path: Path, records: list[dict], tenders: list[dict]) -> t
             existing = {(r[0], r[12]): index for index, r in enumerate(sheet.iter_rows(min_row=2, values_only=True), 2) if r[0]}
             snapshots = [dict(zip(TENDER_FIELDS, values)) for values in sheet.iter_rows(min_row=2, values_only=True) if values[0]]
             for row in tenders:
+                similar = next((old for old in snapshots if same_tender(old, row)), None)
+                if similar:
+                    row = dict(row, tender_id=similar["tender_id"])
                 past = [entry for entry in snapshots if entry["tender_id"] == row["tender_id"] and entry["checked_as_of"] <= row["checked_as_of"]]
                 latest = max(past, key=lambda entry:(entry["checked_as_of"],entry["retrieved_at"])) if past else None
                 if latest and latest["status"] != "open" and row["status"] == "open":
@@ -365,6 +387,7 @@ def save_biomass_data(path: Path, records: list[dict], tenders: list[dict]) -> t
                 else:
                     sheet.append(values)
                     existing[key] = sheet.max_row
+                snapshots.append(row)
                 updates += 1
                 changed = True
             sheet.freeze_panes = "A2"

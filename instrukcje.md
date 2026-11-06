@@ -133,8 +133,10 @@ sama data nie wystarcza do uznania naboru za otwarty. Brak wyniku postępowania
 nie jest dowodem otwartego naboru. Upływ terminu nie zmienia archiwalnego statusu
 na rozstrzygnięty — wyłącza jedynie wpis z aktualnej tabeli naborów.
 
-Dashboard pokazuje dwie osobne tabele po maksymalnie 5 rekordów, z pustymi
-wierszami, jeżeli danych jest mniej. W postępowaniach w toku widoczne są tylko:
+Dashboard pokazuje osobne tabele po maksymalnie 5 rekordów. Tabela postępowań
+w toku (łącznie z nagłówkiem) jest ukrywana, gdy nie ma aktualnych naborów.
+Po ukryciu naborów tabela transakcji pokazuje do 8 rekordów (zamiast 5) i
+rozciąga się na dostępną wysokość. Zachowuje puste wiersze, jeśli danych jest mniej. W postępowaniach w toku widoczne są tylko:
 podmiot, rodzaj zrębki, planowana ilość z jednostką i termin ofert. W transakcjach
 zachowane są jednostki cen i ilości oraz oznaczenia VAT i sposobu ustalenia ceny.
 Przycisk „Model nie znalazł nowych danych ani zmian” pozwala przejść dalej bez
@@ -164,3 +166,13 @@ ujemny. Niepoprawne rekordy TGE można zastąpić we wspólnym formularzu ręczn
 Węgiel i EUA są dopisywane lub aktualizowane po dacie i identyfikatorze;
 krótsza odpowiedź modelu nie usuwa starszych danych, a identyczne wpisy
 zachowują dotychczasową datę pobrania.
+
+Duplikaty zrębki są porównywane również po znormalizowanych nazwach podmiotów,
+identyfikatorach BZP i numerach postępowań oraz linkach bez parametrów śledzących.
+Skrót nazwy i pełna nazwa mogą wskazywać to samo postępowanie. Wybór oferty
+i późniejsza umowa z tą samą ceną mogą zostać połączone; zachowywane są źródła,
+wcześniejsza data ustalenia ceny oraz pełniejsze dane. Różne ceny, jednostki,
+znane podstawy VAT, produkty, ilości i części zamówienia pozostają rozdzielone.
+Aneksy z innymi datami również nie są łączone z pierwotną umową. Porównanie
+działa pomiędzy odpowiedziami i przy zapisie; odczyt ukrywa także rozpoznane
+powtórzenia już obecne w archiwum, bez usuwania jego surowych wierszy.

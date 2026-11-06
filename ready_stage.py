@@ -107,19 +107,17 @@ def show_ready_page(workbook_path: Path) -> None:
     else:
         st.caption("Brak zapisanych transakcji zrębków do wybranej daty.")
 
-    st.subheader("Zrębki drzewne — postępowania w toku")
     linked = {row.get("tender_id") for row in transactions if row.get("tender_id")}
     tenders = [row for row in read_tenders(workbook_path, st.session_state["report_date"], open_only=True)
                if row["tender_id"] not in linked and (row.get("quantity") is not None or row.get("volume_t") is not None) and deadline_is_open(row.get("deadline_at") or row.get("deadline"))]
     if tenders:
+        st.subheader("Zrębki drzewne — postępowania w toku")
         st.dataframe([
             {"Podmiot": row["buyer"] or "—", "Rodzaj zrębki": row["kind"],
              "Planowana ilość": f"{row.get('quantity') if row.get('quantity') is not None else row.get('volume_t', '—')} {row.get('quantity_unit') or ('t' if row.get('volume_t') is not None else '')}",
              "Termin ofert": as_date(row["deadline"]).strftime("%d.%m.%Y")}
             for row in sorted(tenders, key=lambda row:row["published_date"], reverse=True)
         ], hide_index=True, width="stretch")
-    else:
-        st.caption("Brak zapisanych postępowań z aktualnym terminem ofert.")
 
     if st.button("Wróć do wyboru dat"):
         st.session_state["page"] = "dates"

@@ -1,3 +1,4 @@
+from biomass_identity import same_transaction, same_tender, merge_transaction
 """Validate and merge separate ChatGPT answers without losing source units."""
 from datetime import date, datetime
 import json
@@ -83,7 +84,7 @@ def _settled(raw, end, retrieved):
         source_name='Źródło',source_url=urls[0],reference=reference,evidence='',retrieved_at=retrieved,
         unit_price=price,price_unit=price_unit,quantity=quantity,quantity_unit=quantity_unit,
         price_method=method,transaction_status=status,source_urls=json.dumps(urls,ensure_ascii=False))
-    row['tender_id'] = tender_key(dict(buyer=buyer,reference=reference,source_url=urls[0]))
+    row['tender_id'] = tender_key(dict(buyer=buyer,kind=kind,reference=reference,source_url=urls[0]))
     return row
 
 
@@ -116,6 +117,7 @@ def merge_responses(texts,end,known_tenders=(),*,now=None):
     now = now or current_time()
     result=BiomassValidation()
     records,tenders={},{}
+    duplicates=0
     known={row['tender_id']:row for row in known_tenders}
     for response_index,text in enumerate(texts,1):
         if not text.strip():
@@ -153,14 +155,10 @@ def merge_responses(texts,end,known_tenders=(),*,now=None):
                         result.errors.append(f'Odpowiedź {response_index}, ongoing {index}: {error}')
             for row in incoming_records:
                 key=canonical_record_key(row)
-                if key in records:
-                    if row.get('source_urls'):
-                        old=records[key]
-                        urls=json.loads(old.get('source_urls') or '[]')+json.loads(row['source_urls'])
-                        provenance = {'calculated_indicative':0,'calculated':1,'source':2}
-                        if provenance.get(row.get('price_method'),-1)>provenance.get(old.get('price_method'),-1):
-                            old.update(price_method=row['price_method'])
-                        old['source_urls']=json.dumps(list(dict.fromkeys(urls)),ensure_ascii=False)
+                similar = key if key in records else next((identity for identity, old in records.items() if same_transaction(old, row)), None)
+                if similar is not None:
+                    duplicates+=1
+                    records[similar] = merge_transaction(records[similar],row)
                     continue
                 records[key]=row
             for row in incoming_tenders:
@@ -168,7 +166,13 @@ def merge_responses(texts,end,known_tenders=(),*,now=None):
                     result.warnings.append(f'Pominięto nieaktualny nabór: {row["buyer"]}.')
                     continue
                 key=row['tender_id']
-                old=tenders.get(key)
+                match=next((old for old in [*known.values(),*tenders.values()] if same_tender(old,row)),None)
+                if match:
+                    if match['tender_id'] in tenders:
+                        duplicates+=1
+                    key=match['tender_id']
+                    row=dict(row,tender_id=key)
+                old=tenders.get(key) or known.get(key)
                 if old and old['status']!='open' and row['status']=='open':
                     continue
                 if not old or row['status']!='open' or row.get('published_date','')>=old.get('published_date',''):
@@ -180,8 +184,15 @@ def merge_responses(texts,end,known_tenders=(),*,now=None):
         if not tender_id:
             continue
         old=tenders.get(tender_id) or known.get(tender_id)
+        if old is None:
+            old=next((old for old in [*tenders.values(),*known.values()] if same_tender(old,row)),None)
+            if old:
+                tender_id=old['tender_id']
+                row['tender_id']=tender_id
         if old and old['status']=='open':
             tenders[tender_id]=dict(old,status='awarded',status_date=row['date'],checked_as_of=end.isoformat(),retrieved_at=now.isoformat())
+    if duplicates:
+        result.warnings.append(f"Połączono powtarzające się rekordy: {duplicates}.")
     result.records=list(records.values())
     result.tenders=list(tenders.values())
     return result

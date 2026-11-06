@@ -103,7 +103,7 @@ class BiomassImportTests(unittest.TestCase):
         self.assertEqual(len(read_transactions(self.path)),1)
 
     def test_settled_result_closes_linked_ongoing_in_any_answer_order(self):
-        payload=answer();payload['ongoing'][0].update(entity='PEC Test',procedure_id='ZP.1.2026')
+        payload=answer();payload['ongoing'][0].update(entity='PEC Test',procedure_id='ZP.1.2026',product=payload['settled'][0]['product'])
         for values in ([{'settled':payload['settled'],'ongoing':[]},{'settled':[],'ongoing':payload['ongoing']}],
                        [{'settled':[],'ongoing':payload['ongoing']},{'settled':payload['settled'],'ongoing':[]}]):
             result=self.merge(*values)

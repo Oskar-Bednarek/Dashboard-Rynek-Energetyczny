@@ -857,13 +857,19 @@ SOFTWARE.
       border:0;
     }
     .market-card.eua::before { left:var(--notch-x); right:0; border-left:1px solid #dbd1be; }
-    .market-card.biomass::before { left:0; right:calc(100% - var(--notch-x)); border-right:1px solid #dbd1be; }
+    .market-card.biomass::before { left:0; right:calc(100% - var(--notch-x)); border-right:1px solid #dbd1be; background:var(--outline-accent,var(--accent)); }
     .market-card.power .power-indices-heading { margin-top: 3mm; }
     .market-grid > .market-card.power { position: relative; padding-bottom: 1mm; }
     .market-card.power .power-indices { position: absolute; left: 1mm; right: 1mm; bottom: 1mm; margin-bottom: 0; }
     .market-grid > .market-card.eua,
     .market-grid > .market-card.biomass { border-top: 2px solid var(--accent); }
     .market-card.power .power-indices-heading { transform: translateY(-1mm); }
+    /* Both lower markets share a real L outline and the same rounded top strip. */
+    .market-grid > .market-card.eua, .market-grid > .market-card.biomass { background:transparent; border-color:transparent; box-shadow:none; pointer-events:none; overflow:visible; }
+    .market-card.eua::before, .market-card.biomass::before { display:none; }
+    .market-card.eua > .section-heading, .market-card.eua > .eua-layout, .market-card.biomass > .section-heading, .market-card.biomass > .biomass-content { position:relative; z-index:1; pointer-events:auto; }
+    .market-card.eua > .market-outline, .market-card.biomass > .market-outline { position:absolute; left:-1px; top:-2px; width:calc(100% + 2px); height:calc(100% + 3px); pointer-events:none; z-index:0; overflow:visible; }
+
     /* EUA: table aligned to the narrow arm; chart spans the full lower area. */
     .eua-layout {
       grid-template-columns:minmax(0,2fr) minmax(0,1fr);
@@ -966,7 +972,10 @@ SOFTWARE.
     .biomass-ongoing th:nth-child(3) { width:20%; }
     .biomass-ongoing th:nth-child(4) { width:19%; }
     .biomass-ongoing td:nth-child(2) { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .biomass-price-note { margin-top:.5mm; font-size:4pt; line-height:1.2; color:#756b58; }
+    .biomass-content.single-table > .table-scroll { flex:1 1 0; min-height:0; }
+    .biomass-content.single-table .biomass-transactions { height:100%; }
+    .biomass-content.single-table .biomass-transactions th { height:4mm; }
+    .biomass-content.single-table .biomass-transactions td { height:auto; }
     .biomass-transactions a { color:inherit; text-decoration:underline; text-decoration-color:#b8a98c; }
     .biomass-transactions td:nth-child(3) { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   </style>
@@ -1013,11 +1022,14 @@ SOFTWARE.
           const scaleX=rect.width/w,scaleY=rect.height/h;
           const gap=parseFloat(style.rowGap);
           const power=dashboard.querySelector(".market-card.power").getBoundingClientRect();
-          const heading=section.querySelector(".section-heading").getBoundingClientRect();
           const left=section.classList.contains("eua");
+          const headerStyle=getComputedStyle(section.querySelector(".section-heading"));
+          const accentColor=headerStyle.borderTopColor;
+          section.style.setProperty("--outline-accent",accentColor);
           // Follow the actual header edge; percentage rounding left a white lip
           // to the right of EUA. Keep the lower arm below the energy section.
-          const x=left?(heading.right-rect.left)/scaleX+1:(power.right-rect.left)/scaleX+gap;
+          const gas=dashboard.querySelector(".market-card.gas").getBoundingClientRect();
+          const x=left?(gas.right-rect.left)/scaleX:(power.right-rect.left)/scaleX+gap;
           const y=(power.bottom-rect.top)/scaleY+gap;
           section.style.setProperty("--notch-x",`${x}px`);
           const points=left?[[0,0],[x,0],[x,y],[w,y],[w,h],[0,h]]:[[x,0],[w,0],[w,h],[0,h],[0,y],[x,y]];
@@ -1030,7 +1042,43 @@ SOFTWARE.
             return {point,start:along(previous,before),end:along(next,after)};
           });
           const path=`M ${corners[0].start.join(" ")} `+corners.map(c=>`L ${c.start.join(" ")} Q ${c.point.join(" ")} ${c.end.join(" ")}`).join(" ")+" Z";
-          section.style.clipPath=`path('${path}')`;
+          {
+            section.style.clipPath="none";
+            const ns="http://www.w3.org/2000/svg";
+            let outline=section.querySelector(":scope > .market-outline");
+            if(!outline){
+              outline=document.createElementNS(ns,"svg");
+              outline.classList.add("market-outline");
+              outline.setAttribute("aria-hidden","true");
+              outline.setAttribute("preserveAspectRatio","none");
+              section.prepend(outline);
+            }
+            outline.setAttribute("viewBox",`0 0 ${w} ${h}`);
+            const surface=document.createElementNS(ns,"path");
+            surface.setAttribute("d",path);
+            surface.setAttribute("fill",style.getPropertyValue("--paper").trim());
+            surface.setAttribute("stroke",style.getPropertyValue("--line").trim());
+            surface.setAttribute("stroke-width","1");
+            const accent=document.createElementNS(ns,"path");
+            const topWidth=parseFloat(headerStyle.borderTopWidth);
+            const radius=Math.min(2,topWidth);
+            // Round only the top corners; the bottom of the accent stays flat.
+            const topStart=left?0:x,topEnd=left?x:w;
+            accent.setAttribute("d",`M ${topStart} ${topWidth} V ${radius} Q ${topStart} 0 ${topStart+radius} 0 H ${topEnd-radius} Q ${topEnd} 0 ${topEnd} ${radius} V ${topWidth} Z`);
+            accent.setAttribute("fill",accentColor);
+            const biomass=dashboard.querySelector(".market-card.biomass");
+            const biomassStyle=getComputedStyle(biomass);
+            const biomassEdge=getComputedStyle(biomass,"::before");
+            const edgeY=(biomass.getBoundingClientRect().top-rect.top)/scaleY
+              +parseFloat(biomassStyle.borderTopWidth)+parseFloat(biomassEdge.top);
+            const lowerAccent=document.createElementNS(ns,"path");
+            const lowerStart=left?x:0,lowerEnd=left?w:x;
+            const lowerWidth=parseFloat(biomassEdge.height);
+            const lowerRadius=Math.min(2,lowerWidth);
+            lowerAccent.setAttribute("d",`M ${lowerStart} ${edgeY+lowerWidth} V ${edgeY+lowerRadius} Q ${lowerStart} ${edgeY} ${lowerStart+lowerRadius} ${edgeY} H ${lowerEnd-lowerRadius} Q ${lowerEnd} ${edgeY} ${lowerEnd} ${edgeY+lowerRadius} V ${edgeY+lowerWidth} Z`);
+            lowerAccent.setAttribute("fill",accentColor);
+            outline.replaceChildren(surface,accent,lowerAccent);
+          }
         });
       };
       const locale = "pl-PL";
@@ -1475,8 +1523,8 @@ SOFTWARE.
       };
       const BIOMASS_MAX_RECORDS=5;
       const addBiomass = (target, asOf) => {
-        const transactions=(DATA.biomass_transactions||[]).filter(row=>row.date<=asOf)
-          .sort((a,b)=>b.date.localeCompare(a.date)).slice(0,BIOMASS_MAX_RECORDS);
+        const availableTransactions=(DATA.biomass_transactions||[]).filter(row=>row.date<=asOf)
+          .sort((a,b)=>b.date.localeCompare(a.date));
         const latestTenders=new Map();
         (DATA.biomass_tenders||[]).filter(row=>row.status_date<=asOf && row.checked_as_of<=asOf).forEach(row=>{
           const old=latestTenders.get(row.tender_id);
@@ -1491,10 +1539,12 @@ SOFTWARE.
           if(!deadline) return false;
           return deadline.length===10 ? deadline>today : new Date(deadline)>now;
         }).sort((a,b)=>b.published_date.localeCompare(a.published_date)).slice(0,BIOMASS_MAX_RECORDS);
+        const transactionLimit=ongoing.length?BIOMASS_MAX_RECORDS:BIOMASS_MAX_RECORDS+3;
+        const transactions=availableTransactions.slice(0,transactionLimit);
         const newest=[...transactions.map(row=>row.date),...ongoing.map(row=>row.published_date)].sort().pop();
         const section=card("Rynek zrębków drzewnych","Transakcje i przetargi · Polska",newest,"biomass");
         section.querySelector(".date-badge").textContent=newest?formatDate(newest):"Brak danych";
-        const content=el("div","biomass-content");
+        const content=el("div",ongoing.length?"biomass-content":"biomass-content single-table");
         content.append(el("div","biomass-table-title","Rozstrzygnięte postępowania i transakcje"));
         const rows=transactions.map(row=>{
           const value=row.unit_price??row.price_pln_t;
@@ -1520,8 +1570,9 @@ SOFTWARE.
           tr.cells[2].title=record.kind;
           tr.cells[4].title=record.price_method==="calculated_indicative"?"Orientacyjna cena wyliczona":record.price_method==="calculated"?"Cena wyliczona":"Cena podana w źródle";
         });
-        reserveTableRows(settled.querySelector("table"),BIOMASS_MAX_RECORDS);
+        reserveTableRows(settled.querySelector("table"),transactionLimit);
         content.append(settled);
+        if (ongoing.length) {
         content.append(el("div","biomass-table-title","Postępowania w toku"));
         const openRows=ongoing.map(row=>[row.buyer||"—",row.kind,
           `${formatNumber(row.quantity??row.volume_t)} ${row.quantity_unit||(row.volume_t!=null?"t":"")}`,
@@ -1536,7 +1587,7 @@ SOFTWARE.
         });
         reserveTableRows(openTable.querySelector("table"),BIOMASS_MAX_RECORDS);
         content.append(openTable);
-        content.append(el("div","biomass-price-note","* VAT nieustalony · † Cena wyliczona · ≈ Cena orientacyjna. Jednostki i warunki dostaw mogą się różnić."));
+        }
         section.append(content);
         target.append(section);
       };
