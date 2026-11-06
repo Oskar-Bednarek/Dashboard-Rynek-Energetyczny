@@ -98,3 +98,14 @@ class MarketCompletenessTests(unittest.TestCase):
         self.assertEqual(float(number('1.234,56')),1234.56)
         self.assertEqual(float(number('1.32K',volume=True)),1320)
         self.assertEqual(float(number(0.000001)),0.000001)
+
+    def test_empty_optional_text_is_normalized_to_null_but_empty_price_is_rejected(self):
+        payload=valid_payload()
+        payload['data']['coal']['futures'][0]['values']['volume']=''
+        payload['data']['emissions']['futures'][0]['values']['change_pct']='  '
+        report=self.validate(payload)
+        self.assertTrue(report.is_valid)
+        self.assertIsNone(report.data['data']['coal']['futures'][0]['values']['volume'])
+        self.assertIsNone(report.data['data']['emissions']['futures'][0]['values']['change_pct'])
+        payload['data']['coal']['futures'][0]['values']['price']=''
+        self.assertFalse(self.validate(payload).is_valid)

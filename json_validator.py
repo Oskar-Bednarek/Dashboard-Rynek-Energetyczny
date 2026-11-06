@@ -89,6 +89,22 @@ def parse_json_response(response: str) -> dict[str, Any]:
         ) from error
     if not isinstance(value, dict):
         raise ValueError("Odpowiedź JSON musi być jednym obiektem.")
+    # Models sometimes return empty strings for missing optional source cells.
+    data = value.get("data")
+    if isinstance(data, dict):
+        for market in data.values():
+            if not isinstance(market, dict):
+                continue
+            for records in market.values():
+                if not isinstance(records, list):
+                    continue
+                for record in records:
+                    values = record.get("values") if isinstance(record, dict) else None
+                    if not isinstance(values, dict):
+                        continue
+                    for field in ("volume", "volume_mwh", "change_pct", "open", "high", "low", "max_pln_mwh"):
+                        if isinstance(values.get(field), str) and not values[field].strip():
+                            values[field] = None
     return value
 
 
