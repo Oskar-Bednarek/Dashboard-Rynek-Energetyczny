@@ -189,6 +189,15 @@ def show_review_page(workbook_path: Path) -> None:
             st.warning(f"Do uzupełnienia: {len(missing_records)} pozycji. Wpisz brakujące dane w formularzu poniżej.")
         else:
             st.warning(f"Dane wymagają poprawy. Sprawdź wskazane problemy{f' w {invalid_count} grupach danych' if invalid_count else ''} poniżej.")
+    blocking_issues = [issue for issue in report.issues if issue.severity == "error"]
+    if blocking_issues:
+        st.subheader("Problemy blokujące zapis")
+        st.dataframe([
+            {"Rodzaj danych": _SECTION_LABELS.get(issue.section, {"metadata":"Status odpowiedzi", "global":"Format odpowiedzi"}.get(issue.section,issue.section)),
+             "Pole": issue.path, "Problem": issue.message}
+            for issue in blocking_issues
+        ], hide_index=True, width="stretch")
+        st.caption("Brakujące dane TGE uzupełnij poniżej. Pozostałe wskazane błędy popraw w odpowiedzi JSON, korzystając z przycisku „Wróć do odpowiedzi”.")
     if otf_session_date is None:
         st.error(
             "Nie potwierdzono wspólnej daty sesji OTF na stronach TGE. "
@@ -197,8 +206,8 @@ def show_review_page(workbook_path: Path) -> None:
         )
     source_errors = _source_errors(report)
 
-    st.subheader("Braki i uwagi ze źródeł")
     if source_errors:
+        st.subheader("Uwagi zgłoszone przez źródła")
         st.info(
             "Podczas pobierania zgłoszono poniższe uwagi. Same uwagi nie "
             "zawsze blokują zapis — informację o brakach wymagających poprawy "
@@ -277,7 +286,7 @@ def show_review_page(workbook_path: Path) -> None:
                     )
                 st.rerun()
     elif not source_errors:
-        st.caption("Dla danych TGE nie znaleziono brakujących pozycji.")
+        st.caption("Nie brakuje pozycji TGE. Przyczynę blokady zapisu pokazano w tabeli problemów powyżej." if blocking_issues else "Dane TGE są kompletne.")
 
     invalid_sections = [
         section

@@ -554,12 +554,20 @@ def validate_payload(
             if isinstance(market, dict):
                 record_count += sum(len(value) for value in market.values() if isinstance(value, list))
     has_validation_errors = any(issue.severity == "error" for issue in report.issues)
-    if status == "success" and (errors or has_validation_errors):
-        report.add("metadata", "status", "Status success jest niespójny z błędami odpowiedzi.")
-    if status == "partial" and (not errors or record_count == 0):
-        report.add("metadata", "status", "Status partial wymaga rekordów oraz wpisu w errors.")
-    if status == "error" and record_count > 0:
-        report.add("metadata", "status", "Status error jest niespójny z obecnością rekordów.")
+    # The model's summary is advisory; actual records and schema determine validity.
+    # A mismatched summary must not strand a complete response on the review page.
+    if status in ALLOWED_STATUS and report.is_structurally_valid:
+        actual_status = "error" if record_count == 0 else (
+            "partial" if errors or has_validation_errors else "success"
+        )
+        if status != actual_status:
+            report.add(
+                "metadata", "status",
+                f"Status odpowiedzi {status!r} nie odpowiada wynikom kontroli; "
+                f"ustawiono {actual_status!r} na podstawie danych.",
+                severity="warning",
+            )
+            payload["status"] = actual_status
     return report
 
 

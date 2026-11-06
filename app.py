@@ -15,6 +15,7 @@ from prompt_stage import (
 from review_stage import show_review_page
 from ready_stage import show_ready_page
 from biomass_stage import show_biomass_page
+from biomass_data import ensure_biomass_sheets
 from workbook_access import show_workbook_access_error
 
 
@@ -31,6 +32,10 @@ st.set_page_config(
 
 def initialize_session() -> None:
     try:
+        workbook_version = WORKBOOK_PATH.stat().st_mtime_ns
+        if st.session_state.get("biomass_schema_key") != workbook_version:
+            ensure_biomass_sheets(WORKBOOK_PATH)
+            st.session_state["biomass_schema_key"] = WORKBOOK_PATH.stat().st_mtime_ns
         fx_key = (warsaw_today(), WORKBOOK_PATH.stat().st_mtime_ns)
         if st.session_state.get("fx_sync_key") != fx_key:
             try:

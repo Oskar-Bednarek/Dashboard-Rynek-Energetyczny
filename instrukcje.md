@@ -205,3 +205,14 @@ GitHub Actions „Windows - paczka przenosna” buduje i testuje paczkę na Wind
 po zmianie plików pakowania oraz po ręcznym uruchomieniu workflow. Gotowy ZIP
 można pobrać z sekcji Artifacts zakończonego przebiegu. Test uruchamia przenośny
 runtime i Chromium, sprawdza PDF oraz ścieżki ze spacjami i polskimi znakami.
+
+Status success/partial/error zwrócony przez model jest porównywany z rzeczywistym
+wynikiem walidacji. Niespójna etykieta statusu jest korygowana z ostrzeżeniem
+i nie blokuje kompletnych, poprawnych rekordów. Błędy pól i brakujące dane
+nadal blokują zapis; ekran kontroli pokazuje wszystkie przyczyny w widocznej
+tabeli „Problemy blokujące zapis”, także te spoza sekcji rynkowych.
+
+Arkusze `ZREBKI` i `ZREBKI_PRZETARGI` są teraz tworzone automatycznie już przy
+uruchomieniu aplikacji, zanim użytkownik wklei pierwszy JSON. Starsze zgodne
+kolumny są rozszerzane bez utraty rekordów i z kopią zapasową. Sformatowane
+puste wiersze nie odsuwają nowych rekordów poniżej faktycznej tabeli.

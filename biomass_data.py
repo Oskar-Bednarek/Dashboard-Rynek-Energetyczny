@@ -22,6 +22,39 @@ PREVIOUS_TENDER_FIELDS = ("tender_id", "published_date", "buyer", "kind", "refer
 TENDER_FIELDS = PREVIOUS_TENDER_FIELDS + ("quantity", "quantity_unit", "deadline_at")
 
 
+@serialized_update
+def ensure_biomass_sheets(path: Path) -> None:
+    """Create/upgrade writable biomass sheets before the first import."""
+    workbook = load_workbook(path)
+    changed = False
+    try:
+        for name, fields, previous in (
+            (SHEET, FIELDS, (LEGACY_FIELDS, PREVIOUS_FIELDS)),
+            (TENDER_SHEET, TENDER_FIELDS, (PREVIOUS_TENDER_FIELDS,)),
+        ):
+            if name not in workbook.sheetnames:
+                workbook.create_sheet(name).append(fields)
+                changed = True
+                continue
+            sheet = workbook[name]
+            headers = tuple(cell.value for cell in sheet[1])
+            if headers == fields:
+                continue
+            if headers not in previous:
+                raise ValueError(f"Arkusz {name} ma nieprawidłowy układ kolumn. Nie zmieniono danych.")
+            for column, field in enumerate(fields, 1):
+                sheet.cell(1, column, field)
+            changed = True
+        if changed:
+            _atomic_save(workbook, Path(path))
+    finally:
+        workbook.close()
+
+
+def _last_data_row(sheet):
+    return max((index for index, values in enumerate(sheet.iter_rows(min_row=2,values_only=True),2)
+                if any(value is not None for value in values)), default=1)
+
 
 @dataclass
 class BiomassValidation:
@@ -314,6 +347,7 @@ def save_biomass_data(path: Path, records: list[dict], tenders: list[dict]) -> t
             existing = {r[0]: index for index, r in enumerate(sheet.iter_rows(min_row=2, values_only=True), 2) if r[0]}
             semantic = {canonical_record_key(dict(zip(FIELDS, values))): index
                         for index, values in enumerate(sheet.iter_rows(min_row=2, values_only=True), 2) if values[0]}
+            last_data_row = _last_data_row(sheet)
             for row in records:
                 key = record_key(row)
                 semantic_key = canonical_record_key(row)
@@ -349,9 +383,11 @@ def save_biomass_data(path: Path, records: list[dict], tenders: list[dict]) -> t
                             changed = True
                     continue
                 row = dict(row, record_id=key)
-                sheet.append([row.get(field) for field in FIELDS])
-                existing[key] = sheet.max_row
-                semantic[semantic_key] = sheet.max_row
+                last_data_row += 1
+                for column, field in enumerate(FIELDS, 1):
+                    sheet.cell(last_data_row,column).value = row.get(field)
+                existing[key] = last_data_row
+                semantic[semantic_key] = last_data_row
                 added += 1
                 changed = True
             sheet.freeze_panes = "A2"
@@ -368,6 +404,7 @@ def save_biomass_data(path: Path, records: list[dict], tenders: list[dict]) -> t
                 sheet.append(TENDER_FIELDS)
             existing = {(r[0], r[12]): index for index, r in enumerate(sheet.iter_rows(min_row=2, values_only=True), 2) if r[0]}
             snapshots = [dict(zip(TENDER_FIELDS, values)) for values in sheet.iter_rows(min_row=2, values_only=True) if values[0]]
+            last_data_row = _last_data_row(sheet)
             for row in tenders:
                 similar = next((old for old in snapshots if same_tender(old, row)), None)
                 if similar:
@@ -385,8 +422,10 @@ def save_biomass_data(path: Path, records: list[dict], tenders: list[dict]) -> t
                     for column, value in enumerate(values, 1):
                         sheet.cell(index, column).value = value
                 else:
-                    sheet.append(values)
-                    existing[key] = sheet.max_row
+                    last_data_row += 1
+                    for column, value in enumerate(values,1):
+                        sheet.cell(last_data_row,column).value = value
+                    existing[key] = last_data_row
                 snapshots.append(row)
                 updates += 1
                 changed = True

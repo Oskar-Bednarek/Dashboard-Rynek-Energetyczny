@@ -5,6 +5,11 @@ on:
   push:
     paths:
       - 'packaging/**'
+      - '*.py'
+      - 'prompt_*.txt'
+      - 'market_dashboard_template.html'
+      - 'requirements.txt'
+      - 'vendor/**'
       - '.github/workflows/windows-portable.yml'
 
 permissions:

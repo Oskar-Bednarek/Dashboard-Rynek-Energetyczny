@@ -282,8 +282,10 @@ Dla błędów TGE każdy wpis errors dotyczy jednego konkretnego URL-a. Jeśli k
 Zasady statusu:
 
 - success — wszystkie wymagane rekordy TGE oraz wszystkie dostępne sesje węgla i EUA zostały odczytane;
-- partial — odczytano tylko część wymaganych danych;
+- partial — odczytano tylko część wymaganych danych; lista errors musi wtedy zawierać konkretne problemy;
 - error — nie odczytano żadnego wymaganego rekordu.
+
+Jeśli errors jest puste i wszystkie wymagane dane są dostępne, ustaw status success, nie partial.
 
 Nie dodawaj błędu tylko dlatego, że pojedyncza komórka zawiera myślnik i została poprawnie zapisana jako null. Jeśli nie uda się potwierdzić danych, zwróć rzeczywisty błąd zamiast wymyślonych wartości.
 

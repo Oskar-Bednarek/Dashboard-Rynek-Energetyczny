@@ -450,5 +450,28 @@ class JsonValidatorTests(unittest.TestCase):
         self.assertFalse(report.is_valid)
 
 
+    def test_partial_without_errors_does_not_block_complete_data(self):
+        payload=valid_payload();payload['status']='partial'
+        report=self.validate(payload)
+        self.assertTrue(report.is_valid,report.issues)
+        self.assertEqual(report.data['status'],'success')
+        self.assertTrue(any(issue.section=='metadata' and issue.severity=='warning' for issue in report.issues))
+
+    def test_success_with_source_notes_uses_partial_but_keeps_complete_data_usable(self):
+        payload=valid_payload()
+        payload['errors']=[{'section':'coal.futures','source_url':'https://www.investing.com/commodities/rotterdam-coal-futures-historical-data','message':'Brak części wolumenów w źródle.'}]
+        report=self.validate(payload)
+        self.assertTrue(report.is_valid,report.issues)
+        self.assertEqual(report.data['status'],'partial')
+
+    def test_status_normalization_does_not_hide_missing_or_invalid_market_data(self):
+        payload=valid_payload();payload['status']='partial'
+        payload['data']['gas']['day_ahead'][0]['values']['price_pln_mwh']=None
+        report=self.validate(payload)
+        self.assertFalse(report.is_valid)
+        self.assertFalse(report.section_validity['gas.day_ahead'])
+        self.assertTrue(any(issue.severity=='error' and issue.section=='gas.day_ahead' for issue in report.issues))
+
+
 if __name__ == "__main__":
     unittest.main()
