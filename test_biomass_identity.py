@@ -88,3 +88,37 @@ class BiomassIdentityTests(unittest.TestCase):
         a=answer();b=deepcopy(a);b['ongoing'][0]['product']='Zrębka leśna'
         result=self.merge(a,b)
         self.assertEqual(len(result.tenders),2)
+
+    def test_mixed_existing_new_and_repeated_answers_are_checked_together(self):
+        old,old_alias=self.variants()
+        baseline=self.merge(old)
+        save_biomass_data(self.path,baseline.records,baseline.tenders)
+        new=answer()
+        new['settled'][0].update(buyer='PEC Kolejny',procedure_id='ZP.NEW.2026',date='2026-11-05',unit_price=180)
+        new['ongoing'][0].update(entity='PEC Kolejny',procedure_id='OPEN.NEW.2026')
+        new_alias=deepcopy(new)
+        new_alias['settled'][0].update(buyer='PEC KOLEJNY Sp. z o.o.',procedure_id='ZP NEW/2026')
+        new_alias['settled'][0]['source_urls']=['https://new.example.org/wynik']
+        new_alias['ongoing'][0].update(entity='PEC KOLEJNY Sp. z o.o.',procedure_id='OPEN NEW/2026')
+        combined=self.merge(old_alias,new,new_alias,old_alias,known=read_tenders(self.path))
+        self.assertTrue(combined.is_valid,combined.errors)
+        self.assertEqual((len(combined.records),len(combined.tenders)),(2,2))
+        added,_=save_biomass_data(self.path,combined.records,combined.tenders)
+        self.assertEqual(added,1)
+        self.assertEqual((len(read_transactions(self.path)),len(read_tenders(self.path))),(2,2))
+        self.assertEqual(save_biomass_data(self.path,combined.records,combined.tenders)[0],0)
+        workbook=load_workbook(self.path,read_only=True)
+        self.assertEqual(workbook['ZREBKI'].max_row,3)
+        self.assertEqual(workbook['ZREBKI_PRZETARGI'].max_row,3)
+        workbook.close()
+
+    def test_writer_also_deduplicates_a_batch_without_response_merger(self):
+        a,b=self.variants()
+        first,second=self.merge(a),self.merge(b)
+        added,_=save_biomass_data(self.path,first.records+second.records+first.records,first.tenders+second.tenders)
+        self.assertEqual(added,1)
+        self.assertEqual((len(read_transactions(self.path)),len(read_tenders(self.path))),(1,1))
+        workbook=load_workbook(self.path,read_only=True)
+        self.assertEqual(workbook['ZREBKI'].max_row,2)
+        self.assertEqual(workbook['ZREBKI_PRZETARGI'].max_row,2)
+        workbook.close()

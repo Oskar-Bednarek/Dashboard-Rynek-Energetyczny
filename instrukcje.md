@@ -176,3 +176,10 @@ znane podstawy VAT, produkty, ilości i części zamówienia pozostają rozdziel
 Aneksy z innymi datami również nie są łączone z pierwotną umową. Porównanie
 działa pomiędzy odpowiedziami i przy zapisie; odczyt ukrywa także rozpoznane
 powtórzenia już obecne w archiwum, bez usuwania jego surowych wierszy.
+
+Na ekranie „Gotowe” sekcja „Aktualny plik danych — DataMaster.xlsx” pokazuje
+pełną ścieżkę pliku używanego przez aplikację i pozwala pobrać jego aktualną
+kopię. Transakcje zrębki są zapisywane w `ZREBKI`, przetargi w
+`ZREBKI_PRZETARGI`. Dawny pusty arkusz `ZREBKA` jest zachowywany, ale nowe
+importy go nie zapełniają. Aplikacja uruchomiona na serwerze aktualizuje plik
+na serwerze, a nie wcześniej pobrany Excel na komputerze użytkownika.

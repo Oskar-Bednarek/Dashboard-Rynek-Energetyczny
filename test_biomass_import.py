@@ -124,3 +124,26 @@ class BiomassImportTests(unittest.TestCase):
         save_biomass_data(self.path,result.records,result.tenders)
         self.assertEqual(read_transactions(self.path)[0]['price_unit'],'PLN/mp')
         self.assertEqual(read_tenders(self.path)[0]['quantity'],3000)
+
+    def test_real_master_template_persists_biomass_after_market_save(self):
+        import shutil
+        from excel_writer import save_market_data
+        from test_json_validator import valid_payload, WINDOW
+        shutil.copy2(Path(__file__).parent/'DataMaster.xlsx', self.path)
+        workbook=load_workbook(self.path,read_only=True)
+        old_headers=tuple(cell.value for cell in workbook['ZREBKA'][1])
+        workbook.close()
+        result=self.merge(answer())
+        self.assertTrue(result.is_valid,result.errors)
+        self.assertEqual(save_biomass_data(self.path,result.records,result.tenders),(1,1))
+        workbook=load_workbook(self.path,read_only=True,data_only=True)
+        self.assertIn('ZREBKI',workbook.sheetnames)
+        self.assertIn('ZREBKI_PRZETARGI',workbook.sheetnames)
+        self.assertEqual(workbook['ZREBKI'].max_row,2)
+        self.assertEqual(workbook['ZREBKI_PRZETARGI'].max_row,2)
+        self.assertEqual(tuple(cell.value for cell in workbook['ZREBKA'][1]),old_headers)
+        workbook.close()
+        save_market_data(self.path,valid_payload(),WINDOW,WINDOW)
+        self.assertEqual(len(read_transactions(self.path)),1)
+        self.assertEqual(len(read_tenders(self.path)),1)
+        self.assertEqual(read_transactions(self.path)[0]['unit_price'],172.2)

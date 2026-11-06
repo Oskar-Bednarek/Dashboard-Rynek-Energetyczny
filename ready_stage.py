@@ -8,7 +8,7 @@ from review_stage import build_dashboard_preview
 from preview_tables import show_market_tables
 from workbook_access import show_workbook_access_error
 from report_pdf import generate_report_pdf, PdfGenerationError
-from biomass_data import read_transactions, as_date, read_tenders
+from biomass_data import read_transactions, as_date, read_tenders, SHEET, TENDER_SHEET
 
 
 _COVERAGE_LABELS = {
@@ -25,7 +25,7 @@ def show_ready_page(workbook_path: Path) -> None:
     import streamlit as st
 
     st.title("Gotowe")
-    if st.session_state.get("data_saved"):
+    if st.session_state.get("data_saved") or st.session_state.get("biomass_added", 0) or st.session_state.get("biomass_tenders_updated", 0):
         st.info("Dane zapisano w pliku DataMaster.xlsx.")
     else:
         st.info("Dane dla wybranego raportu znajdują się już w pliku DataMaster.xlsx.")
@@ -63,6 +63,18 @@ def show_ready_page(workbook_path: Path) -> None:
 
     if st.session_state.get("biomass_checked"):
         st.caption(f"Zrębki: nowe transakcje — {st.session_state.get('biomass_added', 0)}, zapisane aktualizacje przetargów — {st.session_state.get('biomass_tenders_updated', 0)}.")
+    with st.expander("Aktualny plik danych — DataMaster.xlsx"):
+        st.write(f"Transakcje zrębki: arkusz `{SHEET}`. Przetargi: arkusz `{TENDER_SHEET}`. "
+                 "Dawny arkusz `ZREBKA` nie jest używany do nowych zapisów.")
+        st.caption(f"Plik używany przez aplikację: {workbook_path.resolve()}")
+        st.download_button(
+            "Pobierz aktualny DataMaster.xlsx", data=workbook_path.read_bytes(),
+            file_name="DataMaster.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            key="download_current_workbook",
+        )
+        st.caption("Przy pracy przez stronę internetową pobierz tę kopię, aby zobaczyć "
+                   "aktualne dane w Excelu na swoim komputerze.")
     for message in st.session_state.get("biomass_warnings", []):
         st.warning(f"Wyszukiwanie zrębków — uwaga ze źródła: {message}")
     coverage = st.session_state.get("coverage_result")
