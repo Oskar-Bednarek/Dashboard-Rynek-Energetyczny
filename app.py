@@ -5,6 +5,7 @@ from zipfile import BadZipFile
 from openpyxl.utils.exceptions import InvalidFileException
 import streamlit as st
 
+from app_paths import workbook_path
 from date_stage import load_date_plan, show_date_selection
 from exchange_rates import ensure_exchange_rates, warsaw_today, ExchangeRateError
 from prompt_stage import (
@@ -18,7 +19,7 @@ from workbook_access import show_workbook_access_error
 
 
 BASE_DIR  = Path(__file__).resolve().parent
-WORKBOOK_PATH = BASE_DIR / "DataMaster.xlsx"
+WORKBOOK_PATH = workbook_path(BASE_DIR)
 PROMPT_TEMPLATE_PATH = BASE_DIR / "prompt_market_data.txt"
 
 st.set_page_config(

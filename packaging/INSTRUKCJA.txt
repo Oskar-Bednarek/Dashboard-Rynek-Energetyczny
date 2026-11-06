@@ -1,0 +1,31 @@
+RAPORT RYNKÓW ENERGETYCZNYCH — WINDOWS 10/11, 64-BIT
+
+PIERWSZE URUCHOMIENIE
+1. Rozpakuj całą paczkę ZIP do własnego folderu, np. Dokumenty\Raport energetyczny.
+2. Kliknij dwukrotnie Uruchom.cmd. Aplikacja otworzy się w domyślnej przeglądarce.
+3. Pozostaw okno uruchamiania otwarte podczas pracy.
+
+Python ani dodatkowa przeglądarka nie wymagają instalowania — są w paczce.
+Do pobierania danych i pracy z ChatGPT potrzebne jest połączenie z internetem.
+Wygenerowane wcześniej raporty HTML i PDF można otwierać bez internetu.
+
+DANE
+Excel: data\DataMaster.xlsx
+Kopie zapasowe: data\backups (do 30 ostatnich wersji)
+Dziennik błędów: data\logs\app.log
+
+Przy pierwszym uruchomieniu aplikacja tworzy plik danych z dołączonej wersji
+startowej. Istniejącego data\DataMaster.xlsx nie zastępuje. Własny DataMaster.xlsx
+możesz skopiować do folderu data przed pierwszym uruchomieniem.
+Nie trzymaj Excela otwartego podczas zapisywania danych przez aplikację.
+
+ZAMYKANIE
+Zamknij kartę przeglądarki, a w oknie uruchamiania naciśnij Ctrl+C.
+Ponowne kliknięcie Uruchom.cmd podczas pracy otworzy działającą aplikację.
+
+AKTUALIZACJA
+Zamknij aplikację. Zachowaj cały folder data. W istniejącym folderze zastąp
+pliki app, runtime, launcher.py, Uruchom.cmd i INSTRUKCJA.txt plikami z nowej
+paczki. Paczka nie zawiera folderu data, więc nie zastępuje Twojej historii.
+Nie uruchamiaj nowej wersji z osobnego folderu, jeśli chcesz korzystać
+z dotychczasowych danych — najpierw przenieś do niego cały folder data.

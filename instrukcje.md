@@ -183,3 +183,25 @@ kopię. Transakcje zrębki są zapisywane w `ZREBKI`, przetargi w
 `ZREBKI_PRZETARGI`. Dawny pusty arkusz `ZREBKA` jest zachowywany, ale nowe
 importy go nie zapełniają. Aplikacja uruchomiona na serwerze aktualizuje plik
 na serwerze, a nie wcześniej pobrany Excel na komputerze użytkownika.
+
+## Paczka Windows bez instalowania Pythona
+
+Współpracownik otrzymuje ZIP, rozpakowuje go i uruchamia `Uruchom.cmd`.
+Paczka zawiera Python, zależności aplikacji i Chromium do PDF. Serwer działa
+wyłącznie na 127.0.0.1, otwiera domyślną przeglądarkę i nie wysyła telemetrii
+Streamlit. Ponowne uruchomienie otwiera już działającą instancję.
+
+Excel znajduje się w `data/DataMaster.xlsx`, kopie w `data/backups`, logi
+w `data/logs/app.log`. Pierwszy start kopiuje wersję startową Excela, jeśli
+użytkownik nie ma jeszcze pliku danych. Aktualizacja plików `app` i `runtime`
+nie zastępuje folderu `data`. Cała instrukcja odbiorcy: `packaging/INSTRUKCJA.txt`.
+
+Budowanie odbywa się na Windows x64: `packaging/Zbuduj_paczke.cmd` albo
+`powershell -File packaging/build_windows.ps1`. Python 3.12 jest wymagany tylko na komputerze budującym. Budowanie i codzienne
+pobieranie nowych danych wymagają internetu. Odbiorca ZIP-u nie instaluje Pythona.
+Wynik: `dist/Raport_energetyczny_Windows.zip`.
+
+GitHub Actions „Windows - paczka przenosna” buduje i testuje paczkę na Windows
+po zmianie plików pakowania oraz po ręcznym uruchomieniu workflow. Gotowy ZIP
+można pobrać z sekcji Artifacts zakończonego przebiegu. Test uruchamia przenośny
+runtime i Chromium, sprawdza PDF oraz ścieżki ze spacjami i polskimi znakami.

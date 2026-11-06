@@ -1,0 +1,37 @@
+name: Windows - paczka przenosna
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'packaging/**'
+      - '.github/workflows/windows-portable.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - name: Pobierz kod
+        uses: actions/checkout@v4
+      - name: Python do budowania
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          architecture: 'x64'
+      - name: Zbuduj paczke z Pythonem i Chromium
+        shell: pwsh
+        run: ./packaging/build_windows.ps1
+      - name: Sprawdz uruchomienie i PDF na Windows
+        shell: pwsh
+        run: python packaging/smoke_windows.py dist/Raport_energetyczny_Windows
+      - name: Udostepnij gotowa paczke ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: Raport_energetyczny_Windows
+          path: dist/Raport_energetyczny_Windows/
+          if-no-files-found: error
+          retention-days: 30

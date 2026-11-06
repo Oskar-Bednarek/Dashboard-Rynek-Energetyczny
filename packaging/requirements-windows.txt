@@ -1,0 +1,5 @@
+# Versions used and tested in this release; resolved Windows dependencies ship in ZIP.
+streamlit==1.66.1
+openpyxl==3.1.5
+playwright==1.64.1
+tzdata>=2025.2
