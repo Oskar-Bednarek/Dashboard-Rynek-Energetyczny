@@ -365,6 +365,9 @@ def confirm_dates(
     )
     for key in ("validation_report", "response", "parsed_response", "validated_payload", "validated_sections", "biomass_response", "biomass_added", "biomass_checked", "biomass_warnings", "biomass_tenders_updated"):
         st.session_state.pop(key, None)
+    for key in list(st.session_state):
+        if key.startswith("biomass_response_"):
+            st.session_state.pop(key, None)
     st.session_state["data_saved"] = False
     st.session_state["otf_session_candidates"] = [otf_session_date]
     st.session_state["confirmed_source_dates"] = {

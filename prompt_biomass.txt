@@ -1,50 +1,97 @@
-ZADANIE — TRANSAKCJE I MONITOROWANIE PRZETARGÓW NA ZRĘBKI ENERGETYCZNE W POLSCE
+Znajdź nowe, udokumentowane dane o rynku zrębki drzewnej w Polsce, szczególnie zrębki przeznaczonej do celów energetycznych, do dwóch tabel:
+1. Rozstrzygnięte postępowania i transakcje — z ustaloną ceną jednostkową.
+2. Postępowania w toku — takie, w których nadal można składać oferty.
 
-Wykonaj dwa niezależne zadania:
-1. Znajdź nowe rzeczywiste transakcje, wyniki przetargów oraz otwarte przetargi na zrębki drzewne do celów energetycznych. Zakres nowych danych: {{start_date}}–{{end_date}}, włącznie. Możesz również zgłosić starszy przetarg, jeśli jest nadal otwarty w dniu {{end_date}}.
-2. Sprawdź KAŻDY wcześniej zapisany otwarty przetarg z listy poniżej: czy nadal trwa, zmienił termin, został rozstrzygnięty, unieważniony albo zakończony bez wyniku. Sprawdzaj stan nie późniejszy niż {{end_date}}. To zadanie jest niezależne od zakresu dat nowych transakcji.
+Celem jest znalezienie po 5 najnowszych nowych rekordów do każdej tabeli. Przeprowadź maksymalnie 5 rund wyszukiwania w ramach tej samej odpowiedzi. Zwróć wyłącznie jeden końcowy JSON.
 
-PRZYKŁADOWE PRZETARGI I PORTALE — WYŁĄCZNIE INSPIRACJA
-{{example_sources}}
-Konkretne przykładowe postępowania służą wyłącznie poznaniu tematu, słownictwa i struktury dokumentów. NIE zwracaj danych dotyczących tych postępowań, także znalezionych pod innym adresem. Możesz na tych samych portalach wyszukać INNE postępowania. Link do ogólnej listy postępowań jest punktem wyjścia do wyszukiwania nowych ogłoszeń. Nie ograniczaj się do tych portali; samodzielnie szukaj innych wiarygodnych źródeł.
+DATA ODNIESIENIA
+Data raportu: {{end_date}}. W rozstrzygniętych przypadkach nie podawaj zdarzeń późniejszych niż ta data. Ustal także rzeczywistą dzisiejszą datę i godzinę w strefie Europe/Warsaw: nabór ofert musi być nadal otwarty w momencie wyszukiwania. Dla postępowań w toku publikacja lub aktualizacja również nie może być późniejsza niż data raportu.
 
-WCZEŚNIEJ ZAPISANE OTWARTE PRZETARGI — SPRAWDŹ I ZWRÓĆ AKTUALIZACJE
-{{open_tenders}}
-Dla każdego dostępnego źródła zwróć aktualny rekord w tenders z NIEZMIENIONYM tender_id z listy. Możesz aktualizować link, termin i status, ale zachowaj reference. Jeśli brak dostępu, nie wymyślaj statusu: dodaj wpis do errors i pomiń aktualizację. Jeżeli nadal trwa, zwróć status open. Sam upływ terminu ofert NIE oznacza rozstrzygnięcia ani zakończenia. Wymagaj dowodu statusu. Aktualizuj także przetargi starsze od początku zakresu.
+1. ZAKRES DAT I KOLEJNE RUNDY
+Zacznij od ostatniego miesiąca liczonego wstecz od daty odniesienia. Następnie przeszukuj kolejne wcześniejsze miesiące, uzupełniając brakujące rekordy. Nie stosuj sztywnego limitu liczby miesięcy. Przykładowo dla 6 listopada: najpierw 6 października–6 listopada, następnie 6 września–5 października, potem kolejne wcześniejsze okresy.
+Najpierw przeszukaj różne źródła w nowszym okresie. Nie przechodź od razu do starych danych dlatego, że łatwiej je znaleźć.
+Wykonaj maksymalnie 5 rund:
+- W każdej rundzie wykonaj kilka wyszukiwań i sprawdź najbardziej obiecujące dokumenty.
+- Zweryfikuj wyniki, usuń duplikaty i zachowaj poprawne rekordy.
+- Sprawdź, ile rekordów brakuje w każdej tabeli.
+- W kolejnej rundzie zmieniaj zapytania, podmioty, regiony i źródła; w razie potrzeby rozszerzaj zakres na wcześniejsze miesiące.
+- Nie powtarzaj wyłącznie tych samych zapytań i stron.
+Runda nie oznacza pojedynczego zapytania ani jednego miesiąca. Każdą tabelę uzupełniaj niezależnie. Jeśli jedna zawiera już 5 rekordów, skup kolejne rundy na drugiej. Zakończ wcześniej, jeśli obie zawierają po 5 poprawnych nowych rekordów.
+Po 5. rundzie zwróć znalezione rekordy, nawet jeśli list nie udało się zapełnić. Przy ograniczeniach narzędzi zwróć tylko rzeczywiście zweryfikowane wyniki. Nie wymyślaj danych i nie obniżaj wymagań. Nie pokazuj wyników pośrednich ani opisów rund.
 
-REKORDY TRANSAKCJI JUŻ ZAPISANE Z DNIA POCZĄTKOWEGO — NIE POWTARZAJ
+2. WYŁĄCZNIE NOWE DANE
+Wcześniej zapisane rekordy:
+<zapisane_rekordy>
 {{existing_records}}
-Nie zwracaj tych samych transakcji opisywanych w innym źródle. Szukaj od daty początkowej włącznie, by znaleźć inne transakcje z tego dnia.
+</zapisane_rekordy>
+Wcześniej zapisane postępowania do ponownego sprawdzenia:
+<zapisane_postepowania>
+{{open_tenders}}
+</zapisane_postepowania>
+Porównuj wyniki z tymi zbiorami. Nie zwracaj ponownie tego samego zdarzenia ani postępowania tylko dlatego, że znalazłeś je na innej stronie. Puste listy oznaczają brak danych do porównania.
+Jeżeli wcześniej zapisane postępowanie zostało rozstrzygnięte, zwróć jego wynik jako nowy rekord settled, jeżeli ustalono cenę. Zachowaj numer postępowania umożliwiający powiązanie wpisów. Aneks faktycznie zmieniający cenę jest nowym zdarzeniem; kopia tej samej ceny w kolejnym dokumencie nim nie jest.
 
-ZASADY DANYCH
-- Rozróżniaj OTWARTE OGŁOSZENIE (lista tenders) od POTWIERDZONEJ TRANSAKCJI/WYNIKU Z CENĄ (lista transactions). Nie traktuj ceny szacunkowej lub budżetu jako ceny zawartej transakcji. Nie importuj zwykłych ofert sprzedaży ani planów zamówień.
-- Nie wymyślaj danych. Dla otwartego przetargu cena nie jest wymagana i nie należy jej dodawać do transactions. Wymagane: publikacja, rodzaj, status, dowód i źródło. Zamawiający, numer sprawy, termin i wolumen mogą być null.
-- Statusy przetargu: open, awarded (potwierdzony wybór oferty), cancelled (unieważniony), closed_without_result (potwierdzone zakończenie bez wyniku). Brak znalezionego wyniku nie jest dowodem zakończenia.
-- status_date to data potwierdzonego statusu (dla open bez zmiany: data publikacji); published_date to publikacja ogłoszenia; deadline to termin ofert i może przypadać po dacie raportu. published_date <= status_date <= {{end_date}}. Nie zwracaj przyszłych rozstrzygnięć.
-- Dla nowego przetargu tender_id=null. Aplikacja nada ID. Dla aktualizacji używaj dokładnie tender_id podanego na liście, także gdy zmienia się adres wyniku.
-- Jeśli otwarty przetarg został rozstrzygnięty, zwróć jego status awarded w tenders. Gdy źródło potwierdza jednostkową cenę PLN/t, dodaj też rekord tender_award w transactions, z tym samym tender_id. Dla NOWEGO przetargu użyj tender_id=null i identycznych buyer oraz reference w obu listach; aplikacja je powiąże. Znany wcześniej przetarg może mieć wynik starszy od {{start_date}}, ale nie późniejszy niż {{end_date}}.
-- date w transactions: data transakcji (date_basis=transaction), albo data publikacji wyniku (award_publication) jeśli data transakcji nie jest podana. Dla powiązanego wyniku date musi być zgodne ze status_date.
-- Cena: wyłącznie jednostkowa PLN/t, NIE łączna wartość zamówienia. Obliczenie z wartości zamówienia i tonażu dopuszczalne tylko dla dokładnie tego samego zakresu i tej samej podstawy VAT; opisz je w evidence. Nie przeliczaj m³ na t z założonej gęstości. Nie mieszaj zrębków z pelletem ani trocinami.
-- price_basis: net/gross/unknown, transport: included/excluded/unknown. buyer i volume_t mogą być null; price_pln_t, kind, źródło i evidence są wymagane dla transactions. Nie zakładaj VAT, transportu ani dokonanych dostaw z kontraktu ramowego.
-- Liczby JSON bez jednostek. Daty RRRR-MM-DD. retrieved_at: czas rzeczywistego wyszukiwania ISO 8601 ze strefą. source_url: bezpośredni link do dowodu (w tym wyniku), source_name: nazwa źródła, evidence: krótki fragment/opis dowodu statusu i/lub ceny.
-- W odpowiedzi mogą być tylko otwarte przetargi lub aktualizacje, bez nowych cen. Puste listy przy udanym wyszukiwaniu są poprawne. Problemy ze źródłami zapisz w errors. Nie dopisuj przykładowych rekordów jako wyników.
+3. GDZIE SZUKAĆ
+Przeszukuj różne podmioty i regiony Polski, przede wszystkim:
+- strony PEC, MPEC, ciepłowni, elektrociepłowni i operatorów kotłowni biomasowych;
+- BIP przedsiębiorstw komunalnych i samorządów;
+- zakupy paliwa dla szkół, szpitali i innych obiektów;
+- platformazakupowa.pl, Logintrade, eB2B, SmartPZP i inne platformy zakupowe;
+- e-Zamówienia, BZP i TED;
+- producentów zrębki, tartaki, zakłady przetwórstwa drewna;
+- wyniki przetargów sprzedażowych i aukcji oraz inne publiczne źródła.
+Nie ograniczaj się do tej listy. Agregatory i artykuły wykorzystuj do znajdowania postępowań, następnie docieraj do dokumentów źródłowych. Nie poświęcaj całego wyszukiwania jednemu podmiotowi ani kopiom tego samego ogłoszenia.
+Łącz „zrębka drzewna”, „zrębki drzewne”, „zrębka energetyczna”, „zrębka leśna”, „zrębki tartaczne”, „biomasa drzewna” z hasłami „cena jednostkowa”, „zł/t”, „PLN/Mg”, „zł/mp”, „zł/m³”, „zł/GJ”, „formularz cenowy”, „formularz ofertowy”, „wybór najkorzystniejszej oferty”, „wynik przetargu”, „umowa”, „aneks”, „sprzedaż zrębki”, „wynik aukcji”, „termin składania ofert”.
+Uwzględniaj zakup i sprzedaż. Sprawdzaj, czy biomasa rzeczywiście oznacza zrębkę, a nie pellet, trociny, korę lub mieszankę paliw.
 
-ODPOWIEDŹ — WYŁĄCZNIE JEDEN OBIEKT JSON
-{
-  "schema_version": "biomass-data-2.0",
-  "status": "success",
-  "retrieved_at": "RRRR-MM-DDTHH:MM:SS+01:00",
-  "data": {
-    "biomass": {
-      "transactions": [],
-      "tenders": []
-    }
-  },
-  "errors": []
-}
-Rekord transactions:
-{"date":"RRRR-MM-DD","date_basis":"transaction","record_type":"transaction","buyer":null,"kind":"Rodzaj zrębków","price_pln_t":150.0,"price_basis":"unknown","transport":"unknown","volume_t":null,"source_name":"Źródło","source_url":"https://...","reference":null,"evidence":"Dowód transakcji i ceny","tender_id":null}
-Rekord tenders:
-{"tender_id":null,"published_date":"RRRR-MM-DD","buyer":null,"kind":"Zrębka energetyczna","reference":null,"source_name":"Źródło","source_url":"https://...","status":"open","status_date":"RRRR-MM-DD","deadline":null,"volume_t":null,"evidence":"Dowód aktualnego statusu"}
-To przykłady SCHEMATU, nie rzeczywiste rekordy. status odpowiedzi: success, partial (część źródeł niedostępna), error (wyszukiwanie nie powiodło się).
-Wpis errors: {"section":"biomass.tenders lub biomass.transactions","source_url":"https://... lub null","message":"Opis problemu"}.
+Przykładowe źródła jako inspiracja do odnajdywania innych postępowań; nie ograniczaj się do nich i nie kopiuj danych z konkretnych przykładów bez przeprowadzenia wyszukiwania i weryfikacji:
+{{example_sources}}
+
+4. SPRAWDZANIE DOKUMENTÓW
+Otwieraj strony i załączniki, w tym PDF-y, skany oraz arkusze. Nie opieraj ustaleń wyłącznie na fragmentach wyszukiwarki.
+Sprawdzaj wybór oferty, wyniki przetargów i aukcji, wypełnione formularze cenowe, podpisane umowy, aneksy, informacje z otwarcia ofert powiązane z wyborem, ogłoszenia o udzieleniu zamówienia, aktualizacje terminów i unieważnienia.
+Odróżniaj wypełniony dokument od pustego wzoru. Gdy ogłoszenie nie podaje ceny jednostkowej, sprawdź załączniki, ofertę, umowę i archiwum; wyszukaj numer postępowania wraz z wykonawcą.
+Łącz dokumenty wyłącznie przy jednoznacznej zgodności podmiotu, postępowania, produktu, części i zakresu dostaw. Nie deklaruj odczytania nieotwartego dokumentu. Nie konstruuj niezweryfikowanych URL-i.
+
+5. ROZSTRZYGNIĘTE POSTĘPOWANIA I TRANSAKCJE
+Dodawaj tylko przypadki mające datę zdarzenia, potwierdzony wybór oferty/udzielenie zamówienia/umowę/transakcję/aneks cenowy, rodzaj zrębki, przynajmniej jedną stronę transakcji, cenę jednostkową z jednostką oraz źródło.
+O aktualności decyduje zdarzenie ustalające cenę. Nowe ogłoszenie o wykonaniu starej umowy nie oznacza nowej ceny.
+Wybór i późniejszą umowę z tą samą ceną traktuj jako jeden przypadek: zachowaj datę pierwotnego ustalenia ceny, status uzupełnij najnowszym potwierdzeniem. Aneks zmieniający cenę jest osobnym rekordem z datą aneksu.
+Cenę z otwarcia ofert przypisz wybranej ofercie tylko przy potwierdzeniu wykonawcy, części i wyboru oraz braku późniejszej zmiany ceny. Nie dodawaj niewybranych ofert, cen wywoławczych, cenników ani budżetów.
+
+6. WYLICZANIE CENY
+Cena jednostkowa = cena całkowita / odpowiadająca jej ilość.
+- Kwota i ilość muszą dotyczyć tego samego produktu, części i zakresu dostaw.
+- Nie dziel wartości kilku paliw przez ilość samej zrębki.
+- Ilość szacunkowa, maksymalna lub o nieustalonym charakterze oznacza cenę orientacyjną.
+- Przy opcji ustal, czy kwota obejmuje ilość podstawową, opcjonalną czy obie. Bez dopasowania kwoty i ilości nie licz ceny.
+- Nie dziel wypłaconego wynagrodzenia przez planowaną ilość, aby przedstawić rzeczywistą cenę dostawy; potrzebna jest ilość faktycznie dostarczona.
+- Nie przeliczaj objętości ani energii na tony bez udokumentowanego przelicznika.
+- Nie przeliczaj netto/brutto bez potwierdzonej stawki VAT.
+- Zaokrąglaj wyliczoną cenę do dwóch miejsc po przecinku.
+Nie odrzucaj przypadku tylko dlatego, że cenę trzeba prawidłowo wyliczyć.
+
+7. POSTĘPOWANIA W TOKU
+Wymagane są wszystkie cztery informacje: podmiot, rodzaj zrębki, planowana ilość z jednostką i aktualny termin ofert.
+Sprawdź zmiany terminów, wyniki i unieważnienia. Uwzględniaj wyłącznie postępowania, w których termin ofert jeszcze nie upłynął. Starsze ogłoszenie może być uwzględnione, jeśli nabór nadal trwa.
+Jeżeli termin przypada dzisiaj, potwierdź godzinę w Europe/Warsaw; jeśli nie da się ustalić, czy nabór nadal trwa, pomiń przypadek. Nie traktuj braku wyniku jako dowodu otwartego naboru. Nie dodawaj zakończonych, unieważnionych ani oczekujących na wynik po terminie ofert.
+Jeśli nie ma 5 aktualnie otwartych postępowań, zwróć mniej; stare wygasłe ogłoszenia nie są aktualne.
+
+8. FORMAT — WYŁĄCZNIE JSON
+Zwróć jeden obiekt: {"settled": [], "ongoing": []}. Każda lista ma od 0 do 5 rekordów.
+Sortuj settled malejąco po dacie ustalenia ceny, ongoing malejąco po publikacji lub istotnej aktualizacji terminu/przedmiotu.
+Rekord settled:
+{"date":"YYYY-MM-DD","buyer":null,"seller":null,"product":"Rodzaj zrębki","quantity":null,"quantity_unit":null,"unit_price":100.5,"price_unit":"PLN/mp","tax_basis":"unknown","price_method":"source","status":"contract_signed","procedure_id":null,"source_urls":["https://adres-dokumentu"]}
+Dozwolone tax_basis: net, gross, unknown.
+Dozwolone price_method: source, calculated, calculated_indicative.
+Dozwolone status: offer_selected, contract_awarded, contract_signed, transaction_completed, price_amendment.
+Przy cenie wyliczonej quantity i quantity_unit zawierają ilość używaną do obliczenia. Przy cenie źródłowej mogą być null. source_urls potwierdza cenę; przy wyliczeniu także kwotę i ilość.
+Rekord ongoing:
+{"entity":"Podmiot","product":"Rodzaj zrębki","quantity":3000,"quantity_unit":"mp","offer_deadline":"YYYY-MM-DD","published_or_updated_date":"YYYY-MM-DD","procedure_id":null,"source_url":"https://adres-postepowania"}
+Dane wyświetlane w tabeli ongoing: wyłącznie podmiot, rodzaj, ilość z jednostką i termin ofert. Pozostałe pola służą weryfikacji i wykrywaniu powtórek.
+Jeżeli termin ofert przypada dzisiaj i potwierdzono przyszłą godzinę, offer_deadline zapisz jako YYYY-MM-DDTHH:MM:SS+HH:MM. W pozostałych przypadkach stosuj YYYY-MM-DD.
+
+9. KONTROLA KOŃCOWA
+Sprawdź JSON, daty, jednostki, obliczenia i powiązanie dokumentów z podmiotem, numerem, rokiem i częścią. Usuń powtórzenia. Zachowaj maksymalnie 5 najnowszych poprawnych nowych rekordów na listę. Wzory pokazują strukturę, nie dane do skopiowania.
+Liczby zapisuj jako liczby JSON z kropką, bez separatorów tysięcy i K/M. Braki opcjonalne jako null, nigdy pusty tekst, myślnik ani zero. Zachowaj jednostki t, mp, m3, GJ; Mg możesz zapisać jako t. Cena ma jednostkę PLN/t, PLN/mp, PLN/m3 albo PLN/GJ. Brak podstawy VAT oznacz unknown i nie odrzucaj z tego powodu ceny.
+Nie dodawaj innych pól ani tekstu poza JSON-em, bloków Markdown, cytatów, opisów rund, list źródeł, ograniczeń, rekomendacji lub podsumowań. Nie przygotowuj e-maili ani wniosków. Nie wymyślaj danych, aby zapełnić listy. Przy braku nowych wyników zwróć dokładnie {"settled":[],"ongoing":[]}.

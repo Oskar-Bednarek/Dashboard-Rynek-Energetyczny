@@ -1,3 +1,4 @@
+from biomass_import import deadline_is_open
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -93,29 +94,32 @@ def show_ready_page(workbook_path: Path) -> None:
     transactions = [row for row in read_transactions(workbook_path) if as_date(row["date"]) <= st.session_state["report_date"]]
     if transactions:
         st.dataframe([
-            {"Data": as_date(row["date"]).strftime("%d.%m.%Y"), "Nabywca": row["buyer"] or "—",
-             "Rodzaj": row["kind"], "Cena (PLN/t)": row["price_pln_t"],
+            {"Data": as_date(row["date"]).strftime("%d.%m.%Y"), "Podmiot": row["buyer"] or row.get("seller") or "—",
+             "Rodzaj": row["kind"], "Cena": row.get("unit_price") if row.get("unit_price") is not None else row["price_pln_t"],
+             "Jednostka ceny": row.get("price_unit") or "PLN/t",
+             "Ustalenie ceny": {"source":"Źródłowa", "calculated":"Wyliczona", "calculated_indicative":"Orientacyjna"}.get(row.get("price_method"),"Źródłowa"),
              "VAT": {"net":"Netto","gross":"Brutto","unknown":"Nie podano"}[row["price_basis"]],
-             "Wolumen (t)": row["volume_t"], "Źródło": row["source_url"],
-             "Typ": "Wynik przetargu" if row["record_type"] == "tender_award" else "Transakcja"}
+             "Ilość": row.get("quantity") if row.get("quantity") is not None else row["volume_t"],
+             "Jednostka ilości": row.get("quantity_unit") or ("t" if row["volume_t"] is not None else None), "Źródło": row["source_url"],
+             "Status": {"offer_selected":"Wybrana oferta", "contract_awarded":"Udzielone zamówienie", "contract_signed":"Zawarta umowa", "transaction_completed":"Zrealizowana transakcja", "price_amendment":"Zmiana ceny"}.get(row.get("transaction_status"), "Wynik przetargu" if row["record_type"] == "tender_award" else "Transakcja")}
             for row in sorted(transactions, key=lambda r:r["date"], reverse=True)
         ], hide_index=True, width="stretch", column_config={"Źródło":st.column_config.LinkColumn("Źródło")})
     else:
         st.caption("Brak zapisanych transakcji zrębków do wybranej daty.")
 
-    st.subheader("Zrębki drzewne — monitorowane przetargi")
-    tenders = read_tenders(workbook_path, st.session_state["report_date"])
+    st.subheader("Zrębki drzewne — postępowania w toku")
+    linked = {row.get("tender_id") for row in transactions if row.get("tender_id")}
+    tenders = [row for row in read_tenders(workbook_path, st.session_state["report_date"], open_only=True)
+               if row["tender_id"] not in linked and (row.get("quantity") is not None or row.get("volume_t") is not None) and deadline_is_open(row.get("deadline_at") or row.get("deadline"))]
     if tenders:
-        labels = {"open":"Otwarty", "awarded":"Rozstrzygnięty", "cancelled":"Unieważniony", "closed_without_result":"Zakończony bez wyniku"}
         st.dataframe([
-            {"Zamawiający": r["buyer"] or "—", "Postępowanie": r["reference"] or "—",
-             "Rodzaj": r["kind"], "Status": labels[r["status"]],
-             "Termin ofert": r["deadline"] or "—", "Data statusu": r["status_date"],
-             "Sprawdzono dla dnia": r["checked_as_of"], "Źródło": r["source_url"]}
-            for r in tenders
-        ], hide_index=True, width="stretch", column_config={"Źródło":st.column_config.LinkColumn("Źródło")})
+            {"Podmiot": row["buyer"] or "—", "Rodzaj zrębki": row["kind"],
+             "Planowana ilość": f"{row.get('quantity') if row.get('quantity') is not None else row.get('volume_t', '—')} {row.get('quantity_unit') or ('t' if row.get('volume_t') is not None else '')}",
+             "Termin ofert": as_date(row["deadline"]).strftime("%d.%m.%Y")}
+            for row in sorted(tenders, key=lambda row:row["published_date"], reverse=True)
+        ], hide_index=True, width="stretch")
     else:
-        st.caption("Brak zapisanych przetargów do monitorowania.")
+        st.caption("Brak zapisanych postępowań z aktualnym terminem ofert.")
 
     if st.button("Wróć do wyboru dat"):
         st.session_state["page"] = "dates"

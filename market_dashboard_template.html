@@ -955,6 +955,17 @@ SOFTWARE.
     .market-card.biomass > .biomass-content { justify-content:center; }
     .biomass-content > .table-scroll { flex:0 0 auto; }
     .eua-history .history-table td { padding-top:.6mm; padding-bottom:.6mm; }
+    .biomass-content { justify-content:flex-start !important; gap:.35mm; }
+    .biomass-table-title { font-size:5.3pt; font-weight:700; margin-top:.4mm; }
+    .biomass-content .table-scroll { overflow:hidden; }
+    .biomass-content td { height:3.3mm; padding:.45mm .5mm; font-size:4.8pt; line-height:1.1; }
+    .biomass-content th { padding:.5mm; font-size:4.7pt; }
+    .biomass-ongoing { table-layout:fixed; }
+    .biomass-ongoing th:nth-child(1) { width:33%; }
+    .biomass-ongoing th:nth-child(2) { width:28%; }
+    .biomass-ongoing th:nth-child(3) { width:20%; }
+    .biomass-ongoing th:nth-child(4) { width:19%; }
+    .biomass-ongoing td:nth-child(2) { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .biomass-price-note { margin-top:.5mm; font-size:4pt; line-height:1.2; color:#756b58; }
     .biomass-transactions a { color:inherit; text-decoration:underline; text-decoration-color:#b8a98c; }
     .biomass-transactions td:nth-child(3) { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -997,11 +1008,18 @@ SOFTWARE.
       const roundMarketCorners = () => {
         dashboard.querySelectorAll(".market-card.eua,.market-card.biomass").forEach(section=>{
           const style=getComputedStyle(section);
-          const w=section.offsetWidth,h=section.offsetHeight;
+          const rect=section.getBoundingClientRect();
+          const w=parseFloat(style.width),h=parseFloat(style.height);
+          const scaleX=rect.width/w,scaleY=rect.height/h;
           const gap=parseFloat(style.rowGap);
-          const y=parseFloat(style.gridTemplateRows)+gap;
+          const power=dashboard.querySelector(".market-card.power").getBoundingClientRect();
+          const heading=section.querySelector(".section-heading").getBoundingClientRect();
           const left=section.classList.contains("eua");
-          const x=left?(2*w-gap)/3:(w+gap)/3;
+          // Follow the actual header edge; percentage rounding left a white lip
+          // to the right of EUA. Keep the lower arm below the energy section.
+          const x=left?(heading.right-rect.left)/scaleX+1:(power.right-rect.left)/scaleX+gap;
+          const y=(power.bottom-rect.top)/scaleY+gap;
+          section.style.setProperty("--notch-x",`${x}px`);
           const points=left?[[0,0],[x,0],[x,y],[w,y],[w,h],[0,h]]:[[x,0],[w,0],[w,h],[0,h],[0,y],[x,y]];
           const corners=points.map((point,index)=>{
             const previous=points[(index+points.length-1)%points.length],next=points[(index+1)%points.length];
@@ -1455,52 +1473,70 @@ SOFTWARE.
           reserveTableRows(historyTable.querySelector("table"),key==="eua"?7:5);
         target.append(section);
       };
-      // Table view: show up to nine latest available transactions.
-      const BIOMASS_MAX_RECORDS=9;
+      const BIOMASS_MAX_RECORDS=5;
       const addBiomass = (target, asOf) => {
-        const transactions=(DATA.biomass_transactions||[]).filter(row=>row.date<=asOf);
-        const linked=new Set(transactions.map(row=>row.tender_id).filter(Boolean));
-        const tenderLabels={open:"Otwarty",awarded:"Rozstrzygnięty",cancelled:"Unieważniony",closed_without_result:"Bez wyniku"};
+        const transactions=(DATA.biomass_transactions||[]).filter(row=>row.date<=asOf)
+          .sort((a,b)=>b.date.localeCompare(a.date)).slice(0,BIOMASS_MAX_RECORDS);
         const latestTenders=new Map();
         (DATA.biomass_tenders||[]).filter(row=>row.status_date<=asOf && row.checked_as_of<=asOf).forEach(row=>{
           const old=latestTenders.get(row.tender_id);
           if(!old || row.checked_as_of>old.checked_as_of || (row.checked_as_of===old.checked_as_of && row.retrieved_at>old.retrieved_at)) latestTenders.set(row.tender_id,row);
         });
-        const notices=[...latestTenders.values()].filter(row=>!linked.has(row.tender_id)).map(row=>({
-          ...row,date:row.status_date,record_type:"tender_notice",kind:`${tenderLabels[row.status]} · ${row.kind}`,
-          date_basis:"tender_status",price_pln_t:null,price_basis:"unknown",transport:"unknown",
-        }));
-        const samples=[...transactions,...notices].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,BIOMASS_MAX_RECORDS);
-        const section=card("Rynek zrębków drzewnych","Transakcje i przetargi · Polska",samples[0]?.date,"biomass");
-        section.querySelector(".date-badge").textContent=samples.length?formatDate(samples[0].date):"Brak notowań";
-
+        const linked=new Set((DATA.biomass_transactions||[]).filter(row=>row.date<=asOf).map(row=>row.tender_id).filter(Boolean));
+        const now=new Date();
+        const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Warsaw',year:'numeric',month:'2-digit',day:'2-digit'}).format(now);
+        const ongoing=[...latestTenders.values()].filter(row=>{
+          if(row.status!=="open" || linked.has(row.tender_id) || (row.quantity??row.volume_t)==null || !row.buyer || !row.kind) return false;
+          const deadline=row.deadline_at||row.deadline;
+          if(!deadline) return false;
+          return deadline.length===10 ? deadline>today : new Date(deadline)>now;
+        }).sort((a,b)=>b.published_date.localeCompare(a.published_date)).slice(0,BIOMASS_MAX_RECORDS);
+        const newest=[...transactions.map(row=>row.date),...ongoing.map(row=>row.published_date)].sort().pop();
+        const section=card("Rynek zrębków drzewnych","Transakcje i przetargi · Polska",newest,"biomass");
+        section.querySelector(".date-badge").textContent=newest?formatDate(newest):"Brak danych";
         const content=el("div","biomass-content");
-        const rows=samples.map(row=>[
-          formatDate(row.date),row.buyer??"—",row.kind,
-          formatNumber(row.volume_t),
-          row.price_pln_t==null?"—":`${fmtMoney(row.price_pln_t," zł/t")} ${row.price_basis==="net"?"netto":row.price_basis==="gross"?"brutto":"*"}`,
-          `${row.source_name} · ${row.record_type==="tender_notice"?tenderLabels[row.status]:row.record_type==="tender_award"?"wynik przetargu":"transakcja"}`,
-        ]);
-        const wrapper=table(["Data","Podmiot","Rodzaj","Wolumen","Cena","Źródło"],rows,[3,4]);
-        wrapper.querySelector("table").classList.add("biomass-transactions");
-        wrapper.querySelectorAll("tbody tr").forEach((tr,index)=>{
-          const record=samples[index];
+        content.append(el("div","biomass-table-title","Rozstrzygnięte postępowania i transakcje"));
+        const rows=transactions.map(row=>{
+          const value=row.unit_price??row.price_pln_t;
+          const unit=row.price_unit||"PLN/t";
+          const quantity=row.quantity??row.volume_t;
+          const quantityUnit=row.quantity_unit||(row.volume_t!=null?"t":"");
+          const mark=row.price_method==="calculated_indicative"?" ≈":row.price_method==="calculated"?" †":"";
+          return [formatDate(row.date),row.buyer||row.seller||"—",row.kind,
+            quantity==null?"—":`${formatNumber(quantity)} ${quantityUnit}`,
+            value==null?"—":`${formatNumber(value)} ${unit}${row.price_basis==="net"?" netto":row.price_basis==="gross"?" brutto":" *"}${mark}`,"Źródło"];
+        });
+        const settled=table(["Data","Podmiot","Rodzaj","Ilość","Cena","Źródło"],rows,[3,4]);
+        settled.querySelector("table").classList.add("biomass-transactions");
+        settled.querySelectorAll("tbody tr").forEach((tr,index)=>{
+          const record=transactions[index];
           if(!record) return;
           const source=document.createElement("a");
-          const displayUrl=record.source_url.replace(/^https?:\/\//i, "").replace(/^www\./i, "");
-          source.textContent=displayUrl.length>30?`${displayUrl.slice(0,30)}…`:displayUrl;
-          source.href=record.source_url;
-          source.target="_blank";
-          source.rel="noopener noreferrer";
-          source.title=`${record.source_url}\n${record.evidence}${record.deadline?`\nTermin ofert: ${record.deadline}`:""}`;
+          const display=record.source_url.replace(/^https?:\/\//i,"").replace(/^www\./i,"");
+          source.textContent=display.length>22?`${display.slice(0,22)}…`:display;
+          source.href=record.source_url; source.target="_blank"; source.rel="noopener noreferrer";
+          source.title=record.source_url;
           tr.cells[5].replaceChildren(source);
           tr.cells[2].title=record.kind;
-          tr.cells[0].title=record.date_basis==="tender_status"?"Data statusu przetargu":record.date_basis==="award_publication"?"Data publikacji wyniku przetargu":"Data transakcji";
-          tr.cells[4].title=`Transport: ${record.transport==="included"?"wliczony":record.transport==="excluded"?"niewliczony":"nie podano"}`;
+          tr.cells[4].title=record.price_method==="calculated_indicative"?"Orientacyjna cena wyliczona":record.price_method==="calculated"?"Cena wyliczona":"Cena podana w źródle";
         });
-        reserveTableRows(wrapper.querySelector("table"),BIOMASS_MAX_RECORDS);
-        content.append(wrapper);
-        if (samples.some(row=>row.price_pln_t!=null)) content.append(el("div","biomass-price-note","* Nie podano podstawy VAT. Zakres transportu może się różnić."));
+        reserveTableRows(settled.querySelector("table"),BIOMASS_MAX_RECORDS);
+        content.append(settled);
+        content.append(el("div","biomass-table-title","Postępowania w toku"));
+        const openRows=ongoing.map(row=>[row.buyer||"—",row.kind,
+          `${formatNumber(row.quantity??row.volume_t)} ${row.quantity_unit||(row.volume_t!=null?"t":"")}`,
+          formatDate(row.deadline)]);
+        const openTable=table(["Podmiot","Rodzaj","Planowana ilość","Termin ofert"],openRows,[2]);
+        openTable.querySelector("table").classList.add("biomass-ongoing");
+        openTable.querySelectorAll("tbody tr").forEach((tr,index)=>{
+          const record=ongoing[index]; if(!record) return;
+          tr.cells[0].title=record.source_url;
+          tr.cells[1].title=record.kind;
+          tr.cells[3].title=record.deadline_at||record.deadline;
+        });
+        reserveTableRows(openTable.querySelector("table"),BIOMASS_MAX_RECORDS);
+        content.append(openTable);
+        content.append(el("div","biomass-price-note","* VAT nieustalony · † Cena wyliczona · ≈ Cena orientacyjna. Jednostki i warunki dostaw mogą się różnić."));
         section.append(content);
         target.append(section);
       };
@@ -1530,6 +1566,7 @@ SOFTWARE.
       dateInput.addEventListener("change",render);
       document.getElementById("print-button").addEventListener("click",()=>window.print());
       window.addEventListener("beforeprint",()=>{roundMarketCorners();chartInstances.forEach(chart=>chart.resize());});
+      window.matchMedia("print").addEventListener("change",()=>requestAnimationFrame(roundMarketCorners));
       document.getElementById("generated-at").textContent=`Wygenerowano ${new Date().toLocaleString(locale)}`;
       const preview = document.querySelector(".paper-preview");
       const report = preview.querySelector("main");

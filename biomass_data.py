@@ -14,9 +14,11 @@ from exchange_rates import _atomic_save, as_date
 
 SHEET = "ZREBKI"
 LEGACY_FIELDS = ("record_id", "date", "date_basis", "record_type", "buyer", "kind", "price_pln_t", "price_basis", "transport", "volume_t", "source_name", "source_url", "reference", "evidence", "retrieved_at")
-FIELDS = LEGACY_FIELDS + ("tender_id",)
+PREVIOUS_FIELDS = LEGACY_FIELDS + ("tender_id",)
+FIELDS = PREVIOUS_FIELDS + ("seller", "unit_price", "price_unit", "quantity", "quantity_unit", "price_method", "transaction_status", "source_urls")
 TENDER_SHEET = "ZREBKI_PRZETARGI"
-TENDER_FIELDS = ("tender_id", "published_date", "buyer", "kind", "reference", "source_name", "source_url", "status", "status_date", "deadline", "volume_t", "evidence", "checked_as_of", "retrieved_at")
+PREVIOUS_TENDER_FIELDS = ("tender_id", "published_date", "buyer", "kind", "reference", "source_name", "source_url", "status", "status_date", "deadline", "volume_t", "evidence", "checked_as_of", "retrieved_at")
+TENDER_FIELDS = PREVIOUS_TENDER_FIELDS + ("quantity", "quantity_unit", "deadline_at")
 
 
 
@@ -39,7 +41,7 @@ def read_transactions(path: Path) -> list[dict]:
             return []
         sheet = workbook[SHEET]
         headers = tuple(cell.value for cell in sheet[1])
-        if headers not in (FIELDS, LEGACY_FIELDS):
+        if headers not in (FIELDS, PREVIOUS_FIELDS, LEGACY_FIELDS):
             raise ValueError("Arkusz ZREBKI ma nieprawidłowy układ kolumn.")
         records = []
         for values in sheet.iter_rows(min_row=2, values_only=True):
@@ -90,7 +92,21 @@ def _number(value, optional=False):
     return float(number)
 
 
+def canonical_record_key(row):
+    if row.get("unit_price") is not None:
+        return record_key(row)
+    return record_key(dict(row, unit_price=row.get("price_pln_t"), price_unit="PLN/t"))
+
+
 def record_key(row):
+    if row.get("unit_price") is not None:
+        normalized = lambda value: re.sub(r'\s+', ' ', str(value or '').strip().casefold())
+        reference = normalized(row.get("reference"))
+        identity = [row["date"], normalized(row.get("buyer") or row.get("seller")), reference,
+                    None if reference else normalized(row.get("kind")),
+                    str(Decimal(str(row["unit_price"])).normalize()), row["price_unit"], row["price_basis"],
+                    None if reference or row.get("quantity", row.get("volume_t")) is None else str(Decimal(str(row.get("quantity", row.get("volume_t")))).normalize())]
+        return sha256(json.dumps(identity, ensure_ascii=False).encode()).hexdigest()
     normalized = lambda value: re.sub(r'\s+', ' ', str(value or '').strip().casefold())
     # Do not count the same named transaction again just because another site cites it.
     identity = [row["date"], normalized(row.get("buyer")), normalized(row["kind"]),
@@ -208,14 +224,14 @@ def read_tenders(path: Path, as_of: date | None = None, *, open_only: bool = Fal
         if TENDER_SHEET not in workbook.sheetnames:
             return []
         sheet = workbook[TENDER_SHEET]
-        if tuple(c.value for c in sheet[1]) != TENDER_FIELDS:
+        if tuple(c.value for c in sheet[1]) not in (TENDER_FIELDS, PREVIOUS_TENDER_FIELDS):
             raise ValueError("Arkusz ZREBKI_PRZETARGI ma nieprawidłowy układ kolumn.")
         latest = {}
         snapshots = []
         for values in sheet.iter_rows(min_row=2, values_only=True):
             if not values[0]:
                 continue
-            row = dict(zip(TENDER_FIELDS, values))
+            row = dict(zip(tuple(c.value for c in sheet[1]), values))
             if as_of and (as_date(row["checked_as_of"]) > as_of or as_date(row["status_date"]) > as_of):
                 continue
             snapshots.append(row)
@@ -281,25 +297,42 @@ def save_biomass_data(path: Path, records: list[dict], tenders: list[dict]) -> t
             if SHEET in workbook.sheetnames:
                 sheet = workbook[SHEET]
                 headers = tuple(c.value for c in sheet[1])
-                if headers not in (FIELDS, LEGACY_FIELDS):
+                if headers not in (FIELDS, PREVIOUS_FIELDS, LEGACY_FIELDS):
                     raise ValueError("Arkusz ZREBKI ma nieprawidłowy układ kolumn.")
-                if headers == LEGACY_FIELDS:
-                    sheet.cell(1, len(FIELDS), "tender_id")
+                if headers != FIELDS:
+                    for column, field in enumerate(FIELDS, 1):
+                        sheet.cell(1, column, field)
                     changed = True
             else:
                 sheet = workbook.create_sheet(SHEET)
                 sheet.append(FIELDS)
             existing = {r[0]: index for index, r in enumerate(sheet.iter_rows(min_row=2, values_only=True), 2) if r[0]}
+            semantic = {canonical_record_key(dict(zip(FIELDS, values))): index
+                        for index, values in enumerate(sheet.iter_rows(min_row=2, values_only=True), 2) if values[0]}
             for row in records:
                 key = record_key(row)
+                semantic_key = canonical_record_key(row)
+                if key not in existing and semantic_key in semantic:
+                    existing[key] = semantic[semantic_key]
                 if key in existing:
-                    if row.get("tender_id") and not sheet.cell(existing[key], len(FIELDS)).value:
-                        sheet.cell(existing[key], len(FIELDS), row["tender_id"])
+                    if row.get("tender_id") and not sheet.cell(existing[key], FIELDS.index("tender_id")+1).value:
+                        sheet.cell(existing[key], FIELDS.index("tender_id")+1, row["tender_id"])
                         changed = True
+                    index = existing[key]
+                    if row.get("source_urls"):
+                        column = FIELDS.index("source_urls") + 1
+                        old_urls = json.loads(sheet.cell(index,column).value or '[]')
+                        old_source = sheet.cell(index,FIELDS.index("source_url")+1).value
+                        urls = list(dict.fromkeys(([old_source] if old_source else []) + old_urls + json.loads(row["source_urls"])))
+                        merged = json.dumps(urls,ensure_ascii=False)
+                        if sheet.cell(index,column).value != merged:
+                            sheet.cell(index,column,merged)
+                            changed = True
                     continue
                 row = dict(row, record_id=key)
                 sheet.append([row.get(field) for field in FIELDS])
                 existing[key] = sheet.max_row
+                semantic[semantic_key] = sheet.max_row
                 added += 1
                 changed = True
             sheet.freeze_panes = "A2"
@@ -307,8 +340,10 @@ def save_biomass_data(path: Path, records: list[dict], tenders: list[dict]) -> t
         if tenders:
             if TENDER_SHEET in workbook.sheetnames:
                 sheet = workbook[TENDER_SHEET]
-                if tuple(c.value for c in sheet[1]) != TENDER_FIELDS:
+                if tuple(c.value for c in sheet[1]) not in (TENDER_FIELDS, PREVIOUS_TENDER_FIELDS):
                     raise ValueError("Arkusz ZREBKI_PRZETARGI ma nieprawidłowy układ kolumn.")
+                for column, field in enumerate(TENDER_FIELDS, 1):
+                    sheet.cell(1, column, field)
             else:
                 sheet = workbook.create_sheet(TENDER_SHEET)
                 sheet.append(TENDER_FIELDS)

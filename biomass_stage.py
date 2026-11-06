@@ -2,14 +2,15 @@ from datetime import date
 import json
 from pathlib import Path
 
-from biomass_data import read_transactions, search_context, validate_response, save_biomass_data, read_tenders
+from biomass_data import read_transactions, search_context, save_biomass_data, read_tenders
 from workbook_access import show_workbook_access_error
+from biomass_import import merge_responses
 
 ROOT = Path(__file__).resolve().parent
 
 
 def build_biomass_prompt(path: Path, report_date: date) -> tuple[str, date]:
-    start, existing = search_context(read_transactions(path), report_date)
+    start, _ = search_context(read_transactions(path), report_date)
     sources = (ROOT / "prompt_biomass_sources.txt").read_text(encoding="utf-8")
     sources = "\n".join(line for line in sources.splitlines() if line.strip() and not line.lstrip().startswith('#'))
     prompt = (ROOT / "prompt_biomass.txt").read_text(encoding="utf-8")
@@ -17,7 +18,7 @@ def build_biomass_prompt(path: Path, report_date: date) -> tuple[str, date]:
         "{{start_date}}": start.isoformat(), "{{end_date}}": report_date.isoformat(),
         "{{example_sources}}": sources or "Nie wskazano — samodzielnie wyszukaj wiarygodne źródła.",
         "{{open_tenders}}": json.dumps(read_tenders(path, report_date, open_only=True), ensure_ascii=False, indent=2, default=str),
-        "{{existing_records}}": json.dumps(existing, ensure_ascii=False, indent=2, default=str),
+        "{{existing_records}}": json.dumps([r for r in read_transactions(path) if date.fromisoformat(r["date"]) <= report_date], ensure_ascii=False, indent=2, default=str),
     }
     for placeholder, value in replacements.items():
         prompt = prompt.replace(placeholder, value)
@@ -28,9 +29,12 @@ def show_biomass_page(path: Path) -> None:
     import streamlit as st
 
     st.title("Dane o zrębkach")
-    st.write("Skopiuj osobny prompt do nowej rozmowy AI. Po zakończeniu wyszukiwania wklej pełną odpowiedź poniżej.")
+    st.write("1. Otwórz ChatGPT i rozpocznij nową rozmowę z dostępem do wyszukiwania w internecie.")
+    st.markdown("[Otwórz ChatGPT — https://chatgpt.com/](https://chatgpt.com/)")
+    st.write("2. Skopiuj poniższy prompt. Możesz uruchomić go w kilku osobnych czatach — niezależne wyszukiwania mogą dać lepszy wynik.")
+    st.write("3. Wklej odpowiedzi do osobnych pól. Aplikacja połączy dane, usunie duplikaty i sprawdzi terminy ofert.")
     try:
-        prompt, start = build_biomass_prompt(path, st.session_state["report_date"])
+        prompt, _ = build_biomass_prompt(path, st.session_state["report_date"])
     except PermissionError:
         show_workbook_access_error()
         st.button("Spróbuj ponownie", key="biomass_retry_read")
@@ -40,12 +44,21 @@ def show_biomass_page(path: Path) -> None:
         return
     st.subheader("Prompt do skopiowania")
     st.code(prompt, language=None, height=350)
-    st.subheader("Odpowiedź")
-    with st.form("biomass_response_form"):
-        text = st.text_area("Pełna odpowiedź dotycząca zrębków", height=250, key="biomass_response")
-        submitted = st.form_submit_button("Sprawdź odpowiedź i kontynuuj", type="primary")
+    st.subheader("Odpowiedzi z ChatGPT")
+    count = st.session_state.setdefault("biomass_response_count", 1)
+    texts = []
+    for index in range(count):
+        key = "biomass_response" if index == 0 else f"biomass_response_{index}"
+        texts.append(st.text_area(f"Odpowiedź {index+1} — pełny JSON", height=220, key=key))
+    if st.button("Dodaj kolejne pole na odpowiedź", key="biomass_add_response"):
+        st.session_state["biomass_response_count"] = count + 1
+        st.rerun()
+    submitted = st.button("Sprawdź odpowiedź i kontynuuj", type="primary")
     if submitted:
-        report = validate_response(text, start, st.session_state["report_date"], read_tenders(path, st.session_state["report_date"], open_only=True))
+        if not any(text.strip() for text in texts):
+            st.error("Wklej przynajmniej jedną odpowiedź lub wybierz przycisk braku nowych danych.")
+            return
+        report = merge_responses(texts, st.session_state["report_date"], read_tenders(path, st.session_state["report_date"]))
         if not report.is_valid:
             st.error("Odpowiedź wymaga poprawy. Dane nie zostały zapisane.")
             for error in report.errors:

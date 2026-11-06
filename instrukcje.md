@@ -99,56 +99,46 @@ pobrania HTML. Eksport nie pobiera zewnętrznych zasobów.
 
 ## Oddzielny ekran danych o zrębkach
 
-Po kompletnych danych energetycznych (z pliku albo po zapisie odpowiedzi) aplikacja
-przechodzi do jednego ekranu „Dane o zrębkach”. Użytkownik kopiuje osobny prompt,
-wkleja odpowiedź JSON i sprawdza ją na tym samym ekranie. Poprawne rekordy są
-zapisywane automatycznie w arkuszu `ZREBKI`, po czym dostępne są HTML i PDF.
-Przycisk „Model nie znalazł nowych transakcji” pozwala zakończyć etap bez wklejania
-pustej odpowiedzi. Dotychczasowe transakcje nie są wówczas usuwane.
+Po danych energetycznych aplikacja otwiera ekran „Dane o zrębkach” z linkiem
+https://chatgpt.com/ i instrukcją rozpoczęcia nowego czatu z wyszukiwaniem.
+Można uruchomić prompt w kilku niezależnych rozmowach, co może poprawić wyniki.
+Przycisk „Dodaj kolejne pole na odpowiedź” dodaje osobne pole JSON bez utraty
+wcześniej wpisanego tekstu. Puste dodatkowe pola są ignorowane. Wszystkie odpowiedzi
+są sprawdzane przed wspólnym zapisem; błąd wskazuje numer odpowiedzi i rekordu.
 
-Szablon: `prompt_biomass.txt`. Edytowalna lista przykładowych źródeł:
-`prompt_biomass_sources.txt`, jeden adres lub nazwa na wiersz. Źródła są wskazówkami;
-model ma przeszukiwać również inne źródła. Zakres obejmuje ostatnią rzeczywistą
-datę zapisu do daty raportu włącznie. Rekordy z dnia początkowego są zawarte wyłącznie
-w prompcie jako lista wykluczeń; aplikacja dodatkowo deduplikuje zapis. Przy pierwszym
-wyszukiwaniu zakres obejmuje ostatnie 30 dni. Dane demonstracyjne nie są historią.
+Szablon `prompt_biomass.txt` szuka po 5 najnowszych nowych wyników do tabel
+`settled` i `ongoing`, cofając się od ostatniego miesiąca bez stałego limitu dat,
+w maksymalnie 5 rundach. Data raportu ogranicza daty zdarzeń. Przykładowe źródła
+w `prompt_biomass_sources.txt` są inspiracją, a nie jedynymi miejscami wyszukiwania.
+Prompt otrzymuje wcześniejsze transakcje i zapisane otwarte postępowania, aby
+unikać powtórek i szukać ich wyników. Starsze schematy biomass-data-1.0/2.0
+pozostają obsługiwane przy wklejaniu.
 
-Schemat `biomass-data-2.0` zawiera `status`, `retrieved_at`,
-`data.biomass.transactions`, `data.biomass.tenders` oraz `errors`. Obsługiwane są rzeczywiste transakcje,
-wyniki przetargów i opublikowane otwarte przetargi; nie zwykłe oferty sprzedaży. Cena to PLN/t, z osobnym statusem
-VAT i transportu. Brak nabywcy/wolumenu zapisuje się jako null. Zachowane są link,
-nazwa źródła, dowód oraz typ daty (transakcja/publikacja wyniku). Walidacja sprawdza
-strukturę i poprawność wartości, ale nie zastępuje oceny prawdziwości źródła.
+Odpowiedź ma postać `{"settled": [...], "ongoing": [...]}`. Settled zachowuje
+kupującego, sprzedawcę, datę, rodzaj, cenę i jednostkę, VAT, sposób ustalenia
+ceny, ilość i jej jednostkę, status, numer postępowania i linki. Obsługiwane
+jednostki to t/Mg, mp, m3 i GJ; dane nie są samoczynnie przeliczane na tony.
+Cena źródłowa, wyliczona i orientacyjna są rozróżniane.
 
-Raport pokazuje do 9 najnowszych rzeczywistych rekordów do wybranej daty i puste
-wiersze dla brakujących pozycji. Ceny netto/brutto są oznaczone; gwiazdka oznacza
-nieznaną podstawę VAT. Puste źródło danych nie jest zastępowane przykładami.
+Wspólny import usuwa duplikaty pomiędzy odpowiedziami oraz sprawdza zapisane
+wcześniej dane. Dodatkowe źródła tej samej transakcji są zachowywane. Arkusze
+`ZREBKI` i `ZREBKI_PRZETARGI` są rozszerzane bez kasowania poprzednich danych.
+Wynik rozstrzygnięcia powiązany numerem i podmiotem z zapisanym otwartym
+postępowaniem aktualizuje jego status na rozstrzygnięty.
 
-## Monitorowanie otwartych przetargów zrębków
+Terminy ofert są sprawdzane względem rzeczywistego czasu Europe/Warsaw, a nie
+wyłącznie wybranej daty raportu. Wygasłe nabory są pomijane z komunikatem.
+Termin przypadający dzisiaj wymaga potwierdzonej przyszłej godziny w ISO 8601;
+sama data nie wystarcza do uznania naboru za otwarty. Brak wyniku postępowania
+nie jest dowodem otwartego naboru. Upływ terminu nie zmienia archiwalnego statusu
+na rozstrzygnięty — wyłącza jedynie wpis z aktualnej tabeli naborów.
 
-Prompt otrzymuje także wcześniej zapisane otwarte przetargi i polecenie ponownego
-sprawdzenia każdego z nich, niezależnie od zakresu nowych transakcji. Aktualizacje
-zwracają zachowane `tender_id`. Nowe przetargi mają null; ID nadaje aplikacja.
-Źródła przykładowe są inspiracją; konkretne przykładowe postępowania są wykluczone
-z importu, a ogólne listy postępowań mogą prowadzić do nowych wyników.
-
-Arkusz `ZREBKI_PRZETARGI` przechowuje statusy open/awarded/cancelled/closed_without_result,
-termin ofert, datę publikacji, datę potwierdzonego statusu, dzień raportu, dowód
-oraz źródło. Kolejne dni sprawdzenia tworzą historię, zamiast nadpisywać stare statusy.
-Sam upływ terminu nie jest dowodem zakończenia; nadal otwarty przetarg pozostaje do
-sprawdzenia. Nowy termin i brak dostępu do źródła nie mogą skutkować wymyśleniem wyniku.
-
-Transakcje i statusy zapisują się atomowo w jednym skoroszycie. Otwarte postępowanie
-nie musi mieć ceny. Potwierdzony wynik z ceną trafia do `ZREBKI` z powiązaniem
-`tender_id`; wynik bez znanej ceny pozostaje statusem przetargu. Starsze arkusze
-transakcji bez kolumny tender_id są odczytywane i uzupełniane przy zapisie.
-Aplikacja przyjmuje także dotychczasowy schemat 1.0 z samymi transakcjami.
-
-Ostatni ekran pokazuje monitorowane przetargi osobno od cen. Dashboard wyświetla
-otwarte/zakończone postępowania z opisem statusu i bez ceny, a wynik powiązany
-z transakcją nie jest liczony drugi raz. Zachowany limit wynosi 9 najnowszych pozycji.
-Przycisk braku wyników dotyczy braku nowych danych ORAZ braku zmian statusów;
-aktualizacje należy wkleić nawet wtedy, gdy nie znaleziono nowych transakcji.
+Dashboard pokazuje dwie osobne tabele po maksymalnie 5 rekordów, z pustymi
+wierszami, jeżeli danych jest mniej. W postępowaniach w toku widoczne są tylko:
+podmiot, rodzaj zrębki, planowana ilość z jednostką i termin ofert. W transakcjach
+zachowane są jednostki cen i ilości oraz oznaczenia VAT i sposobu ustalenia ceny.
+Przycisk „Model nie znalazł nowych danych ani zmian” pozwala przejść dalej bez
+wklejania pustego JSON-u; wcześniejsze dane nie są usuwane.
 
 ## Kopie zapasowe DataMaster
 
