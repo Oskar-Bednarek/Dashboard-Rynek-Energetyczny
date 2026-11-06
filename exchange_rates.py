@@ -1,13 +1,13 @@
 """NBP table A cache. Calendar rows explicitly record their source publication date."""
 from __future__ import annotations
+from workbook_storage import atomic_save, serialized_update
+from market_values import number as market_number
 
 from bisect import bisect_right
 from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 import json
-import os
 from pathlib import Path
-import tempfile
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from zoneinfo import ZoneInfo
@@ -105,20 +105,10 @@ def read_exchange_rates(path: Path) -> dict:
         workbook.close()
 
 
-def _atomic_save(workbook, path: Path) -> None:
-    temporary = None
-    try:
-        with tempfile.NamedTemporaryFile(dir=path.parent, prefix="NBP_", suffix=".xlsx", delete=False) as file:
-            temporary = Path(file.name)
-        workbook.save(temporary)
-        check = load_workbook(temporary, read_only=True)
-        check.close()
-        os.replace(temporary, path)
-    finally:
-        if temporary is not None:
-            temporary.unlink(missing_ok=True)
+_atomic_save = atomic_save
 
 
+@serialized_update
 def ensure_exchange_rates(path: Path, *, today: date | None = None) -> dict:
     """Fill every calendar day from the oldest market record through today.
 
@@ -152,14 +142,16 @@ def ensure_exchange_rates(path: Path, *, today: date | None = None) -> dict:
             raise ExchangeRateError("Daty notowań są późniejsze niż dzisiejsza data.")
         cache = _read_cache(workbook)
         updated = dict(cache)
-        checked_at = datetime.now(ZoneInfo("Europe/Warsaw")).isoformat()
+        checked_at = datetime.combine(today, datetime.now(ZoneInfo("Europe/Warsaw")).timetz()).isoformat()
         for currency in CURRENCIES:
             missing = []
             day = start
             while day <= today:
                 record = cache.get((day, currency))
                 # Same-day publication can arrive after an earlier fallback.
-                if record is None or (day == today and record["effective_date"] < today):
+                if record is None or (record["table_number"] != "MANUAL"
+                        and record["effective_date"] < day
+                        and (day == today or (day.weekday() < 5 and str(record.get("checked_at", ""))[:10] <= day.isoformat()))):
                     missing.append(day)
                 day += timedelta(days=1)
             if not missing:
@@ -233,12 +225,57 @@ def convert_record_to_pln(record: dict, currency: str, rates: dict) -> dict:
             converted[field] = None
             continue
         try:
-            number = Decimal(str(value).strip().replace("\xa0", "").replace(" ", "").replace(",", "."))
-            if not number.is_finite():
-                raise InvalidOperation
-        except InvalidOperation as error:
+            number = market_number(value)
+        except ValueError as error:
             raise ExchangeRateError(f"Nieprawidłowa cena {field} dla {day}.") from error
         converted[field] = float(number * rate)
     # Source percentage changes are foreign-currency changes, not PLN changes.
     converted["change_pct"] = None
     return converted
+
+
+def missing_exchange_rates(path: Path, *, today: date | None = None) -> list[tuple[date, str]]:
+    """Calendar gaps, including all historical market dates, through today."""
+    cache = read_exchange_rates(path)
+    workbook = load_workbook(path, read_only=True, data_only=True)
+    dates = []
+    try:
+        for name in MARKET_SHEETS:
+            if name not in workbook.sheetnames:
+                continue
+            rows = workbook[name].iter_rows(values_only=True)
+            headers = next(rows)
+            if 'trading_date' in headers:
+                index = headers.index('trading_date')
+                dates.extend(as_date(row[index]) for row in rows if row[index])
+    finally:
+        workbook.close()
+    if not dates:
+        return []
+    first, last = min(dates), today or warsaw_today()
+    return [(first + timedelta(days=i), currency)
+            for i in range(max(0, (last-first).days+1)) for currency in CURRENCIES
+            if (first + timedelta(days=i), currency) not in cache]
+
+
+@serialized_update
+def save_manual_exchange_rates(path: Path, entries: list[tuple[date, str, object]]) -> None:
+    validated = [(day, code, float(positive_decimal(value))) for day, code, value in entries]
+    if any(code not in CURRENCIES or day > warsaw_today() for day, code, _ in validated):
+        raise ExchangeRateError('Nieprawidłowa waluta lub data kursu.')
+    workbook = load_workbook(path)
+    try:
+        cache = _read_cache(workbook)
+        for day, code, value in validated:
+            cache[(day, code)] = dict(date=day, currency=code, mid_pln=value,
+                effective_date=day, table_number='MANUAL',
+                checked_at=datetime.now(ZoneInfo('Europe/Warsaw')).isoformat())
+        sheet = workbook[FX_SHEET] if FX_SHEET in workbook.sheetnames else workbook.create_sheet(FX_SHEET)
+        sheet.delete_rows(1, sheet.max_row)
+        sheet.append(FX_HEADERS)
+        for key in sorted(cache):
+            sheet.append([value.isoformat() if isinstance(value, date) else value
+                          for value in (cache[key][field] for field in FX_HEADERS)])
+        _atomic_save(workbook, Path(path))
+    finally:
+        workbook.close()

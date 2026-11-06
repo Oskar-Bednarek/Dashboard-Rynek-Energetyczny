@@ -1,3 +1,4 @@
+from exchange_rates import missing_exchange_rates, save_manual_exchange_rates, ExchangeRateError
 from datetime import date
 import json
 from pathlib import Path
@@ -121,6 +122,15 @@ def _source_errors(report: ValidationReport) -> list[dict[str, str]]:
 def show_review_page(workbook_path: Path) -> None:
     import streamlit as st
 
+    if st.session_state.get("review_existing_data"):
+        st.title("Uzupełnij brakujące dane")
+        gaps = missing_exchange_rates(workbook_path)
+        if gaps:
+            _show_fx_form(workbook_path, gaps)
+            return
+        st.session_state["page"] = "biomass"
+        st.rerun()
+
     report: ValidationReport | None = st.session_state.get("validation_report")
     if report is None or report.data is None or not report.is_structurally_valid:
         st.session_state["page"] = "prompt"
@@ -145,7 +155,8 @@ def show_review_page(workbook_path: Path) -> None:
         st.session_state["otf_session_date"], coal_window, eua_window, otf_session_candidates,
     )
     st.session_state["validation_report"] = report
-    if report.is_valid:
+    fx_gaps = missing_exchange_rates(workbook_path)
+    if report.is_valid and not fx_gaps:
         try:
             if not st.session_state.get("data_saved"):
                 save_market_data(workbook_path, report.data, coal_window, eua_window)
@@ -158,6 +169,8 @@ def show_review_page(workbook_path: Path) -> None:
             st.button("Spróbuj ponownie", key="retry_save")
             return
         st.session_state["data_saved"] = True
+        if missing_exchange_rates(workbook_path):
+            st.rerun()
         st.session_state["otf_session_date"] = otf_session_date
         st.session_state["page"] = "biomass"
         st.session_state.pop("coverage_result", None)
@@ -198,7 +211,7 @@ def show_review_page(workbook_path: Path) -> None:
             column_config={"Link": st.column_config.LinkColumn("Link")},
         )
 
-    if missing_records:
+    if missing_records or fx_gaps:
         st.write(
             "Otwórz link i wpisz wartości dokładnie takie, jakie widzisz na "
             "stronie. Zostaw pole puste tylko wtedy, gdy źródło wyraźnie nie "
@@ -206,6 +219,7 @@ def show_review_page(workbook_path: Path) -> None:
         )
         completed = []
         with st.form("review_manual_completion"):
+            fx_entries = _fx_inputs(fx_gaps)
             for index, missing in enumerate(missing_records):
                 st.markdown(
                     f"**{missing.instrument} — {missing.trading_date}**  "
@@ -227,9 +241,18 @@ def show_review_page(workbook_path: Path) -> None:
                 "Sprawdź ponownie dane uzupełnione", type="primary"
             )
         if apply_manual:
+            if any(value is None or value <= 0 for _, _, value in fx_entries):
+                st.error("Wpisz dodatni kurs dla każdej brakującej daty i waluty.")
+                return
             if not all(item[2] for item in completed):
                 st.error("Najpierw potwierdź każdą sprawdzoną pozycję.")
             else:
+                if fx_entries:
+                    try:
+                        save_manual_exchange_rates(workbook_path, fx_entries)
+                    except ExchangeRateError as error:
+                        st.error(str(error))
+                        return
                 updated = apply_manual_records(
                     report.data,
                     [(missing, values) for missing, values, _ in completed],
@@ -291,4 +314,35 @@ def show_review_page(workbook_path: Path) -> None:
     if right.button("Przygotuj kolejny raport"):
         st.session_state["page"] = "dates"
         st.session_state["data_saved"] = False
+        st.rerun()
+
+
+def _fx_inputs(gaps):
+    import streamlit as st
+    entries = []
+    if gaps:
+        st.subheader("Brakujące kursy walut")
+        st.info("Nie udało się automatycznie uzupełnić wszystkich kursów NBP. Wpisz średni kurs tabeli A obowiązujący w danym dniu; w dni bez publikacji użyj ostatniego wcześniejszego kursu. Wpisy zostaną oznaczone jako ręczne.")
+        st.markdown("https://nbp.pl/statystyka-i-sprawozdawczosc/kursy/tabela-a/")
+    for day, currency in gaps:
+        value = st.number_input(f"{currency}/PLN — {day:%d.%m.%Y}", value=None,
+                                min_value=0.000001, format="%.6f", key=f"fx_{day}_{currency}")
+        entries.append((day, currency, value))
+    return entries
+
+
+def _show_fx_form(path, gaps):
+    import streamlit as st
+    with st.form("review_manual_completion"):
+        entries = _fx_inputs(gaps)
+        submitted = st.form_submit_button("Zapisz uzupełnione dane", type="primary")
+    if submitted:
+        try:
+            save_manual_exchange_rates(path, entries)
+        except ExchangeRateError as error:
+            st.error(str(error))
+        else:
+            st.rerun()
+    if st.button("Wróć do dat"):
+        st.session_state["page"] = "dates"
         st.rerun()

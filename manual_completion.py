@@ -1,3 +1,4 @@
+from market_values import valid_tge_record
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import date
@@ -30,6 +31,8 @@ def _existing_keys(payload: dict[str, Any], market: str, collection: str) -> set
         (record.get("trading_date"), record.get("data_id"))
         for record in records
         if isinstance(record, dict)
+        and isinstance(record.get("values"), dict)
+        and valid_tge_record({**record, **record["values"]}, market, collection)
     }
 
 
@@ -56,13 +59,12 @@ def find_missing_tge_records(
     for market, source_key, url_path, instruments in rdn_specs:
         existing = _existing_keys(payload, market, "day_ahead")
         requested_dates = source_dates[source_key]
-        if market == "electricity" and requested_dates:
-            latest_date = max(requested_dates)
-            requested_dates = [latest_date]
         for trading_date in requested_dates:
             text_date = trading_date.isoformat()
             url = f"https://tge.pl{url_path}?dateShow={trading_date.strftime('%d-%m-%Y')}"
             for data_id, instrument in instruments.items():
+                if market == "electricity" and data_id != "tge_power_da_base" and trading_date != max(requested_dates):
+                    continue
                 if (text_date, data_id) not in existing:
                     value_fields = (
                         ("price_pln_mwh",)
@@ -103,7 +105,11 @@ def find_missing_tge_records(
                 data_id for data_id in group_ids if data_id not in existing_ids
             ]
             needed_count = max(0, OTF_MINIMUM_COUNTS[group] - len(existing_ids))
-            for data_id in missing_ids[:needed_count]:
+            supplied_ids = {record.get("data_id") for record in payload.get("data", {}).get(market, {}).get("futures", [])
+                            if record.get("trading_date") == otf_session_date.isoformat()}
+            repair_ids = [data_id for data_id in missing_ids if data_id in supplied_ids]
+            repair_ids += [data_id for data_id in missing_ids if data_id not in supplied_ids][:max(0, needed_count-len(repair_ids))]
+            for data_id in repair_ids:
                 index = int(data_id.rsplit("_", 1)[1])
                 instrument = values[index - 1]
                 key = (otf_session_date.isoformat(), data_id)
@@ -129,6 +135,7 @@ def apply_manual_records(
     for missing, values in records:
         market, collection = missing.section.split(".")
         target = data.setdefault(market, {}).setdefault(collection, [])
+        target[:] = [row for row in target if (row.get("trading_date"), row.get("data_id")) != (missing.trading_date, missing.data_id)]
         target.append({
             "data_id": missing.data_id,
             "source_url": missing.source_url,

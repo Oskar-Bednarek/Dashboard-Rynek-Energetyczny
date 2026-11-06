@@ -9,6 +9,7 @@ import re
 from urllib.parse import urlsplit, urlunsplit
 
 from openpyxl import load_workbook
+from workbook_storage import serialized_update
 from exchange_rates import _atomic_save, as_date
 
 SHEET = "ZREBKI"
@@ -269,6 +270,7 @@ def validate_tender(raw, end, retrieved, known):
     return row
 
 
+@serialized_update
 def save_biomass_data(path: Path, records: list[dict], tenders: list[dict]) -> tuple[int, int]:
     """Save both transaction and tender changes in one atomic workbook update."""
     workbook = load_workbook(path)

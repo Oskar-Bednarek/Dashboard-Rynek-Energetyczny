@@ -8,7 +8,7 @@ from typing import Any
 
 from openpyxl import load_workbook
 
-from exchange_rates import ensure_exchange_rates, convert_record_to_pln
+from exchange_rates import ensure_exchange_rates, convert_record_to_pln, read_exchange_rates, ExchangeRateError
 from biomass_data import read_transactions, read_tenders
 
 
@@ -40,7 +40,11 @@ def _json_value(value: Any) -> Any:
 
 
 def load_dashboard_data(workbook_path: Path) -> dict[str, Any]:
-    exchange_rates = ensure_exchange_rates(workbook_path)
+    try:
+        exchange_rates = ensure_exchange_rates(workbook_path)
+    except ExchangeRateError:
+        # Existing verified/manual rates still permit local report generation.
+        exchange_rates = read_exchange_rates(workbook_path)
     workbook = load_workbook(workbook_path, read_only=True, data_only=True)
     try:
         result: dict[str, Any] = {"biomass_transactions": read_transactions(workbook_path)}

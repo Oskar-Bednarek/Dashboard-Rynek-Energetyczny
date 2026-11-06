@@ -7,6 +7,7 @@ from openpyxl import Workbook
 
 from contract_selection import build_contract_set
 from data_coverage import assess_coverage
+from market_values import contract_map, INVESTING_INSTRUMENTS
 
 
 class DataCoverageTests(unittest.TestCase):
@@ -27,14 +28,16 @@ class DataCoverageTests(unittest.TestCase):
         }
         for sheet_name, ids in ids_by_sheet.items():
             worksheet = workbook.create_sheet(sheet_name)
-            worksheet.append(["trading_date", "data_id"])
+            worksheet.append(["trading_date", "data_id", "instrument", "dkr_pln_mwh"])
             worksheet.append([self.session_date, "unrelated_id"])
             for data_id in ids:
-                worksheet.append([self.session_date, data_id])
+                market = "gas" if sheet_name == "GAZ_OTF" else "electricity"
+                worksheet.append([self.session_date, data_id, contract_map(self.session_date,market).get(data_id), 100])
         for sheet_name in ("WEGIEL", "EUA"):
             worksheet = workbook.create_sheet(sheet_name)
-            worksheet.append(["trading_date"])
-            worksheet.append([date(2026, 10, 29)])
+            worksheet.append(["trading_date", "data_id", "instrument", "price"])
+            identifier, instrument = INVESTING_INSTRUMENTS["coal" if sheet_name == "WEGIEL" else "emissions"]
+            worksheet.append([date(2026, 10, 29),identifier,instrument,"100"])
         workbook.save(path)
         workbook.close()
         return path

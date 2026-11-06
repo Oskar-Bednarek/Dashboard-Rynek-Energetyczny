@@ -1,3 +1,4 @@
+from market_values import valid_tge_record, valid_values, INVESTING_INSTRUMENTS
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path
@@ -22,6 +23,14 @@ def _date_text(value: object) -> str | None:
     if isinstance(value, str) and value:
         return value[:10]
     return None
+
+
+def _valid_date(text):
+    try:
+        date.fromisoformat(text)
+        return True
+    except ValueError:
+        return False
 
 
 def _day_count_text(count: int) -> str:
@@ -104,10 +113,14 @@ def assess_coverage(
                 for row in worksheet.iter_rows(min_row=2, values_only=True)
                 if _date_text(row[date_column]) == otf_session_date.isoformat()
                 and row[id_column]
+                and valid_tge_record(dict(zip(headers, row)), market, "futures")
             }
             requirements = _otf_requirements(
                 build_contract_set(otf_session_date, gas=market == "gas"), market
             )
+            all_ids = {row[id_column] for row in worksheet.iter_rows(min_row=2, values_only=True)
+                       if _date_text(row[date_column]) == otf_session_date.isoformat()}
+            invalid_ids = all_ids.intersection({item for ids in requirements.values() for item in ids}) - stored_ids
             group_status = []
             market_complete = True
             for group, ids in requirements.items():
@@ -118,6 +131,9 @@ def assess_coverage(
                     f"wymagane minimum: {required}"
                 )
                 market_complete &= available >= required
+            if invalid_ids:
+                market_complete = False
+                group_status.append(f"rekordy wymagające poprawy: {len(invalid_ids)}")
             details[key] = ", ".join(group_status)
             section_complete[key] = market_complete
             is_complete &= market_complete
@@ -132,19 +148,27 @@ def assess_coverage(
                 for cell in next(worksheet.iter_rows(min_row=1, max_row=1))
             ]
             date_column = headers.index("trading_date")
-            dates = {
-                parsed
-                for row in worksheet.iter_rows(min_row=2, values_only=True)
-                if (text := _date_text(row[date_column])) is not None
-                and window[0] <= (parsed := date.fromisoformat(text)) <= window[1]
-            }
+            expected_id, expected_name = INVESTING_INSTRUMENTS[key]
+            candidates = []
+            for row in worksheet.iter_rows(min_row=2, values_only=True):
+                text = _date_text(row[date_column])
+                if text and _valid_date(text) and window[0] <= date.fromisoformat(text) <= window[1]:
+                    candidates.append(dict(zip(headers, row)))
+            valid_records = [record for record in candidates
+                             if record.get("data_id") == expected_id
+                             and record.get("instrument") == expected_name
+                             and valid_values(record, "price", ("open", "high", "low", "volume", "change_pct"))]
+            dates = {_date_text(record["trading_date"]) for record in valid_records}
+            invalid_count = len(candidates) - len(valid_records)
             details[key] = (
                 _observation_count_text(len(dates))
                 if dates
                 else "brak notowań w wybranym zakresie"
             )
-            section_complete[key] = bool(dates)
-            is_complete &= bool(dates)
+            if invalid_count:
+                details[key] += f"; rekordy wymagające poprawy: {invalid_count}"
+            section_complete[key] = bool(dates) and invalid_count == 0
+            is_complete &= section_complete[key]
     finally:
         workbook.close()
     return CoverageResult(is_complete, details, section_complete)

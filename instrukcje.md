@@ -37,8 +37,9 @@
 - `json_validator.py` parsuje odpowiedz, sprawdza schemat JSON 1.0 oraz
   porownuje rekordy z wybrana data, kontraktami i zakresami.
 - `prompt_stage.py` przygotowuje prompt i obsluguje wklejona odpowiedz.
-- RDN obejmuje brakujace dni kalendarzowe, maksymalnie z ostatnich 7 dni do
-  wczoraj. Dla OTF ekran pokazuje piec ostatnich dat przypadajacych w dni
+- RDN sprawdza 30 dni kalendarzowych do wybranej daty raportu i pobiera
+  maksymalnie 7 najnowszych brakujących dat dla każdego rynku, również luki
+  przed ostatnią zapisaną datą. Wykresy pokazują wszystkie dostępne dane z 30 dni. Dla OTF ekran pokazuje piec ostatnich dat przypadajacych w dni
   powszednie. Uzytkownik
   recznie wybiera date; aplikacja przekazuje tylko ja do promptu i walidatora
   dla obu rynkow.
@@ -57,9 +58,10 @@
   Dane i biblioteka Chart.js sa osadzone w HTML, wiec otwarcie raportu nie
   wymaga polaczenia z siecia. Kontrakty terminowe gazu i energii sa
   prezentowane w dwoch polowach tabeli z jednostkami w naglowkach.
-- Przycisk `Sprawdz odpowiedz` kontroluje wklejone dane, ale nie zapisuje ich
-  do Excela. Zapis nastepuje dopiero po kontroli brakow i wybraniu przycisku
-  zapisu na ekranie podgladu.
+- Przycisk `Sprawdz odpowiedz` kontroluje dane. Po poprawnej walidacji zapis
+  następuje automatycznie; brakujące wartości uzupełnia się we wspólnym formularzu.
+  TGeBase można uzupełnić dla wszystkich żądanych dat, pozostałe indeksy
+  energii dla najnowszej żądanej daty. Zapis zachowuje ich historię.
 
 ## Kursy NBP i ceny PLN
 
@@ -72,8 +74,11 @@ notowania. Arkusz przechowuje datę publikacji, numer tabeli i czas pobrania.
 
 Wymagany jest dostęp HTTPS do `api.nbp.pl`; klucze API nie są potrzebne.
 Zapytania obejmują maksymalnie 93 dni. Kompletny historyczny cache jest używany
-ponownie. Błąd pobierania nie nadpisuje skoroszytu i blokuje przygotowanie raportu,
-zamiast wyświetlać nieprzeliczone ceny jako PLN.
+ponownie. Błąd pobierania nie nadpisuje skoroszytu. Brakujące kursy użytkownik
+uzupełnia na ekranie „Sprawdź dane”, w tym samym formularzu co pozostałe braki.
+Dotyczy to również przypadku, gdy dane rynkowe są już kompletne. Kursy ręczne
+mają oznaczenie `MANUAL` w kolumnie `table_number` i nie są nadpisywane przez API.
+Raport można wygenerować przy awarii NBP, jeśli wszystkie wymagane kursy są zapisane.
 
 Oryginalne ceny w `WEGIEL` (USD) i `EUA` (EUR) pozostają bez zmian. Przy generowaniu
 HTML mnożone są pola price/open/high/low przez kurs z daty notowania. Wolumeny
@@ -144,3 +149,28 @@ otwarte/zakończone postępowania z opisem statusu i bez ceny, a wynik powiązan
 z transakcją nie jest liczony drugi raz. Zachowany limit wynosi 9 najnowszych pozycji.
 Przycisk braku wyników dotyczy braku nowych danych ORAZ braku zmian statusów;
 aktualizacje należy wkleić nawet wtedy, gdy nie znaleziono nowych transakcji.
+
+## Kopie zapasowe DataMaster
+
+Przed każdym zastąpieniem Excela aplikacja zachowuje jego poprzednią wersję
+w katalogu `backups` obok skoroszytu. Po udanym zapisie pozostaje 30 najnowszych
+kopii. Nieudany zapis nie usuwa wcześniejszych kopii i nie zastępuje oryginału.
+W celu przywrócenia danych zamknij aplikację i Excel, zachowaj obecny plik
+pod inną nazwą, a wybraną kopię skopiuj jako `DataMaster.xlsx`.
+Aktualizacje kursów, danych rynkowych oraz zrębków korzystają ze wspólnej
+blokady zapisu, także pomiędzy kartami aplikacji. Nie otwieraj Excela podczas zapisu.
+
+## Sprawdzanie kompletności danych
+
+Obecność daty lub identyfikatora nie wystarcza do uznania danych za gotowe.
+RDN wymaga właściwego indeksu, nazwy i skończonej ceny. Energia wymaga także
+indeksów Peak/Offpeak/24 dla najnowszej daty raportu. Cena może wynosić zero
+lub być ujemna. OTF sprawdza wybraną sesję, zgodność nazwy kontraktu z jego
+identyfikatorem oraz DKR; minima grup pozostają bez zmian. Węgiel i EUA
+wymagają poprawnego instrumentu, ceny oraz daty w wybranym zakresie; nie
+wymagamy 30 sesji. Wolumen, zmiana procentowa i pozostałe opcjonalne wartości
+mogą być puste; podane wartości muszą być liczbami, a wolumen nie może być
+ujemny. Niepoprawne rekordy TGE można zastąpić we wspólnym formularzu ręcznym.
+Węgiel i EUA są dopisywane lub aktualizowane po dacie i identyfikatorze;
+krótsza odpowiedź modelu nie usuwa starszych danych, a identyczne wpisy
+zachowują dotychczasową datę pobrania.

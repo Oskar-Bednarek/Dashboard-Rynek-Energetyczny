@@ -1,3 +1,4 @@
+from market_values import valid_tge_record
 from dataclasses import dataclass, replace
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -13,7 +14,8 @@ RDN_SOURCES = {
 }
 OTF_SOURCES = ("gas_otf", "electricity_otf")
 OTF_CANDIDATE_COUNT = 5
-RDN_LOOKBACK_DAYS = 7
+RDN_LOOKBACK_DAYS = 30
+RDN_FETCH_LIMIT = 7
 INITIAL_RDN_HISTORY_DAYS = 7
 
 @dataclass(frozen=True)
@@ -141,7 +143,7 @@ def build_otf_contract_preview(candidates: list[date]) -> list[dict[str, str]]:
 def build_date_plan(
     latest_rdn_dates: dict[str, date | None], today: date
 ) -> DatePlan:
-    # Limit every RDN request to the latest seven calendar days.
+    # The workbook-aware planner below finds internal gaps across 30 days.
     empty_sheet_baseline = today - timedelta(days=INITIAL_RDN_HISTORY_DAYS + 1)
     effective_dates = {
         source: stored_date or empty_sheet_baseline
@@ -157,7 +159,7 @@ def build_date_plan(
     rdn_dates = {
         source: get_dates_between(
             max(effective_dates[source], request_baseline), end_date
-        )
+        )[-RDN_FETCH_LIMIT:]
         for source in RDN_SOURCES
     }
     report_date = today - timedelta(days=1)
@@ -182,14 +184,31 @@ def load_date_plan(workbook_path: Path, today: date) -> DatePlan:
             worksheet = workbook[sheet_name]
             headers = [cell.value for cell in next(worksheet.iter_rows(min_row=1, max_row=1))]
             date_column = headers.index("trading_date")
+            id_column = headers.index("data_id") if "data_id" in headers else None
+            expected_id = "tge_gas_da" if source == "gas_rdn" else "tge_power_da_base"
             stored = {
                 parsed
                 for row in worksheet.iter_rows(min_row=2, values_only=True)
-                if (parsed := _parse_date(row[date_column], sheet_name)) is not None
+                if valid_tge_record(dict(zip(headers, row)), "gas" if source == "gas_rdn" else "electricity", "day_ahead")
+                and (id_column is not None and row[id_column] == expected_id)
+                and (parsed := _parse_date(row[date_column], sheet_name)) is not None
             }
+            if source == "electricity_rdn":
+                report_day = today - timedelta(days=1)
+                latest_valid_ids = {
+                    record.get("data_id")
+                    for row in worksheet.iter_rows(min_row=2, values_only=True)
+                    if (record := dict(zip(headers, row)))
+                    and _parse_date(record.get("trading_date"), sheet_name) == report_day
+                    and valid_tge_record(record, "electricity", "day_ahead")
+                }
+                if not {"tge_power_da_base", "tge_power_da_peak", "tge_power_da_offpeak", "tge_power_da_24"}.issubset(latest_valid_ids):
+                    stored.discard(report_day)
             missing[source] = [
-                value for value in plan.rdn_dates[source] if value not in stored
-            ]
+                value for value in get_dates_between(
+                    today - timedelta(days=RDN_LOOKBACK_DAYS + 1), today - timedelta(days=1)
+                ) if value not in stored
+            ][-RDN_FETCH_LIMIT:]
         return replace(plan, rdn_dates=missing)
     finally:
         workbook.close()
@@ -304,7 +323,7 @@ def show_date_selection(workbook_path: Path) -> None:
     st.subheader("Zakres danych do raportu")
     st.dataframe(summary_rows, hide_index=True, width="stretch")
     st.caption(
-        "Dla RDN sprawdzamy maksymalnie ostatnie 7 dni. Część indeksów "
+        "Dla RDN sprawdzamy ostatnie 30 dni i pobieramy maksymalnie 7 najnowszych brakujących dat. Część indeksów "
         "pobierana jest tylko dla najnowszej daty."
     )
 
@@ -363,5 +382,7 @@ def confirm_dates(
 
         coverage = assess_coverage(workbook_path, plan.rdn_dates, otf_session_date, plan.coal_window, plan.eua_window)
         st.session_state["coverage_result"] = coverage
-        st.session_state["page"] = "biomass" if coverage.complete else "prompt"
+        from exchange_rates import missing_exchange_rates
+        st.session_state["review_existing_data"] = coverage.complete
+        st.session_state["page"] = ("review" if missing_exchange_rates(workbook_path) else "biomass") if coverage.complete else "prompt"
     st.rerun()

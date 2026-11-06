@@ -137,7 +137,8 @@ class ManualCompletionTests(unittest.TestCase):
                         if row[headers.index("data_id")] == data_id
                     ]
                     self.assertTrue(dates)
-                    self.assertEqual(set(dates), {"2026-10-21"})
+                    self.assertIn("2026-10-21", dates)
+                    self.assertIn("2026-11-04", dates)
             finally:
                 workbook.close()
 

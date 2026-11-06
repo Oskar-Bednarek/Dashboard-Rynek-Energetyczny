@@ -1038,11 +1038,17 @@ SOFTWARE.
       const numeric = value => {
         if (typeof value === "number" && Number.isFinite(value)) return value;
         if (typeof value !== "string") return null;
-        const text = value.trim().replace(/\s/g,"").replace(/%$/,"").replace(",",".");
+        let text = value.trim().replace(/\s/g,"").replace(/%$/,"");
+        if (text.includes(".") && text.includes(",")) {
+          text = text.lastIndexOf(".") > text.lastIndexOf(",") ? text.replace(/,/g,"") : text.replace(/\./g,"").replace(",",".");
+        } else if ((text.match(/,/g)||[]).length > 1) {
+          text = text.replace(/,/g,"");
+        } else text = text.replace(",",".");
         const match = text.match(/^([+-]?\d+(?:\.\d+)?)([kKmM])?$/);
         if (!match) return null;
         const multiplier = match[2] ? (match[2].toLowerCase() === "k" ? 1000 : 1000000) : 1;
-        return Number(match[1]) * multiplier;
+        const number = Number(match[1]) * multiplier;
+        return Number.isFinite(number) ? number : null;
       };
       const fmtMoney = (value, unit=" zł") => {
         const number = numeric(value);

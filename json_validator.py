@@ -1,5 +1,7 @@
+from market_values import number
 from dataclasses import dataclass, field
 from datetime import date, datetime
+import math
 import json
 import re
 from typing import Any
@@ -70,13 +72,17 @@ class ValidationReport:
             self.section_validity[section] = False
 
 
+def _reject_json_constant(token: str):
+    raise ValueError(f"Niedozwolona wartość liczbowa: {token}")
+
+
 def parse_json_response(response: str) -> dict[str, Any]:
     text = response.strip()
     fenced = FENCED_JSON.fullmatch(text)
     if fenced:
         text = fenced.group(1).strip()
     try:
-        value = json.loads(text)
+        value = json.loads(text, parse_constant=_reject_json_constant)
     except json.JSONDecodeError as error:
         raise ValueError(
             f"Niepoprawny JSON: linia {error.lineno}, kolumna {error.colno}: {error.msg}."
@@ -97,9 +103,14 @@ def _type_name(value: Any) -> str:
 
 
 def _is_number_or_none(value: Any) -> bool:
-    return value is None or (
-        isinstance(value, (int, float)) and not isinstance(value, bool)
-    )
+    if value is None:
+        return True
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return False
+    try:
+        return math.isfinite(value)
+    except OverflowError:
+        return False
 
 
 def _valid_iso_date(value: Any) -> bool:
@@ -204,13 +215,22 @@ def _validate_tge_values(
         return
     for key in keys:
         if key not in values:
-            report.add(section, f"{path}.{key}", "Brak wymaganego pola.")
+            if key in {"price_pln_mwh", "dkr_pln_mwh"}:
+                report.add(section, f"{path}.{key}", "Brak wymaganej ceny.")
+        elif values[key] is None and key in {"price_pln_mwh", "dkr_pln_mwh"}:
+            report.add(section, f"{path}.{key}", "Cena nie może być pusta.")
         elif not _is_number_or_none(values[key]):
             report.add(
                 section,
                 f"{path}.{key}",
                 f"Oczekiwano liczby lub null, otrzymano {_type_name(values[key])}.",
             )
+
+    if values.get("volume_mwh") is not None:
+        try:
+            number(values["volume_mwh"], volume=True)
+        except ValueError as error:
+            report.add(section, f"{path}.volume_mwh", str(error))
 
 
 def _validate_rdn(
@@ -422,10 +442,17 @@ def _validate_investing(
         values = record.get("values")
         if isinstance(values, dict):
             for key in ("price", "open", "high", "low", "volume", "change_pct"):
-                if key not in values:
-                    report.add(section, f"{path}.values.{key}", "Brak wymaganego pola.")
-                elif values[key] is not None and not isinstance(values[key], str):
-                    report.add(section, f"{path}.values.{key}", "Oczekiwano tekstu lub null.")
+                value = values.get(key)
+                if value is None:
+                    if key == "price":
+                        report.add(section, f"{path}.values.{key}", "Brak wymaganej ceny.")
+                    continue
+                try:
+                    if not isinstance(value, str):
+                        raise ValueError("Oczekiwano liczby zapisanej tekstem.")
+                    number(value, volume=key=="volume", percent=key=="change_pct")
+                except ValueError as error:
+                    report.add(section, f"{path}.values.{key}", str(error))
     if not records:
         report.add(section, f"data.{market}.futures", "Brak rekordów z 30-dniowego zakresu.")
 
