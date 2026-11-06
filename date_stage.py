@@ -14,7 +14,7 @@ RDN_SOURCES = {
 }
 OTF_SOURCES = ("gas_otf", "electricity_otf")
 OTF_CANDIDATE_COUNT = 5
-RDN_LOOKBACK_DAYS = 30
+RDN_LOOKBACK_DAYS = 7
 RDN_FETCH_LIMIT = 7
 INITIAL_RDN_HISTORY_DAYS = 7
 
@@ -143,7 +143,7 @@ def build_otf_contract_preview(candidates: list[date]) -> list[dict[str, str]]:
 def build_date_plan(
     latest_rdn_dates: dict[str, date | None], today: date
 ) -> DatePlan:
-    # The workbook-aware planner below finds internal gaps across 30 days.
+    # The workbook-aware planner below finds gaps within the latest seven days.
     empty_sheet_baseline = today - timedelta(days=INITIAL_RDN_HISTORY_DAYS + 1)
     effective_dates = {
         source: stored_date or empty_sheet_baseline
@@ -323,7 +323,7 @@ def show_date_selection(workbook_path: Path) -> None:
     st.subheader("Zakres danych do raportu")
     st.dataframe(summary_rows, hide_index=True, width="stretch")
     st.caption(
-        "Dla RDN sprawdzamy ostatnie 30 dni i pobieramy maksymalnie 7 najnowszych brakujących dat. Część indeksów "
+        "Dla RDN pobieramy wyłącznie brakujące dane z ostatnich 7 dni do daty raportu włącznie. Część indeksów "
         "pobierana jest tylko dla najnowszej daty."
     )
 

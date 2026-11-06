@@ -18,7 +18,7 @@ from workbook_storage import atomic_save, serialized_update
 
 
 class ReliabilityTests(unittest.TestCase):
-    def test_internal_rdn_gaps_are_found_even_with_recent_data(self):
+    def test_rdn_only_requests_internal_gaps_within_last_seven_days(self):
         with TemporaryDirectory() as directory:
             path = Path(directory)/'DataMaster.xlsx'
             workbook = Workbook()
@@ -38,9 +38,19 @@ class ReliabilityTests(unittest.TestCase):
                         sheet.append([date(2026,11,5),data_id,instrument,100])
             workbook.save(path); workbook.close()
             plan = load_date_plan(path, date(2026,11,6))
-            expected = [date(2026,10,23)+timedelta(days=i) for i in range(7)]
-            self.assertEqual(plan.rdn_dates['gas_rdn'], expected)
-            self.assertEqual(plan.rdn_dates['electricity_rdn'], expected)
+            self.assertEqual(plan.rdn_dates['gas_rdn'], [])
+            self.assertEqual(plan.rdn_dates['electricity_rdn'], [])
+            # Earlier history is incomplete, but only recent internal holes matter.
+            workbook = load_workbook(path)
+            for name, data_id in [('GAZ_RDN','tge_gas_da'), ('EE_RDN','tge_power_da_base')]:
+                sheet = workbook[name]
+                for index in range(sheet.max_row,1,-1):
+                    if str(sheet.cell(index,1).value)[:10] in {'2026-10-31','2026-11-03'} and sheet.cell(index,2).value == data_id:
+                        sheet.delete_rows(index)
+            workbook.save(path);workbook.close()
+            plan=load_date_plan(path,date(2026,11,6))
+            self.assertEqual(plan.rdn_dates['gas_rdn'], [date(2026,10,31),date(2026,11,3)])
+            self.assertEqual(plan.rdn_dates['electricity_rdn'], [date(2026,10,31),date(2026,11,3)])
 
     def test_manual_completion_includes_all_historical_base_dates(self):
         payload = valid_payload()

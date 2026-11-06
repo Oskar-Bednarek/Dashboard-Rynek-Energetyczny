@@ -1,3 +1,6 @@
+ZAKRES DAT RDN
+Dla gazu RDN i energii RDN pobierz wyłącznie wskazane brakujące daty z ostatnich 7 dni kalendarzowych do daty raportu włącznie. Nie wyszukuj starszych luk ani nie rozszerzaj zakresu RDN do 30 dni. Jeśli lista dat danego rynku jest pusta, nie pobieraj dla niego danych RDN. OTF oraz zakresy węgla i EUA pozostają zgodne z instrukcjami poniżej.
+
 ZADANIE
 
 Pobierz dane gazowe i dane energii elektrycznej z Towarowej Giełdy Energii (TGE) oraz dane historyczne węgla i EUA:

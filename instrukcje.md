@@ -37,9 +37,9 @@
 - `json_validator.py` parsuje odpowiedz, sprawdza schemat JSON 1.0 oraz
   porownuje rekordy z wybrana data, kontraktami i zakresami.
 - `prompt_stage.py` przygotowuje prompt i obsluguje wklejona odpowiedz.
-- RDN sprawdza 30 dni kalendarzowych do wybranej daty raportu i pobiera
-  maksymalnie 7 najnowszych brakujących dat dla każdego rynku, również luki
-  przed ostatnią zapisaną datą. Wykresy pokazują wszystkie dostępne dane z 30 dni. Dla OTF ekran pokazuje piec ostatnich dat przypadajacych w dni
+- RDN sprawdza wyłącznie ostatnie 7 dni kalendarzowych do wybranej daty
+  raportu i pobiera brakujące daty dla każdego rynku, również luki wewnątrz
+  tego tygodnia. Starsze luki nie są pobierane. Wykresy pokazują wszystkie dostępne dane z 30 dni. Dla OTF ekran pokazuje piec ostatnich dat przypadajacych w dni
   powszednie. Uzytkownik
   recznie wybiera date; aplikacja przekazuje tylko ja do promptu i walidatora
   dla obu rynkow.

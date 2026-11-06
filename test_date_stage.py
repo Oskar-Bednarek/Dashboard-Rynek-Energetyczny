@@ -60,7 +60,7 @@ class DateStageTests(unittest.TestCase):
             date(2026, 10, day)
             for day in range(15, 22)
         ]
-        self.assertEqual(RDN_LOOKBACK_DAYS, 30)
+        self.assertEqual(RDN_LOOKBACK_DAYS, 7)
         self.assertEqual(plan.rdn_dates["gas_rdn"], expected)
         self.assertEqual(plan.rdn_dates["electricity_rdn"], expected)
 
