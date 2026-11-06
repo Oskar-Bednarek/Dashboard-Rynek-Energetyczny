@@ -1,7 +1,7 @@
+from workbook_storage import atomic_save, serialized_update
 from datetime import date, datetime
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
-import os
-import tempfile
 from typing import Any
 
 from openpyxl import load_workbook
@@ -27,7 +27,8 @@ def _upsert_sheet(
     records: list[dict[str, Any]],
     value_fields: tuple[str, ...],
     retrieved_at: str,
-) -> None:
+    *, preserve_unchanged: bool = False,
+) -> bool:
     headers = [cell.value for cell in worksheet[1]]
     expected = ["trading_date", "data_id", "source_url", "instrument", *value_fields, "retrieved_at"]
     if headers != expected:
@@ -44,34 +45,49 @@ def _upsert_sheet(
         if trading_date and data_id:
             existing[(str(trading_date)[:10], str(data_id))] = row
             last_data_row = max(last_data_row, row)
+    changed = False
     for record in records:
         key = (record["trading_date"], record["data_id"])
         row = existing.get(key, last_data_row + 1)
         values = record["values"]
         output = [
             record["trading_date"], record["data_id"], record["source_url"],
-            record["instrument"], *(values[field] for field in value_fields), retrieved_at,
+            record["instrument"], *(values.get(field) for field in value_fields), retrieved_at,
         ]
+        if preserve_unchanged and key in existing:
+            current = [worksheet.cell(row, column).value for column in range(1, len(output))]
+            current[0] = current[0].isoformat()[:10] if hasattr(current[0], "isoformat") else str(current[0])[:10]
+            if current[:4] == output[:4] and all(
+                _same_number(old, new) for old, new in zip(current[4:], output[4:-1])
+            ):
+                continue
+        changed = True
         for column, value in enumerate(output, 1):
-            worksheet.cell(row, column, value)
+            worksheet.cell(row, column).value = value
         existing[key] = row
         last_data_row = max(last_data_row, row)
+    return changed
 
 
-def _delete_window(worksheet, date_window: tuple[date, date]) -> None:
-    start, end = date_window
-    for row in range(worksheet.max_row, 1, -1):
-        value = worksheet.cell(row, 1).value
-        try:
-            parsed = value.date() if isinstance(value, datetime) else (
-                value if isinstance(value, date) else date.fromisoformat(str(value)[:10])
-            )
-        except (TypeError, ValueError):
-            continue
-        if start <= parsed <= end:
-            worksheet.delete_rows(row)
+def _same_number(old, new) -> bool:
+    if old == new:
+        return True
+    if old is None or new is None:
+        return False
+    def number(value):
+        text = str(value).strip().replace(" ", "").replace("\xa0", "")
+        multiplier = Decimal(1)
+        if text.lower().endswith(("k", "m")):
+            multiplier = Decimal(1000 if text[-1].lower() == "k" else 1000000)
+            text = text[:-1]
+        return Decimal(text.rstrip("%").replace(",", ".")) * multiplier
+    try:
+        return number(old) == number(new)
+    except InvalidOperation:
+        return False
 
 
+@serialized_update
 def save_market_data(
     workbook_path: Path,
     payload: dict[str, Any],
@@ -79,28 +95,18 @@ def save_market_data(
     eua_window: tuple[date, date],
 ) -> None:
     workbook = load_workbook(workbook_path)
-    temp_path: Path | None = None
     try:
         retrieved_at = payload.get("retrieved_at") or datetime.now().astimezone().isoformat()
+        changed = False
         for section, (sheet_name, fields) in SHEET_SPECS.items():
             if sheet_name not in workbook.sheetnames:
                 raise ValueError(f"Brak arkusza {sheet_name} w DataMaster.xlsx.")
             worksheet = workbook[sheet_name]
-            if section == "coal.futures":
-                _delete_window(worksheet, coal_window)
-            elif section == "emissions.futures":
-                _delete_window(worksheet, eua_window)
-            _upsert_sheet(worksheet, _records(payload, section), fields, retrieved_at)
-        with tempfile.NamedTemporaryFile(
-            prefix="DataMaster_", suffix=".xlsx", dir=workbook_path.parent, delete=False
-        ) as temporary:
-            temp_path = Path(temporary.name)
-        workbook.save(temp_path)
-        check = load_workbook(temp_path, read_only=True, data_only=True)
-        check.close()
-        os.replace(temp_path, workbook_path)
-        temp_path = None
+            changed |= _upsert_sheet(
+                worksheet, _records(payload, section), fields, retrieved_at,
+                preserve_unchanged=section in {"coal.futures", "emissions.futures"},
+            )
+        if changed:
+            atomic_save(workbook, workbook_path)
     finally:
         workbook.close()
-        if temp_path is not None and temp_path.exists():
-            temp_path.unlink()

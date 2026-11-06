@@ -1,3 +1,4 @@
+from exchange_rates import missing_exchange_rates, save_manual_exchange_rates, ExchangeRateError
 from datetime import date
 import json
 from pathlib import Path
@@ -8,6 +9,24 @@ from openpyxl import load_workbook
 from excel_writer import SHEET_SPECS, save_market_data
 from json_validator import ValidationReport, validate_response
 from manual_completion import apply_manual_records, find_missing_tge_records
+from workbook_access import show_workbook_access_error
+
+
+_FIELD_LABELS = {
+    "price_pln_mwh": "Cena (PLN/MWh)",
+    "volume_mwh": "Wolumen (MWh)",
+    "change_pct": "Zmiana (%)",
+    "dkr_pln_mwh": "DKR (PLN/MWh)",
+    "max_pln_mwh": "Maksymalny kurs (PLN/MWh)",
+}
+_SECTION_LABELS = {
+    "gas.day_ahead": "Ceny dzienne gazu",
+    "gas.futures": "Kontrakty terminowe na gaz",
+    "electricity.day_ahead": "Ceny dzienne energii",
+    "electricity.futures": "Kontrakty terminowe na energię",
+    "coal.futures": "Historia węgla",
+    "emissions.futures": "Historia uprawnień EUA",
+}
 
 
 def flatten_market_records(payload: dict[str, Any]) -> list[dict[str, Any]]:
@@ -42,7 +61,7 @@ def build_dashboard_preview(
     workbook_path: Path,
     payload: dict[str, Any],
     history_window: tuple[date, date],
-    otf_session_date: date,
+    otf_session_date: date | None,
 ) -> list[dict[str, Any]]:
     combined: dict[tuple[str, str, str], dict[str, Any]] = {}
     workbook = load_workbook(workbook_path, read_only=True, data_only=True)
@@ -78,7 +97,7 @@ def build_dashboard_preview(
         except ValueError:
             continue
         if row["sekcja"] in {"gas.futures", "electricity.futures"}:
-            if row_date != otf_session_date:
+            if otf_session_date is None or row_date != otf_session_date:
                 continue
         elif not start <= row_date <= end:
             continue
@@ -103,149 +122,236 @@ def _source_errors(report: ValidationReport) -> list[dict[str, str]]:
 def show_review_page(workbook_path: Path) -> None:
     import streamlit as st
 
+    if st.session_state.get("review_existing_data"):
+        st.title("Uzupełnij brakujące dane")
+        gaps = missing_exchange_rates(workbook_path)
+        if gaps:
+            _show_fx_form(workbook_path, gaps)
+            return
+        st.session_state["page"] = "biomass"
+        st.rerun()
+
     report: ValidationReport | None = st.session_state.get("validation_report")
     if report is None or report.data is None or not report.is_structurally_valid:
         st.session_state["page"] = "prompt"
         st.rerun()
 
     source_dates: dict[str, list[date]] = st.session_state["confirmed_source_dates"]
-    otf_session_date: date = st.session_state["otf_session_date"]
+    otf_session_date_value = report.data.get("otf_session_date")
+    otf_session_date = (
+        date.fromisoformat(otf_session_date_value)
+        if isinstance(otf_session_date_value, str)
+        else None
+    )
+    otf_session_candidates: list[date] = st.session_state.get(
+        "otf_session_candidates", [st.session_state["otf_session_date"]]
+    )
     coal_window: tuple[date, date] = st.session_state["coal_window"]
     eua_window: tuple[date, date] = st.session_state["eua_window"]
 
-    st.title("Kontrola i uzupełnianie danych")
-    st.success("Struktura JSON-a jest poprawna.")
+    # Revalidate against this selection immediately before the automatic save.
+    report = validate_response(
+        json.dumps(report.data, ensure_ascii=False), source_dates,
+        st.session_state["otf_session_date"], coal_window, eua_window, otf_session_candidates,
+    )
+    st.session_state["validation_report"] = report
+    fx_gaps = missing_exchange_rates(workbook_path)
+    if report.is_valid and not fx_gaps:
+        try:
+            if not st.session_state.get("data_saved"):
+                save_market_data(workbook_path, report.data, coal_window, eua_window)
+        except PermissionError:
+            show_workbook_access_error()
+            st.button("Spróbuj ponownie", key="retry_save")
+            return
+        except (OSError, ValueError, KeyError) as error:
+            st.error(f"Nie udało się zapisać danych: {error}")
+            st.button("Spróbuj ponownie", key="retry_save")
+            return
+        st.session_state["data_saved"] = True
+        if missing_exchange_rates(workbook_path):
+            st.rerun()
+        st.session_state["otf_session_date"] = otf_session_date
+        st.session_state["page"] = "biomass"
+        st.session_state.pop("coverage_result", None)
+        st.session_state.pop("date_plan", None)
+        st.rerun()
 
+    st.title("Uzupełnij brakujące dane")
     missing_records = find_missing_tge_records(
         report.data, source_dates, otf_session_date
     )
+    if report.is_valid:
+        st.success("Dane gotowe do zapisu. Sprawdź podgląd i przygotuj raport.")
+    else:
+        invalid_count = sum(not valid for valid in report.section_validity.values())
+        if missing_records:
+            st.warning(f"Do uzupełnienia: {len(missing_records)} pozycji. Wpisz brakujące dane w formularzu poniżej.")
+        else:
+            st.warning(f"Dane wymagają poprawy. Sprawdź wskazane problemy{f' w {invalid_count} grupach danych' if invalid_count else ''} poniżej.")
+    blocking_issues = [issue for issue in report.issues if issue.severity == "error"]
+    if blocking_issues:
+        st.subheader("Problemy blokujące zapis")
+        st.dataframe([
+            {"Rodzaj danych": _SECTION_LABELS.get(issue.section, {"metadata":"Status odpowiedzi", "global":"Format odpowiedzi"}.get(issue.section,issue.section)),
+             "Pole": issue.path, "Problem": issue.message}
+            for issue in blocking_issues
+        ], hide_index=True, width="stretch")
+        st.caption("Brakujące dane TGE uzupełnij poniżej. Pozostałe wskazane błędy popraw w odpowiedzi JSON, korzystając z przycisku „Wróć do odpowiedzi”.")
+    if otf_session_date is None:
+        st.error(
+            "Nie potwierdzono wspólnej daty sesji OTF na stronach TGE. "
+            "Nie można ręcznie uzupełnić kontraktów bez potwierdzonej daty; "
+            "ponownie pobierz dane dla sesji OTF."
+        )
     source_errors = _source_errors(report)
 
-    st.subheader("Dane wymagające uzupełnienia")
-    if not missing_records and not source_errors:
-        st.success("Nie wykryto brakujących danych ani błędów źródeł.")
-    else:
-        if source_errors:
-            st.write(
-                "Poniższe problemy zostały zgłoszone przez odpowiedź. "
-                "Dla węgla i EUA sprawdź źródło przed zapisem."
-            )
-            st.dataframe(
-                source_errors,
-                hide_index=True,
-                width="stretch",
-                column_config={"Link": st.column_config.LinkColumn("Link")},
-            )
+    if source_errors:
+        st.subheader("Uwagi zgłoszone przez źródła")
+        st.info(
+            "Podczas pobierania zgłoszono poniższe uwagi. Same uwagi nie "
+            "zawsze blokują zapis — informację o brakach wymagających poprawy "
+            "znajdziesz osobno."
+        )
+        st.dataframe(
+            source_errors,
+            hide_index=True,
+            width="stretch",
+            column_config={"Link": st.column_config.LinkColumn("Link")},
+        )
 
-        if missing_records:
-            st.write(
-                "Wpisz wartości z podanych stron. Puste pole oznacza świadomie "
-                "potwierdzony brak wartości (null)."
-            )
-            completed = []
-            with st.form("review_manual_completion"):
-                for index, missing in enumerate(missing_records):
-                    st.markdown(
-                        f"**{missing.instrument} — {missing.trading_date}**  "
-                        f"[{missing.source_url}]({missing.source_url})"
-                    )
-                    columns = st.columns(len(missing.value_fields) + 1)
-                    values = {}
-                    for column, field in zip(columns, missing.value_fields):
-                        values[field] = column.number_input(
-                            field,
-                            value=None,
-                            key=f"review_{index}_{field}",
-                        )
-                    confirmed = columns[-1].checkbox(
-                        "Potwierdzono", key=f"review_{index}_confirmed"
-                    )
-                    completed.append((missing, values, confirmed))
-                apply_manual = st.form_submit_button(
-                    "Zastosuj ręczne uzupełnienia", type="primary"
+    if missing_records or fx_gaps:
+        st.write(
+            "Otwórz link i wpisz wartości dokładnie takie, jakie widzisz na "
+            "stronie. Zostaw pole puste tylko wtedy, gdy źródło wyraźnie nie "
+            "podaje tej wartości. Potwierdź każdą sprawdzoną pozycję."
+        )
+        completed = []
+        with st.form("review_manual_completion"):
+            fx_entries = _fx_inputs(fx_gaps)
+            for index, missing in enumerate(missing_records):
+                st.markdown(
+                    f"**{missing.instrument} — {missing.trading_date}**  "
+                    f"[{missing.source_url}]({missing.source_url})"
                 )
-            if apply_manual:
-                if not all(item[2] for item in completed):
-                    st.error("Potwierdź wszystkie widoczne brakujące rekordy.")
-                else:
-                    updated = apply_manual_records(
-                        report.data,
-                        [(missing, values) for missing, values, _ in completed],
+                columns = st.columns(len(missing.value_fields) + 1)
+                values = {}
+                for column, field in zip(columns, missing.value_fields):
+                    values[field] = column.number_input(
+                        _FIELD_LABELS.get(field, field),
+                        value=None,
+                        key=f"review_{index}_{field}",
                     )
-                    updated_text = json.dumps(updated, ensure_ascii=False)
-                    updated_report = validate_response(
-                        updated_text,
-                        source_dates,
-                        otf_session_date,
-                        coal_window,
-                        eua_window,
-                    )
-                    st.session_state["response"] = updated_text
-                    st.session_state["validation_report"] = updated_report
-                    st.session_state["parsed_response"] = updated
+                confirmed = columns[-1].checkbox(
+                    "Sprawdziłem źródło", key=f"review_{index}_confirmed"
+                )
+                completed.append((missing, values, confirmed))
+            apply_manual = st.form_submit_button(
+                "Sprawdź ponownie dane uzupełnione", type="primary"
+            )
+        if apply_manual:
+            if any(value is None or value <= 0 for _, _, value in fx_entries):
+                st.error("Wpisz dodatni kurs dla każdej brakującej daty i waluty.")
+                return
+            if not all(item[2] for item in completed):
+                st.error("Najpierw potwierdź każdą sprawdzoną pozycję.")
+            else:
+                if fx_entries:
+                    try:
+                        save_manual_exchange_rates(workbook_path, fx_entries)
+                    except ExchangeRateError as error:
+                        st.error(str(error))
+                        return
+                updated = apply_manual_records(
+                    report.data,
+                    [(missing, values) for missing, values, _ in completed],
+                )
+                updated_text = json.dumps(updated, ensure_ascii=False)
+                updated_report = validate_response(
+                    updated_text,
+                    source_dates,
+                    otf_session_date,
+                    coal_window,
+                    eua_window,
+                    otf_session_candidates,
+                )
+                st.session_state["response"] = updated_text
+                st.session_state["validation_report"] = updated_report
+                st.session_state["parsed_response"] = updated
+                st.session_state["data_saved"] = False
+                if updated_report.is_structurally_valid:
                     st.session_state["validated_payload"] = updated
                     st.session_state["validated_sections"] = dict(
                         updated_report.section_validity
                     )
-                    st.rerun()
+                st.rerun()
+    elif not source_errors:
+        st.caption("Nie brakuje pozycji TGE. Przyczynę blokady zapisu pokazano w tabeli problemów powyżej." if blocking_issues else "Dane TGE są kompletne.")
 
-    st.subheader("Wszystkie dane przeznaczone do zapisu i dashboardu")
-    rows = build_dashboard_preview(
-        workbook_path, report.data, coal_window, otf_session_date
-    )
-    if rows:
-        display_rows = [
-            {
-                key: (str(value) if key == "change_pct" and value is not None else value)
-                for key, value in row.items()
-            }
-            for row in rows
-        ]
-        st.dataframe(
-            display_rows,
-            hide_index=True,
-            width="stretch",
-            column_config={"source_url": st.column_config.LinkColumn("source_url")},
-        )
-    else:
-        st.info("JSON nie zawiera jeszcze żadnych rekordów danych.")
-
-    st.subheader("Zapis danych")
-    if report.is_valid:
-        if st.button("Zapisz dane do DataMaster.xlsx", type="primary"):
-            try:
-                save_market_data(
-                    workbook_path, report.data, coal_window, eua_window
-                )
-            except (OSError, ValueError, KeyError) as error:
-                st.error(f"Nie udało się zapisać danych: {error}")
-            else:
-                st.session_state["data_saved"] = True
-                st.session_state.pop("date_plan", None)
-                st.success("Dane zostały zapisane w DataMaster.xlsx.")
-    else:
-        invalid_sections = [
-            section for section, valid in report.section_validity.items() if not valid
-        ]
+    invalid_sections = [
+        section
+        for section, valid in report.section_validity.items()
+        if not valid
+    ]
+    if invalid_sections:
         st.warning(
-            "Zapis jest zablokowany do czasu uzupełnienia danych. "
-            + (
-                "Sekcje wymagające poprawy: " + ", ".join(invalid_sections)
-                if invalid_sections
-                else "Pozostały błędy opisane w raporcie."
+            "Część danych nadal wymaga poprawy: "
+            + ", ".join(_SECTION_LABELS.get(section, section) for section in invalid_sections)
+            + ". Wybierz „Wróć do odpowiedzi”, aby ponowić pobieranie."
+        )
+        with st.expander("Szczegóły braków"):
+            st.dataframe(
+                [
+                    {
+                        "Rodzaj danych": _SECTION_LABELS.get(
+                            issue.section, issue.section
+                        ),
+                        "Szczegóły": issue.message,
+                    }
+                    for issue in report.issues
+                    if issue.section in invalid_sections
+                ],
+                hide_index=True,
+                width="stretch",
             )
-        )
-        st.button(
-            "Zapisz dane do DataMaster.xlsx",
-            disabled=True,
-            type="primary",
-            key="review_save_disabled",
-        )
 
     left, right = st.columns(2)
-    if left.button("Wróć do promptu"):
+    if left.button("Wróć do odpowiedzi"):
         st.session_state["page"] = "prompt"
+        st.session_state["data_saved"] = False
         st.rerun()
-    if right.button("Wróć do wyboru dat"):
+    if right.button("Przygotuj kolejny raport"):
+        st.session_state["page"] = "dates"
+        st.session_state["data_saved"] = False
+        st.rerun()
+
+
+def _fx_inputs(gaps):
+    import streamlit as st
+    entries = []
+    if gaps:
+        st.subheader("Brakujące kursy walut")
+        st.info("Nie udało się automatycznie uzupełnić wszystkich kursów NBP. Wpisz średni kurs tabeli A obowiązujący w danym dniu; w dni bez publikacji użyj ostatniego wcześniejszego kursu. Wpisy zostaną oznaczone jako ręczne.")
+        st.markdown("https://nbp.pl/statystyka-i-sprawozdawczosc/kursy/tabela-a/")
+    for day, currency in gaps:
+        value = st.number_input(f"{currency}/PLN — {day:%d.%m.%Y}", value=None,
+                                min_value=0.000001, format="%.6f", key=f"fx_{day}_{currency}")
+        entries.append((day, currency, value))
+    return entries
+
+
+def _show_fx_form(path, gaps):
+    import streamlit as st
+    with st.form("review_manual_completion"):
+        entries = _fx_inputs(gaps)
+        submitted = st.form_submit_button("Zapisz uzupełnione dane", type="primary")
+    if submitted:
+        try:
+            save_manual_exchange_rates(path, entries)
+        except ExchangeRateError as error:
+            st.error(str(error))
+        else:
+            st.rerun()
+    if st.button("Wróć do dat"):
         st.session_state["page"] = "dates"
         st.rerun()

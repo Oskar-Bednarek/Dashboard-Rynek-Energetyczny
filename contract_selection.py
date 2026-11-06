@@ -5,9 +5,10 @@ from datetime import date, timedelta
 # Te wartości są celowo zebrane w jednym miejscu. Po uzgodnieniu zakresu
 # kontraktów wystarczy zmienić przesunięcia, bez przebudowy reszty aplikacji.
 WEEK_OFFSETS = (2, 3, 4)
-MONTH_OFFSETS = (1, 2, 3, 4)
-QUARTER_OFFSETS = (1, 2)
-YEAR_OFFSETS = (1,)
+MONTH_OFFSETS = (1, 2, 3, 4, 5)
+QUARTER_OFFSETS = (1, 2, 3)
+YEAR_OFFSETS = (1, 2)
+OTF_MINIMUM_COUNTS = {"week": 2, "month": 4, "quarter": 2, "year": 1}
 
 
 @dataclass(frozen=True)
